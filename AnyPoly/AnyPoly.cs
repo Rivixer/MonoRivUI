@@ -1,4 +1,4 @@
-﻿using AnyPoly.UI;
+using AnyPoly.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -58,6 +58,7 @@ public class AnyPoly : Game
     protected override void Update(GameTime gameTime)
     {
         KeyboardController.Update();
+        MouseController.Update();
         ScreenController.Update();
 
         base.Update(gameTime);
