@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using AnyPoly.UI;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace AnyPoly;
@@ -33,6 +34,11 @@ public class AnyPoly : Game
     /// </summary>
     protected override void Initialize()
     {
+        var spriteBatch = new SpriteBatch(this.GraphicsDevice);
+        ScreenController.Initialize(this.graphics, spriteBatch, this.Window);
+        ScreenController.Change(1366, 768, ScreenType.Windowed);
+        ScreenController.ApplyChanges();
+
         base.Initialize();
     }
 
@@ -52,6 +58,8 @@ public class AnyPoly : Game
     protected override void Update(GameTime gameTime)
     {
         KeyboardController.Update();
+        ScreenController.Update();
+
         base.Update(gameTime);
     }
 
