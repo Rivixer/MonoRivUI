@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.Xna.Framework;
 
 namespace AnyPoly.UI;
@@ -25,7 +25,7 @@ internal class UITransform
     private Vector2 relativeOffset = Vector2.Zero;
     private Vector2 relativeSize = Vector2.One;
 
-    private bool needsRecalculation;
+    private bool needsRecalculation = true;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UITransform"/> class.
@@ -464,7 +464,7 @@ internal class UITransform
 
         this.RecalculateRatio();
 
-        this.unscaledSize -= reference.unscaledSize.Scale(this.relativeSize);
+        this.unscaledSize = reference.unscaledSize.Scale(this.relativeSize);
         this.unscaledLocation += reference.unscaledSize.Scale(this.relativeOffset);
     }
 
