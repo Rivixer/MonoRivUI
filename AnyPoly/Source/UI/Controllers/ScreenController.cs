@@ -1,9 +1,8 @@
-﻿using AnyPoly.UI;
+﻿using System;
+using AnyPoly.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-
-#nullable disable
 
 namespace AnyPoly;
 
@@ -12,7 +11,8 @@ namespace AnyPoly;
 /// </summary>
 internal static class ScreenController
 {
-    private static GraphicsDeviceManager graphicsDeviceManager;
+    private static bool isInitialized;
+    private static GraphicsDeviceManager graphicsDeviceManager = default!;
 
     /// <summary>
     /// Represents the method that will handle screen change events.
@@ -22,7 +22,7 @@ internal static class ScreenController
     /// <summary>
     /// An event raised when the screen settings change.
     /// </summary>
-    public static event OnScreenChangeEventHandler OnScreenChange;
+    public static event OnScreenChangeEventHandler? OnScreenChange;
 
     /// <summary>
     /// Gets the default size the UI is designed for.
@@ -32,17 +32,12 @@ internal static class ScreenController
     /// <summary>
     /// Gets the GameWindow class provided by MonoGame.
     /// </summary>
-    public static GameWindow GameWindow { get; private set; }
+    public static GameWindow GameWindow { get; private set; } = default!;
 
     /// <summary>
     /// Gets the GraphicsDevice class provided by MonoGame.
     /// </summary>
     public static GraphicsDevice GraphicsDevice => graphicsDeviceManager.GraphicsDevice;
-
-    /// <summary>
-    /// Gets the SpriteBatch class provided by MonoGame.
-    /// </summary>
-    public static SpriteBatch SpriteBatch { get; private set; }
 
     /// <summary>
     /// Gets the scale factor of the current screen compared to <see cref="DefaultSize"/>.
@@ -52,16 +47,21 @@ internal static class ScreenController
             graphicsDeviceManager.PreferredBackBufferHeight / (float)DefaultSize.Y);
 
     /// <summary>
-    /// Initializes the ScreenController class.
+    /// Initializes the <see cref="ScreenController"/> class.
     /// </summary>
     /// <param name="graphics">The GraphicsDeviceManager class provided by MonoGame.</param>
-    /// <param name="spriteBatch">The SpriteBatch class provided by MonoGame.</param>
     /// <param name="gameWindow">The GameWindow class provided by MonoGame.</param>
-    public static void Initialize(GraphicsDeviceManager graphics, SpriteBatch spriteBatch, GameWindow gameWindow)
+    public static void Initialize(GraphicsDeviceManager graphics, GameWindow gameWindow)
     {
+        if (isInitialized)
+        {
+            throw new InvalidOperationException(
+                "The ScreenController class has already been initialized.");
+        }
+
         graphicsDeviceManager = graphics;
-        SpriteBatch = spriteBatch;
         GameWindow = gameWindow;
+        isInitialized = true;
     }
 
     /// <summary>
