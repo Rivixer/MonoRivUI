@@ -1,7 +1,6 @@
 ﻿using System;
 using AnyPoly.UI;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
 namespace AnyPoly;
@@ -25,16 +24,6 @@ internal static class ScreenController
     public static Point DefaultSize { get; } = new Point(1920, 1080);
 
     /// <summary>
-    /// Gets the GameWindow class provided by MonoGame.
-    /// </summary>
-    public static GameWindow GameWindow { get; private set; } = default!;
-
-    /// <summary>
-    /// Gets the GraphicsDevice class provided by MonoGame.
-    /// </summary>
-    public static GraphicsDevice GraphicsDevice => graphicsDeviceManager.GraphicsDevice;
-
-    /// <summary>
     /// Gets the scale factor of the current screen compared to <see cref="DefaultSize"/>.
     /// </summary>
     public static Vector2 Scale => new Vector2(
@@ -45,8 +34,7 @@ internal static class ScreenController
     /// Initializes the <see cref="ScreenController"/> class.
     /// </summary>
     /// <param name="graphics">The GraphicsDeviceManager class provided by MonoGame.</param>
-    /// <param name="gameWindow">The GameWindow class provided by MonoGame.</param>
-    public static void Initialize(GraphicsDeviceManager graphics, GameWindow gameWindow)
+    public static void Initialize(GraphicsDeviceManager graphics)
     {
         if (isInitialized)
         {
@@ -55,7 +43,6 @@ internal static class ScreenController
         }
 
         graphicsDeviceManager = graphics;
-        GameWindow = gameWindow;
         isInitialized = true;
     }
 
@@ -101,7 +88,7 @@ internal static class ScreenController
         if (screenType.HasValue)
         {
             graphicsDeviceManager.IsFullScreen = screenType is ScreenType.FullScreen or ScreenType.Borderless;
-            GameWindow.IsBorderless = screenType is ScreenType.Borderless;
+            AnyPoly.Instance.Window.IsBorderless = screenType is ScreenType.Borderless;
         }
     }
 

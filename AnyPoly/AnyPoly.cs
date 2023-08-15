@@ -39,7 +39,7 @@ public class AnyPoly : Game
         var spriteBatch = new SpriteBatch(this.GraphicsDevice);
         SpriteBatchController.Initialize(spriteBatch);
 
-        ScreenController.Initialize(this.graphics, this.Window);
+        ScreenController.Initialize(this.graphics);
         ScreenController.Change(1366, 768, ScreenType.Windowed);
         ScreenController.ApplyChanges();
 
