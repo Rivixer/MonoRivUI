@@ -35,7 +35,9 @@ public class AnyPoly : Game
     protected override void Initialize()
     {
         var spriteBatch = new SpriteBatch(this.GraphicsDevice);
-        ScreenController.Initialize(this.graphics, spriteBatch, this.Window);
+        SpriteBatchController.Initialize(spriteBatch);
+
+        ScreenController.Initialize(this.graphics, this.Window);
         ScreenController.Change(1366, 768, ScreenType.Windowed);
         ScreenController.ApplyChanges();
 
