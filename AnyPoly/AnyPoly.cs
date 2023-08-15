@@ -34,6 +34,8 @@ public class AnyPoly : Game
     /// </summary>
     protected override void Initialize()
     {
+        ContentController.Initialize(this.Content);
+
         var spriteBatch = new SpriteBatch(this.GraphicsDevice);
         SpriteBatchController.Initialize(spriteBatch);
 
