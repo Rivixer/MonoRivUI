@@ -16,19 +16,19 @@ internal abstract class UIComponent
     private UITransform? transform;
 
     /// <summary>
-    /// An event that is raised when the parent of the component changes.
+    /// An event raised when a parent of the component has been changed.
     /// </summary>
-    public event EventHandler<ParentChangeEventArgs>? OnParentChange;
+    public event EventHandler<ParentChangeEventArgs>? OnParentChanged;
 
     /// <summary>
-    /// An event that is raised when a child component is added.
+    /// An event raised when a child component has been added.
     /// </summary>
-    public event EventHandler<ChildChangeEventArgs>? OnChildAdd;
+    public event EventHandler<ChildChangeEventArgs>? OnChildAdded;
 
     /// <summary>
-    /// An event that is raised when a child component is removed.
+    /// An event raised when a child component has been removed.
     /// </summary>
-    public event EventHandler<ChildChangeEventArgs>? OnChildRemove;
+    public event EventHandler<ChildChangeEventArgs>? OnChildRemoved;
 
     /// <summary>
     /// Gets the transorm of the component.
@@ -44,11 +44,11 @@ internal abstract class UIComponent
     /// <list type="bullet">
     /// <item><description>
     /// Removes this component from its current parent's list of children
-    /// and raises the <see cref="OnChildRemove"/> event on the parent.
+    /// and raises the <see cref="OnChildRemoved"/> event on the parent.
     /// </description></item>
     /// <item><description>
     /// Adds this component to the new parent's list of children
-    /// and raises the <see cref="OnChildAdd"/> event on the new parent.
+    /// and raises the <see cref="OnChildAdded"/> event on the new parent.
     /// </description></item>
     /// <item><description>
     /// Updates the <see cref="Transform.TransformType"/> of this component
@@ -56,7 +56,7 @@ internal abstract class UIComponent
     /// or to <see cref="TransformType.Relative"/> if there is a new parent.
     /// </description></item>
     /// <item><description>
-    /// Raises the <see cref="OnParentChange"/> event to notify listeners
+    /// Raises the <see cref="OnParentChanged"/> event to notify listeners
     /// about the change in the parent.
     /// </description></item>
     /// </list>
@@ -74,18 +74,18 @@ internal abstract class UIComponent
             UIComponent? oldParent = this.parent;
 
             this.parent?.children.Remove(this);
-            this.parent?.OnChildRemove?.Invoke(this.parent, new ChildChangeEventArgs(this));
+            this.parent?.OnChildRemoved?.Invoke(this.parent, new ChildChangeEventArgs(this));
 
             this.parent = value;
 
             this.parent?.children.Add(this);
-            this.parent?.OnChildAdd?.Invoke(this.parent, new ChildChangeEventArgs(this));
+            this.parent?.OnChildAdded?.Invoke(this.parent, new ChildChangeEventArgs(this));
 
             this.Transform.TransformType = this.parent is null
                 ? TransformType.Absolute
                 : TransformType.Relative;
 
-            this.OnParentChange?.Invoke(this, new ParentChangeEventArgs(this.parent, oldParent));
+            this.OnParentChanged?.Invoke(this, new ParentChangeEventArgs(this.parent, oldParent));
         }
     }
 

@@ -15,14 +15,9 @@ internal static class ScreenController
     private static GraphicsDeviceManager graphicsDeviceManager = default!;
 
     /// <summary>
-    /// Represents the method that will handle screen change events.
+    /// An event raised when the screen settings have been changed.
     /// </summary>
-    public delegate void OnScreenChangeEventHandler();
-
-    /// <summary>
-    /// An event raised when the screen settings change.
-    /// </summary>
-    public static event OnScreenChangeEventHandler? OnScreenChange;
+    public static event Action? OnScreenChanged;
 
     /// <summary>
     /// Gets the default size the UI is designed for.
@@ -119,12 +114,12 @@ internal static class ScreenController
     /// <see cref="Change(int?, int?, ScreenType?)"/> method.
     /// </para>
     /// <para>
-    /// This method will also invoke the <see cref="OnScreenChange"/> event.
+    /// This method will also invoke the <see cref="OnScreenChanged"/> event.
     /// </para>
     /// </remarks>
     public static void ApplyChanges()
     {
         graphicsDeviceManager.ApplyChanges();
-        OnScreenChange?.Invoke();
+        OnScreenChanged?.Invoke();
     }
 }
