@@ -21,6 +21,7 @@ internal class UITransform
     private Point minSize = new Point(1);
     private Point maxSize = new Point(int.MaxValue);
     private Ratio ratio = Ratio.Unspecified;
+    private Alignment alignment = Alignment.TopLeft;
 
     private Vector2 relativeOffset = Vector2.Zero;
     private Vector2 relativeSize = Vector2.One;
@@ -208,6 +209,28 @@ internal class UITransform
             }
 
             this.ratio = value;
+            this.NeedsRecalculation = true;
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets the alignment of the component.
+    /// </summary>
+    /// <remarks>
+    /// It is effective only when <see cref="TransformType"/>
+    /// is set to <see cref="TransformType.Relative"/>.
+    /// </remarks>
+    public Alignment Alignment
+    {
+        get => this.alignment;
+        set
+        {
+            if (this.alignment == value)
+            {
+                return;
+            }
+
+            this.alignment = value;
             this.NeedsRecalculation = true;
         }
     }
@@ -475,11 +498,16 @@ internal class UITransform
         UITransform reference = this.Component.Parent!.Transform;
 
         this.unscaledLocation = reference.unscaledLocation;
-        this.unscaledSize = reference.unscaledSize;
+        this.unscaledSize = reference.unscaledSize.Scale(this.relativeSize);
 
         this.RecalculateRatio();
 
-        this.unscaledSize = reference.unscaledSize.Scale(this.relativeSize);
+        Rectangle sourceRect = reference.UnscaledRectangle;
+        var currentRect = new Rectangle(this.unscaledLocation, this.unscaledSize);
+
+        this.unscaledLocation = RecalculationUtils.AlignRectangle(
+            sourceRect, currentRect, this.alignment).Location;
+
         this.unscaledLocation += reference.unscaledSize.Scale(this.relativeOffset);
     }
 
