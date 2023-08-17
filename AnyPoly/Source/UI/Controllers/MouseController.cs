@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework.Input;
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 
 namespace AnyPoly;
 
@@ -7,8 +8,13 @@ namespace AnyPoly;
 /// </summary>
 internal class MouseController
 {
-    private static MouseState previousMouseState;
-    private static MouseState currentMouseState;
+    private static MouseState previousState;
+    private static MouseState currentState;
+
+    /// <summary>
+    /// Gets the current mouse position.
+    /// </summary>
+    public static Point Position => currentState.Position;
 
     /// <summary>
     /// Updates the mouse state.
@@ -19,8 +25,8 @@ internal class MouseController
     /// </remarks>
     public static void Update()
     {
-        previousMouseState = currentMouseState;
-        currentMouseState = Mouse.GetState();
+        previousState = currentState;
+        currentState = Mouse.GetState();
     }
 
     /// <summary>
@@ -32,7 +38,7 @@ internal class MouseController
     /// </returns>
     public static bool IsLeftButtonPressed()
     {
-        return currentMouseState.LeftButton == ButtonState.Pressed;
+        return currentState.LeftButton == ButtonState.Pressed;
     }
 
     /// <summary>
@@ -44,7 +50,7 @@ internal class MouseController
     /// </returns>
     public static bool IsLeftButtonReleased()
     {
-        return currentMouseState.LeftButton == ButtonState.Released;
+        return currentState.LeftButton == ButtonState.Released;
     }
 
     /// <summary>
@@ -60,8 +66,8 @@ internal class MouseController
     /// </returns>
     public static bool IsLeftButtonClicked()
     {
-        return previousMouseState.LeftButton == ButtonState.Pressed
-            && currentMouseState.LeftButton == ButtonState.Released;
+        return previousState.LeftButton == ButtonState.Pressed
+            && currentState.LeftButton == ButtonState.Released;
     }
 
     /// <summary>
@@ -73,7 +79,7 @@ internal class MouseController
     /// </returns>
     public static bool IsRightButtonPressed()
     {
-        return currentMouseState.RightButton == ButtonState.Pressed;
+        return currentState.RightButton == ButtonState.Pressed;
     }
 
     /// <summary>
@@ -85,7 +91,7 @@ internal class MouseController
     /// </returns>
     public static bool IsRightButtonReleased()
     {
-        return currentMouseState.RightButton == ButtonState.Released;
+        return currentState.RightButton == ButtonState.Released;
     }
 
     /// <summary>
@@ -101,7 +107,7 @@ internal class MouseController
     /// </remarks>
     public static bool IsRightButtonClicked()
     {
-        return previousMouseState.RightButton == ButtonState.Pressed
-            && currentMouseState.RightButton == ButtonState.Released;
+        return previousState.RightButton == ButtonState.Pressed
+            && currentState.RightButton == ButtonState.Released;
     }
 }
