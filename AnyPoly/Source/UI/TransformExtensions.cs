@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using Microsoft.Xna.Framework;
 
 namespace AnyPoly.UI;
 
 /// <summary>
-/// Provides extension methods for transformation objects.
+/// Provides extension methods for transformation.
 /// </summary>
 internal static class TransformExtensions
 {
@@ -61,6 +61,20 @@ internal static class TransformExtensions
     }
 
     /// <summary>
+    /// Clamps a point between two other points.
+    /// </summary>
+    /// <param name="point">The point to be clamped.</param>
+    /// <param name="min">The minimum point defining the lower bounds of clapming.</param>
+    /// <param name="max">The maximum point defining the upper bounds of clamping.</param>
+    /// <returns>A point with X and Y values clamped within the specified range.</returns>
+    public static Point Clamp(this Point point, Point min, Point max)
+    {
+        return new Point(
+            Math.Clamp(point.X, min.X, max.X),
+            Math.Clamp(point.Y, min.Y, max.Y));
+    }
+
+    /// <summary>
     /// Scales a vector by another vector.
     /// </summary>
     /// <param name="vector">The vector to be scaled.</param>
@@ -102,6 +116,20 @@ internal static class TransformExtensions
     public static Vector2 Unscale(this Vector2 vector, float scalar)
     {
         return vector / scalar;
+    }
+
+    /// <summary>
+    /// Clamps a vector between two other vectors.
+    /// </summary>
+    /// <param name="vector">The vector to be clamped.</param>
+    /// <param name="min">The minimum vector defining the lower bounds of clamping.</param>
+    /// <param name="max">The maximum vector defining the upper bounds of clamping.</param>
+    /// <returns>A vector with X and Y values clamped within the specified range.</returns>
+    public static Vector2 Clamp(this Vector2 vector, Vector2 min, Vector2 max)
+    {
+        return new Vector2(
+            Math.Clamp(vector.X, min.X, max.X),
+            Math.Clamp(vector.Y, min.Y, max.Y));
     }
 
     /// <summary>
