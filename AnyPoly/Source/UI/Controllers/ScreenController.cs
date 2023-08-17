@@ -26,9 +26,28 @@ internal static class ScreenController
     /// <summary>
     /// Gets the scale factor of the current screen compared to <see cref="DefaultSize"/>.
     /// </summary>
-    public static Vector2 Scale => new Vector2(
-            graphicsDeviceManager.PreferredBackBufferWidth / (float)DefaultSize.X,
-            graphicsDeviceManager.PreferredBackBufferHeight / (float)DefaultSize.Y);
+    public static Vector2 Scale
+        => new Vector2(Width / (float)DefaultSize.X, Height / (float)DefaultSize.Y);
+
+    /// <summary>
+    /// Gets the current width of the screen.
+    /// </summary>
+    public static int Width { get; private set; }
+
+    /// <summary>
+    /// Gets the current height of the screen.
+    /// </summary>
+    public static int Height { get; private set; }
+
+    /// <summary>
+    /// Gets the current screen type.
+    /// </summary>
+    public static ScreenType ScreenType { get; private set; }
+
+    /// <summary>
+    /// Gets the current size of the screen.
+    /// </summary>
+    public static Point CurrentSize => new Point(Width, Height);
 
     /// <summary>
     /// Initializes the <see cref="ScreenController"/> class.
@@ -77,18 +96,17 @@ internal static class ScreenController
     {
         if (width.HasValue)
         {
-            graphicsDeviceManager.PreferredBackBufferWidth = width.Value;
+            Width = width.Value;
         }
 
         if (height.HasValue)
         {
-            graphicsDeviceManager.PreferredBackBufferHeight = height.Value;
+            Height = height.Value;
         }
 
         if (screenType.HasValue)
         {
-            graphicsDeviceManager.IsFullScreen = screenType is ScreenType.FullScreen or ScreenType.Borderless;
-            AnyPoly.Instance.Window.IsBorderless = screenType is ScreenType.Borderless;
+            ScreenType = screenType.Value;
         }
     }
 
@@ -106,6 +124,11 @@ internal static class ScreenController
     /// </remarks>
     public static void ApplyChanges()
     {
+        graphicsDeviceManager.PreferredBackBufferWidth = Width;
+        graphicsDeviceManager.PreferredBackBufferHeight = Height;
+        graphicsDeviceManager.IsFullScreen = ScreenType is ScreenType.FullScreen or ScreenType.Borderless;
+        AnyPoly.Instance.Window.IsBorderless = ScreenType is ScreenType.Borderless;
+
         graphicsDeviceManager.ApplyChanges();
         OnScreenChanged?.Invoke();
     }
