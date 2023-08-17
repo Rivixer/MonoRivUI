@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace AnyPoly;
@@ -16,6 +17,11 @@ internal static class SpriteBatchController
     public static SpriteBatch SpriteBatch { get; private set; } = default!;
 
     /// <summary>
+    /// Gets a white pixel texture.
+    /// </summary>
+    public static Texture2D WhitePixel { get; private set; } = default!;
+
+    /// <summary>
     /// Initializes the <see cref="SpriteBatchController"/> class.
     /// </summary>
     /// <param name="spriteBatch">The SpriteBatch class provided by Monogame.</param>
@@ -31,6 +37,10 @@ internal static class SpriteBatchController
         }
 
         SpriteBatch = spriteBatch;
+
+        WhitePixel = new Texture2D(AnyPoly.Instance.GraphicsDevice, 1, 1);
+        WhitePixel.SetData(new[] { Color.White });
+
         isInitialized = true;
     }
 }
