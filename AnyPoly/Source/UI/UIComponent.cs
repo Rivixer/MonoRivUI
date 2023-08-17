@@ -100,6 +100,36 @@ internal abstract class UIComponent
     public bool IsEnabled { get; set; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether the component
+    /// automatically updates itself and its child components
+    /// during the game loop.
+    /// </summary>
+    /// <remarks>
+    /// If set to <see langword="true"/>, the
+    /// <see cref="Update(GameTime)"/> method of this component
+    /// and its child components will be invoked during each
+    /// game update cycle. If set to <see langword="false"/>,
+    /// the update logic must be invoked manually.
+    /// The default value is <see langword="true"/>.
+    /// </remarks>
+    public bool AutoUpdate { protected get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the component
+    /// automatically draws itself and its child components
+    /// during the game loop.
+    /// </summary>
+    /// <remarks>
+    /// If set to <see langword="true"/>, the
+    /// <see cref="Draw(GameTime)"/> method of this component
+    /// and its child components will be invoked during
+    /// each game draw cycle. If set to <see langword="false"/>,
+    /// the drawing logic must be invoked manually.
+    /// The default value is <see langword="true"/>.
+    /// </remarks>
+    public bool AutoDraw { protected get; set; } = true;
+
+    /// <summary>
     /// Gets a unique indentifier for the component.
     /// </summary>
     protected uint Id { get; } = idCounter++;
@@ -120,9 +150,13 @@ internal abstract class UIComponent
     /// <param name="gameTime">The game time information.</param>
     public virtual void Update(GameTime gameTime)
     {
+        this.Transform.RecalculateIfNeeded();
         foreach (UIComponent child in this.children)
         {
-            child.Update(gameTime);
+            if (child.AutoUpdate)
+            {
+                child.Update(gameTime);
+            }
         }
     }
 
@@ -134,7 +168,10 @@ internal abstract class UIComponent
     {
         foreach (UIComponent child in this.children)
         {
-            child.Draw(gameTime);
+            if (child.AutoDraw)
+            {
+                child.Draw(gameTime);
+            }
         }
     }
 
