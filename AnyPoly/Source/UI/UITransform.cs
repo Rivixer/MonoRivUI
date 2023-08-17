@@ -486,10 +486,14 @@ internal class UITransform
                 break;
         }
 
-        this.scaledLocation = this.unscaledLocation.Scale(ScreenController.Scale);
-        this.scaledSize = this.unscaledSize.Scale(ScreenController.Scale);
-        this.NeedsRecalculation = false;
+        this.scaledLocation = this.unscaledLocation
+            .Scale(ScreenController.Scale);
 
+        this.scaledSize = this.unscaledSize
+            .Scale(ScreenController.Scale)
+            .Clamp(this.MinSize, this.MaxSize);
+
+        this.NeedsRecalculation = false;
         this.OnRecalculated?.Invoke(this, EventArgs.Empty);
     }
 
