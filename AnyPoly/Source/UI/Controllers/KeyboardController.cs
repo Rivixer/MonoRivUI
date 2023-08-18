@@ -5,10 +5,10 @@ namespace AnyPoly;
 /// <summary>
 /// A static class responsible for managing keyboard input.
 /// </summary>
-internal class KeyboardController
+internal static class KeyboardController
 {
-    private static KeyboardState previousKeyboard;
-    private static KeyboardState currentKeyboard;
+    private static KeyboardState previousState;
+    private static KeyboardState currentState;
 
     /// <summary>
     /// Updates the keyboard state.
@@ -19,8 +19,8 @@ internal class KeyboardController
     /// </remarks>
     public static void Update()
     {
-        previousKeyboard = currentKeyboard;
-        currentKeyboard = Keyboard.GetState();
+        previousState = currentState;
+        currentState = Keyboard.GetState();
     }
 
     /// <summary>
@@ -33,7 +33,7 @@ internal class KeyboardController
     /// </returns>
     public static bool IsKeyDown(Keys key)
     {
-        return currentKeyboard.IsKeyDown(key);
+        return currentState.IsKeyDown(key);
     }
 
     /// <summary>
@@ -46,7 +46,7 @@ internal class KeyboardController
     /// </returns>
     public static bool IsKeyUp(Keys key)
     {
-        return currentKeyboard.IsKeyUp(key);
+        return currentState.IsKeyUp(key);
     }
 
     /// <summary>
@@ -63,7 +63,7 @@ internal class KeyboardController
     /// </remarks>
     public static bool IsKeyHit(Keys key)
     {
-        return previousKeyboard.IsKeyUp(key)
-            && currentKeyboard.IsKeyDown(key);
+        return previousState.IsKeyUp(key)
+            && currentState.IsKeyDown(key);
     }
 }
