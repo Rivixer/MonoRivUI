@@ -44,7 +44,7 @@ internal class UITransform
             ScreenController.OnScreenChanged += this.Recalculate;
         }
 
-        this.NeedsRecalculation = true;
+        this.IsRecalculationNeeded = true;
     }
 
     /// <summary>
@@ -78,7 +78,7 @@ internal class UITransform
             }
 
             this.transformType = value;
-            this.NeedsRecalculation = true;
+            this.IsRecalculationNeeded = true;
         }
     }
 
@@ -86,7 +86,7 @@ internal class UITransform
     /// Gets or sets a value indicating whether
     /// the transformation needs to be recalculated.
     /// </summary>
-    public bool NeedsRecalculation { get; set; } = true;
+    public bool IsRecalculationNeeded { get; set; } = true;
 
     /// <summary>
     /// Gets or sets the relative size of the component.
@@ -112,7 +112,7 @@ internal class UITransform
             }
 
             this.relativeSize = value;
-            this.NeedsRecalculation = true;
+            this.IsRecalculationNeeded = true;
         }
     }
 
@@ -136,7 +136,7 @@ internal class UITransform
             }
 
             this.relativeOffset = value;
-            this.NeedsRecalculation = true;
+            this.IsRecalculationNeeded = true;
         }
     }
 
@@ -160,7 +160,7 @@ internal class UITransform
             }
 
             this.minSize = value;
-            this.NeedsRecalculation = true;
+            this.IsRecalculationNeeded = true;
         }
     }
 
@@ -184,7 +184,7 @@ internal class UITransform
             }
 
             this.maxSize = value;
-            this.NeedsRecalculation = true;
+            this.IsRecalculationNeeded = true;
         }
     }
 
@@ -195,7 +195,7 @@ internal class UITransform
     {
         get
         {
-            if (this.NeedsRecalculation)
+            if (this.IsRecalculationNeeded)
             {
                 this.Recalculate();
             }
@@ -211,7 +211,7 @@ internal class UITransform
             }
 
             this.ratio = value;
-            this.NeedsRecalculation = true;
+            this.IsRecalculationNeeded = true;
         }
     }
 
@@ -233,7 +233,7 @@ internal class UITransform
             }
 
             this.alignment = value;
-            this.NeedsRecalculation = true;
+            this.IsRecalculationNeeded = true;
         }
     }
 
@@ -249,7 +249,7 @@ internal class UITransform
     {
         get
         {
-            if (this.NeedsRecalculation)
+            if (this.IsRecalculationNeeded)
             {
                 this.Recalculate();
             }
@@ -273,7 +273,7 @@ internal class UITransform
             }
 
             this.unscaledLocation = value;
-            this.NeedsRecalculation = true;
+            this.IsRecalculationNeeded = true;
         }
     }
 
@@ -289,7 +289,7 @@ internal class UITransform
     {
         get
         {
-            if (this.NeedsRecalculation)
+            if (this.IsRecalculationNeeded)
             {
                 this.Recalculate();
             }
@@ -319,7 +319,7 @@ internal class UITransform
             }
 
             this.unscaledSize = value;
-            this.NeedsRecalculation = true;
+            this.IsRecalculationNeeded = true;
         }
     }
 
@@ -335,7 +335,7 @@ internal class UITransform
     {
         get
         {
-            if (this.NeedsRecalculation)
+            if (this.IsRecalculationNeeded)
             {
                 this.Recalculate();
             }
@@ -359,7 +359,7 @@ internal class UITransform
             }
 
             this.unscaledLocation = value.Unscale(ScreenController.Scale);
-            this.NeedsRecalculation = true;
+            this.IsRecalculationNeeded = true;
         }
     }
 
@@ -375,7 +375,7 @@ internal class UITransform
     {
         get
         {
-            if (this.NeedsRecalculation)
+            if (this.IsRecalculationNeeded)
             {
                 this.Recalculate();
             }
@@ -405,7 +405,7 @@ internal class UITransform
             }
 
             this.unscaledSize = value.Unscale(ScreenController.Scale);
-            this.NeedsRecalculation = true;
+            this.IsRecalculationNeeded = true;
         }
     }
 
@@ -420,7 +420,7 @@ internal class UITransform
     {
         get
         {
-            if (this.NeedsRecalculation)
+            if (this.IsRecalculationNeeded)
             {
                 this.Recalculate();
             }
@@ -439,7 +439,7 @@ internal class UITransform
     {
         get
         {
-            if (this.NeedsRecalculation)
+            if (this.IsRecalculationNeeded)
             {
                 this.Recalculate();
             }
@@ -470,7 +470,7 @@ internal class UITransform
     /// </summary>
     public void RecalculateIfNeeded()
     {
-        if (this.NeedsRecalculation)
+        if (this.IsRecalculationNeeded)
         {
             this.Recalculate();
         }
@@ -547,7 +547,7 @@ internal class UITransform
             .Scale(ScreenController.Scale)
             .Clamp(this.MinSize, this.MaxSize);
 
-        this.NeedsRecalculation = false;
+        this.IsRecalculationNeeded = false;
         this.OnRecalculated?.Invoke(this, EventArgs.Empty);
     }
 
