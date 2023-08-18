@@ -8,7 +8,7 @@ namespace AnyPoly.UI;
 /// <summary>
 /// Represents a base class for UI components.
 /// </summary>
-internal abstract class UIComponent
+internal abstract partial class UIComponent
 {
     private static uint idCounter;
     private readonly List<UIComponent> children = new List<UIComponent>();
