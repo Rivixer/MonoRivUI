@@ -6,9 +6,8 @@ namespace AnyPoly.UI;
 /// <summary>
 /// Represents a UI component that draws a solid color.
 /// </summary>
-internal class UISolidColor : UIComponent
+internal class UISolidColor : UITextureComponent
 {
-    private Texture2D texture;
     private Color color;
 
     /// <summary>
@@ -18,7 +17,7 @@ internal class UISolidColor : UIComponent
     public UISolidColor(Color color)
     {
         this.color = color;
-        this.texture = this.LoadTexture();
+        this.Texture = this.LoadTexture();
     }
 
     /// <summary>
@@ -35,24 +34,14 @@ internal class UISolidColor : UIComponent
             }
 
             this.color = value;
-            this.texture = this.LoadTexture();
+            this.Texture = this.LoadTexture();
         }
     }
 
     /// <inheritdoc/>
-    public override void Draw(GameTime gameTime)
+    protected override Texture2D LoadTexture()
     {
-        SpriteBatchController.SpriteBatch.Draw(
-            texture: this.texture,
-            destinationRectangle: this.Transform.ScaledRectangle,
-            color: Color.White);
-
-        base.Draw(gameTime);
-    }
-
-    private Texture2D LoadTexture()
-    {
-        this.texture?.Dispose();
+        this.Texture?.Dispose();
         var texture = new Texture2D(AnyPoly.Instance.GraphicsDevice, 1, 1);
         texture.SetData(new Color[] { this.color });
         return texture;
