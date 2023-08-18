@@ -266,7 +266,7 @@ internal class UITransform
             {
                 throw new InvalidOperationException(
                     $"Cannot set {nameof(this.UnscaledLocation)} " +
-                    $"when {nameof(this.TransformType)}" +
+                    $"when {nameof(this.TransformType)} " +
                     $"is not {TransformType.Absolute}.");
             }
 
@@ -306,7 +306,7 @@ internal class UITransform
             {
                 throw new InvalidOperationException(
                     $"Cannot set {nameof(this.UnscaledSize)} " +
-                    $"when {nameof(this.TransformType)}" +
+                    $"when {nameof(this.TransformType)} " +
                     $"is not {TransformType.Absolute}.");
             }
 
@@ -352,7 +352,7 @@ internal class UITransform
             {
                 throw new InvalidOperationException(
                     $"Cannot set {nameof(this.ScaledLocation)} " +
-                    $"when {nameof(this.TransformType)}" +
+                    $"when {nameof(this.TransformType)} " +
                     $"is not {TransformType.Absolute}.");
             }
 
@@ -392,7 +392,7 @@ internal class UITransform
             {
                 throw new InvalidOperationException(
                     $"Cannot set {nameof(this.ScaledSize)} " +
-                    $"when {nameof(this.TransformType)}" +
+                    $"when {nameof(this.TransformType)} " +
                     $"is not {TransformType.Absolute}.");
             }
 
