@@ -123,6 +123,8 @@ internal class UITransform
     /// It is effective only when <see cref="TransformType"/>
     /// is set to <see cref="TransformType.Relative"/>.
     /// </remarks>
+    /// <seealso cref="SetRelativeOffsetFromScaledAbsolute(Vector2)"/>
+    /// <seealso cref="SetRelativeOffsetFromUnscaledAbsolute(Vector2)"/>
     public Vector2 RelativeOffset
     {
         get => this.relativeOffset;
@@ -472,6 +474,58 @@ internal class UITransform
         {
             this.Recalculate();
         }
+    }
+
+    /// <summary>
+    /// Sets the <see cref="RelativeOffset"/> property using a scaled absolute offset.
+    /// </summary>
+    /// <param name="scaledAbsoluteOffset">The scaled absolute offset.</param>
+    /// <remarks>
+    /// <para>
+    /// This method calculates the relative offset of the component based
+    /// on a scaled absolute offset and a reference size. If the component
+    /// has a parent, the reference size is the scaled size of the parent
+    /// component. Otherwise, it's the current screen size
+    /// (<see cref="ScreenController.CurrentSize"/>).
+    /// </para>
+    /// <para>
+    /// The relative offset is calculated by dividing
+    /// the scaled absolute offset by the reference size.
+    /// </para>
+    /// </remarks>
+    public void SetRelativeOffsetFromScaledAbsolute(Vector2 scaledAbsoluteOffset)
+    {
+        Point reference = this.Component.Parent is { } parent
+            ? parent.Transform.ScaledSize
+            : ScreenController.CurrentSize;
+
+        this.RelativeOffset = scaledAbsoluteOffset / reference.ToVector2();
+    }
+
+    /// <summary>
+    /// Sets the <see cref="RelativeOffset"/> property using an unscaled absolute offset.
+    /// </summary>
+    /// <param name="unscaledAbsoluteOffset">The unscaled absolute offset.</param>
+    /// /// <remarks>
+    /// <para>
+    /// This method calculates the relative offset of the component based
+    /// on an unscaled absolute offset and a reference size. If the component
+    /// has a parent, the reference size is the unscaled size of the parent
+    /// component. Otherwise, it's the default screen size
+    /// (<see cref="ScreenController.DefaultSize"/>).
+    /// </para>
+    /// <para>
+    /// The relative offset is calculated by dividing
+    /// the unscaled absolute offset by the reference size.
+    /// </para>
+    /// </remarks>
+    public void SetRelativeOffsetFromUnscaledAbsolute(Vector2 unscaledAbsoluteOffset)
+    {
+        Point reference = this.Component.Parent is { } parent
+            ? parent.Transform.UnscaledSize
+            : ScreenController.DefaultSize;
+
+        this.RelativeOffset = unscaledAbsoluteOffset / reference.ToVector2();
     }
 
     private void Recalculate()
