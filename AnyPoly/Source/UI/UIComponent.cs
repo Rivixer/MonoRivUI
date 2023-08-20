@@ -296,4 +296,26 @@ internal abstract partial class UIComponent
             return hash;
         }
     }
+
+    /// <summary>
+    /// Changes the parent of a child component.
+    /// </summary>
+    /// <param name="child">The component to be reparented.</param>
+    /// <param name="newParent">
+    /// The new parent component to which the child will be reparented.
+    /// </param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the specified <paramref name="child"/>
+    /// is not a direct child of this component.
+    /// </exception>
+    protected virtual void ReparentChild(UIComponent child, UIComponent newParent)
+    {
+        if (!this.children.Contains(child))
+        {
+            throw new InvalidOperationException(
+                $"The specified child is not a direct child of this component.");
+        }
+
+        child.Parent = newParent;
+    }
 }

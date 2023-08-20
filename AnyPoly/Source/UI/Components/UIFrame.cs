@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -166,9 +166,7 @@ internal class UIFrame : UIComponent
 
     private void UIFrame_ChildAdded(object? sender, ChildChangedEventArgs e)
     {
-        // Switch the parent of an added component to innerContainer
-        UIComponent child = e.Child;
-        child.Parent = this.innerContainer;
+        this.ReparentChild(e.Child, this.innerContainer);
     }
 
     private struct LineData
