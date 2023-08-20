@@ -35,13 +35,9 @@ internal class UITransform
         this.Component = component;
         component.OnParentChanged += this.Component_OnParentChanged;
 
-        if (component.Parent is not null)
+        if (component.Parent is null)
         {
-            component.Parent.Transform.OnRecalculated += this.ParentTransform_OnRecalculated;
-        }
-        else
-        {
-            ScreenController.OnScreenChanged += this.Recalculate;
+            ScreenController.OnScreenChanged += this.ScreenController_OnScreenChanged;
         }
 
         this.IsRecalculationNeeded = true;
@@ -528,7 +524,7 @@ internal class UITransform
         this.RelativeOffset = unscaledAbsoluteOffset / reference.ToVector2();
     }
 
-    private void Recalculate()
+    private void Recalculate(bool withChildren = true)
     {
         switch (this.transformType)
         {
@@ -549,11 +545,26 @@ internal class UITransform
 
         this.IsRecalculationNeeded = false;
         this.OnRecalculated?.Invoke(this, EventArgs.Empty);
+
+        if (withChildren)
+        {
+            foreach (UIComponent child in this.Component.Children)
+            {
+                child.Transform.Recalculate();
+            }
+        }
     }
 
     private void RecalculateRelative()
     {
         UITransform reference = this.Component.Parent!.Transform;
+
+        if (reference.IsRecalculationNeeded)
+        {
+            // Without children because otherwise
+            // this method will be called from parent again
+            reference.Recalculate(withChildren: false);
+        }
 
         this.unscaledLocation = reference.unscaledLocation;
         this.unscaledSize = reference.unscaledSize.Scale(this.relativeSize);
@@ -601,29 +612,21 @@ internal class UITransform
         this.unscaledSize = unscaledSize;
     }
 
-    private void ParentTransform_OnRecalculated(object? sender, EventArgs e)
+    private void ScreenController_OnScreenChanged()
     {
         this.Recalculate();
     }
 
     private void Component_OnParentChanged(object? sender, ParentChangeEventArgs e)
     {
-        if (e.OldParent is { } oldParent)
+        if (e.OldParent is null)
         {
-            oldParent.Transform.OnRecalculated -= this.ParentTransform_OnRecalculated;
-        }
-        else
-        {
-            ScreenController.OnScreenChanged -= this.Recalculate;
+            ScreenController.OnScreenChanged -= this.ScreenController_OnScreenChanged;
         }
 
-        if (e.NewParent is { } newParent)
+        if (e.NewParent is null)
         {
-            newParent.Transform.OnRecalculated += this.ParentTransform_OnRecalculated;
-        }
-        else
-        {
-            ScreenController.OnScreenChanged += this.Recalculate;
+            ScreenController.OnScreenChanged += this.ScreenController_OnScreenChanged;
         }
     }
 }
