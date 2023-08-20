@@ -5,14 +5,14 @@ namespace AnyPoly.UI;
 /// <summary>
 /// Represents event data for a parent change event.
 /// </summary>
-internal class ParentChangeEventArgs : EventArgs
+internal class ParentChangedEventArgs : EventArgs
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="ParentChangeEventArgs"/> class.
+    /// Initializes a new instance of the <see cref="ParentChangedEventArgs"/> class.
     /// </summary>
     /// <param name="newParent">The new parent of the component.</param>
     /// <param name="oldParent">The old parent of the component.</param>
-    public ParentChangeEventArgs(UIComponent? newParent, UIComponent? oldParent)
+    public ParentChangedEventArgs(UIComponent? newParent, UIComponent? oldParent)
     {
         this.NewParent = newParent;
         this.OldParent = oldParent;

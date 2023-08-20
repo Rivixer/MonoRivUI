@@ -18,17 +18,17 @@ internal abstract partial class UIComponent
     /// <summary>
     /// An event raised when a parent of the component has been changed.
     /// </summary>
-    public event EventHandler<ParentChangeEventArgs>? OnParentChanged;
+    public event EventHandler<ParentChangedEventArgs>? ParentChanged;
 
     /// <summary>
     /// An event raised when a child component has been added.
     /// </summary>
-    public event EventHandler<ChildChangeEventArgs>? OnChildAdded;
+    public event EventHandler<ChildChangedEventArgs>? ChildAdded;
 
     /// <summary>
     /// An event raised when a child component has been removed.
     /// </summary>
-    public event EventHandler<ChildChangeEventArgs>? OnChildRemoved;
+    public event EventHandler<ChildChangedEventArgs>? ChildRemoved;
 
     /// <summary>
     /// Gets the transorm of the component.
@@ -44,11 +44,11 @@ internal abstract partial class UIComponent
     /// <list type="bullet">
     /// <item><description>
     /// Removes this component from its current parent's list of children
-    /// and raises the <see cref="OnChildRemoved"/> event on the parent.
+    /// and raises the <see cref="ChildRemoved"/> event on the parent.
     /// </description></item>
     /// <item><description>
     /// Adds this component to the new parent's list of children
-    /// and raises the <see cref="OnChildAdded"/> event on the new parent.
+    /// and raises the <see cref="ChildAdded"/> event on the new parent.
     /// </description></item>
     /// <item><description>
     /// Updates the <see cref="Transform.TransformType"/> of this component
@@ -56,7 +56,7 @@ internal abstract partial class UIComponent
     /// or to <see cref="TransformType.Relative"/> if there is a new parent.
     /// </description></item>
     /// <item><description>
-    /// Raises the <see cref="OnParentChanged"/> event to notify listeners
+    /// Raises the <see cref="ParentChanged"/> event to notify listeners
     /// about the change in the parent.
     /// </description></item>
     /// </list>
@@ -74,18 +74,18 @@ internal abstract partial class UIComponent
             UIComponent? oldParent = this.parent;
 
             this.parent?.children.Remove(this);
-            this.parent?.OnChildRemoved?.Invoke(this.parent, new ChildChangeEventArgs(this));
+            this.parent?.ChildRemoved?.Invoke(this.parent, new ChildChangedEventArgs(this));
 
             this.parent = value;
 
             this.parent?.children.Add(this);
-            this.parent?.OnChildAdded?.Invoke(this.parent, new ChildChangeEventArgs(this));
+            this.parent?.ChildAdded?.Invoke(this.parent, new ChildChangedEventArgs(this));
 
             this.Transform.TransformType = this.parent is null
                 ? TransformType.Absolute
                 : TransformType.Relative;
 
-            this.OnParentChanged?.Invoke(this, new ParentChangeEventArgs(this.parent, oldParent));
+            this.ParentChanged?.Invoke(this, new ParentChangedEventArgs(this.parent, oldParent));
         }
     }
 

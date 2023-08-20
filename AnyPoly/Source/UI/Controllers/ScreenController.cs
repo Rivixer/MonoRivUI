@@ -16,7 +16,7 @@ internal static class ScreenController
     /// <summary>
     /// An event raised when the screen settings have been changed.
     /// </summary>
-    public static event Action? OnScreenChanged;
+    public static event Action? ScreenChanged;
 
     /// <summary>
     /// Gets the default size the UI is designed for.
@@ -119,7 +119,7 @@ internal static class ScreenController
     /// <see cref="Change(int?, int?, ScreenType?)"/> method.
     /// </para>
     /// <para>
-    /// This method will also invoke the <see cref="OnScreenChanged"/> event.
+    /// This method will also invoke the <see cref="ScreenChanged"/> event.
     /// </para>
     /// </remarks>
     public static void ApplyChanges()
@@ -130,6 +130,6 @@ internal static class ScreenController
         AnyPoly.Instance.Window.IsBorderless = ScreenType is ScreenType.Borderless;
 
         graphicsDeviceManager.ApplyChanges();
-        OnScreenChanged?.Invoke();
+        ScreenChanged?.Invoke();
     }
 }

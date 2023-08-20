@@ -33,11 +33,11 @@ internal class UITransform
     public UITransform(UIComponent component)
     {
         this.Component = component;
-        component.OnParentChanged += this.Component_OnParentChanged;
+        component.ParentChanged += this.Component_ParentChanged;
 
         if (component.Parent is null)
         {
-            ScreenController.OnScreenChanged += this.ScreenController_OnScreenChanged;
+            ScreenController.ScreenChanged += this.ScreenController_ScreenChanged;
         }
 
         this.IsRecalculationNeeded = true;
@@ -46,7 +46,7 @@ internal class UITransform
     /// <summary>
     /// An event raised when the transformation has been recalculated.
     /// </summary>
-    public event EventHandler? OnRecalculated;
+    public event EventHandler? Recalculated;
 
     /// <summary>
     /// Gets the component associated with this transformation.
@@ -544,7 +544,7 @@ internal class UITransform
             .Clamp(this.MinSize, this.MaxSize);
 
         this.IsRecalculationNeeded = false;
-        this.OnRecalculated?.Invoke(this, EventArgs.Empty);
+        this.Recalculated?.Invoke(this, EventArgs.Empty);
 
         if (withChildren)
         {
@@ -561,8 +561,8 @@ internal class UITransform
 
         if (reference.IsRecalculationNeeded)
         {
-            // Without children because otherwise
-            // this method will be called from parent again
+            // Without children because otherwise this
+            // method will be called again by the parent
             reference.Recalculate(withChildren: false);
         }
 
@@ -612,21 +612,21 @@ internal class UITransform
         this.unscaledSize = unscaledSize;
     }
 
-    private void ScreenController_OnScreenChanged()
+    private void ScreenController_ScreenChanged()
     {
         this.Recalculate();
     }
 
-    private void Component_OnParentChanged(object? sender, ParentChangeEventArgs e)
+    private void Component_ParentChanged(object? sender, ParentChangedEventArgs e)
     {
         if (e.OldParent is null)
         {
-            ScreenController.OnScreenChanged -= this.ScreenController_OnScreenChanged;
+            ScreenController.ScreenChanged -= this.ScreenController_ScreenChanged;
         }
 
         if (e.NewParent is null)
         {
-            ScreenController.OnScreenChanged += this.ScreenController_OnScreenChanged;
+            ScreenController.ScreenChanged += this.ScreenController_ScreenChanged;
         }
     }
 }

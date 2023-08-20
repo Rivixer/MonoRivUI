@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -35,8 +35,8 @@ internal class UIFrame : UIComponent
             TransformType = TransformType.Absolute,
         };
 
-        this.Transform.OnRecalculated += this.Transform_OnRecalculated;
-        this.OnChildAdded += this.UIFrame_OnChildAdded;
+        this.Transform.Recalculated += this.Transform_Recalculated;
+        this.ChildAdded += this.UIFrame_ChildAdded;
 
         this.isUpdateNeeded = true;
     }
@@ -157,14 +157,14 @@ internal class UIFrame : UIComponent
         this.innerContainer.Transform.ScaledSize = size;
     }
 
-    private void Transform_OnRecalculated(object? sender, EventArgs e)
+    private void Transform_Recalculated(object? sender, EventArgs e)
     {
         this.UpdateLines();
         this.UpdateInnerRectangle();
         this.isUpdateNeeded = false;
     }
 
-    private void UIFrame_OnChildAdded(object? sender, ChildChangeEventArgs e)
+    private void UIFrame_ChildAdded(object? sender, ChildChangedEventArgs e)
     {
         // Switch the parent of an added component to innerContainer
         UIComponent child = e.Child;

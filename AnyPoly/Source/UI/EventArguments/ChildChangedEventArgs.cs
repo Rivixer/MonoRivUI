@@ -5,13 +5,13 @@ namespace AnyPoly.UI;
 /// <summary>
 /// Represents event data for a child change event.
 /// </summary>
-internal class ChildChangeEventArgs : EventArgs
+internal class ChildChangedEventArgs : EventArgs
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="ChildChangeEventArgs"/> class.
+    /// Initializes a new instance of the <see cref="ChildChangedEventArgs"/> class.
     /// </summary>
     /// <param name="child">The child component that was added or removed.</param>
-    public ChildChangeEventArgs(UIComponent child)
+    public ChildChangedEventArgs(UIComponent child)
     {
         this.Child = child;
     }
