@@ -1,4 +1,3 @@
-global using System.Diagnostics;
 using AnyPoly.Scenes;
 using AnyPoly.UI;
 using Microsoft.Xna.Framework;
