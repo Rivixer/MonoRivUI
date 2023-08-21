@@ -1,3 +1,5 @@
+global using System.Diagnostics;
+using AnyPoly.Scenes;
 using AnyPoly.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -11,6 +13,10 @@ public class AnyPoly : Game
 {
     private readonly GraphicsDeviceManager graphics;
 
+    private readonly MenuScene menuScene;
+
+    private Scene currentScene;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="AnyPoly"/> class.
     /// </summary>
@@ -22,6 +28,9 @@ public class AnyPoly : Game
 
         this.Content.RootDirectory = "Content";
         this.IsMouseVisible = true;
+
+        this.menuScene = new MenuScene();
+        this.currentScene = this.menuScene;
     }
 
     /// <summary>
@@ -51,6 +60,8 @@ public class AnyPoly : Game
     /// </summary>
     protected override void LoadContent()
     {
+        this.menuScene.Initialize();
+
         base.LoadContent();
     }
 
@@ -65,6 +76,8 @@ public class AnyPoly : Game
         MouseController.Update();
         ScreenController.Update();
 
+        this.currentScene.Update(gameTime);
+
         base.Update(gameTime);
     }
 
@@ -77,6 +90,19 @@ public class AnyPoly : Game
     {
         this.GraphicsDevice.Clear(Color.CornflowerBlue);
 
+        SpriteBatchController.SpriteBatch.Begin();
+
+        this.currentScene.Draw(gameTime);
+
+        SpriteBatchController.SpriteBatch.End();
+
         base.Draw(gameTime);
+    }
+
+    /// <inheritdoc/>
+    protected override void Dispose(bool disposing)
+    {
+        this.graphics.Dispose();
+        base.Dispose(disposing);
     }
 }
