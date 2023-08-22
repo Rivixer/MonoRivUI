@@ -1,6 +1,6 @@
-﻿using System;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System;
 
 namespace AnyPoly.UI;
 
@@ -167,7 +167,7 @@ internal class UIText : UITextComponent
             TextFit.Width => scaleWidth,
             TextFit.Height => scaleHeight,
             TextFit.Both => Math.Min(scaleWidth, scaleHeight),
-            _ => this.fitScale
+            _ => this.fitScale,
         };
     }
 

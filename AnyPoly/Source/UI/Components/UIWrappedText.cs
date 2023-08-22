@@ -1,7 +1,7 @@
-﻿using System;
+﻿using Microsoft.Xna.Framework;
+using System;
 using System.Collections.Generic;
 using System.Text;
-using Microsoft.Xna.Framework;
 
 namespace AnyPoly.UI;
 
@@ -10,7 +10,7 @@ namespace AnyPoly.UI;
 /// </summary>
 internal class UIWrappedText : UITextComponent
 {
-    private readonly List<UIText> textLines = new List<UIText>();
+    private readonly List<UIText> textLines = new();
     private float lineSpacing;
 
     private bool isWrapUpdateNeeded = true;
@@ -168,7 +168,7 @@ internal class UIWrappedText : UITextComponent
                     break;
                 }
 
-                word.Append(character);
+                _ = word.Append(character);
             }
 
             // Measure the width of the current word
@@ -181,7 +181,7 @@ internal class UIWrappedText : UITextComponent
                 if (currentLine.Length > 0)
                 {
                     result.Add(currentLine.ToString());
-                    currentLine.Clear();
+                    _ = currentLine.Clear();
                     currentWidth = 0.0f;
                 }
                 else
@@ -189,19 +189,19 @@ internal class UIWrappedText : UITextComponent
                     // Add the current word to the result, even if it's too long
                     // TODO: Split the word if it's too long
                     result.Add(word.ToString());
-                    word.Clear();
+                    _ = word.Clear();
                     currentWidth = 0.0f;
                 }
             }
 
             // Append the word and its width to the current line
-            currentLine.Append(word);
+            _ = currentLine.Append(word);
             currentWidth += wordWidth;
 
             // If a whitespace character was encountered earlier, add it to the current line
             if (whitespace != default)
             {
-                currentLine.Append(whitespace);
+                _ = currentLine.Append(whitespace);
                 float whitespaceWidth = this.MeasureText(whitespace.ToString()).X;
                 currentWidth += whitespaceWidth;
             }

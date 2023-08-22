@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
 namespace AnyPoly;
@@ -6,7 +6,7 @@ namespace AnyPoly;
 /// <summary>
 /// A static class that provides method to interact with the mouse input.
 /// </summary>
-internal class MouseController
+internal static class MouseController
 {
     private static MouseState previousState;
     private static MouseState currentState;

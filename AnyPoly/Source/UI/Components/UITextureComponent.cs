@@ -77,6 +77,5 @@ internal abstract class UITextureComponent : UIComponent
     /// <summary>
     /// Loads the texture of the image.
     /// </summary>
-    /// <returns>The loaded texture.</returns>
-    protected abstract Texture2D LoadTexture();
+    protected abstract void LoadTexture();
 }

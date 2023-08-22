@@ -1,6 +1,6 @@
-﻿using System;
-using AnyPoly.UI;
+﻿using AnyPoly.UI;
 using Microsoft.Xna.Framework;
+using System;
 
 namespace AnyPoly;
 

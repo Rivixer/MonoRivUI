@@ -1,7 +1,7 @@
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Xna.Framework;
 
 namespace AnyPoly.UI;
 
@@ -11,7 +11,7 @@ namespace AnyPoly.UI;
 internal abstract partial class UIComponent
 {
     private static uint idCounter;
-    private readonly List<UIComponent> children = new List<UIComponent>();
+    private readonly List<UIComponent> children = new();
     private UIComponent? parent;
     private UITransform? transform;
 
@@ -51,7 +51,7 @@ internal abstract partial class UIComponent
     /// and raises the <see cref="ChildAdded"/> event on the new parent.
     /// </description></item>
     /// <item><description>
-    /// Updates the <see cref="Transform.TransformType"/> of this component
+    /// Updates the <see cref="UITransform.TransformType"/> of this component
     /// to <see cref="TransformType.Absolute"/> if the new parent is null,
     /// or to <see cref="TransformType.Relative"/> if there is a new parent.
     /// </description></item>
@@ -73,7 +73,7 @@ internal abstract partial class UIComponent
 
             UIComponent? oldParent = this.parent;
 
-            this.parent?.children.Remove(this);
+            _ = this.parent?.children.Remove(this);
             this.parent?.ChildRemoved?.Invoke(this.parent, new ChildChangedEventArgs(this));
 
             this.parent = value;
@@ -289,12 +289,7 @@ internal abstract partial class UIComponent
     /// <returns>The hash code for component.</returns>
     public override int GetHashCode()
     {
-        unchecked
-        {
-            int hash = 17;
-            hash = (hash * 23) + this.Id.GetHashCode();
-            return hash;
-        }
+        return HashCode.Combine(this.Id);
     }
 
     /// <summary>
@@ -313,7 +308,7 @@ internal abstract partial class UIComponent
         if (!this.children.Contains(child))
         {
             throw new InvalidOperationException(
-                $"The specified child is not a direct child of this component.");
+                "The specified child is not a direct child of this component.");
         }
 
         child.Parent = newParent;

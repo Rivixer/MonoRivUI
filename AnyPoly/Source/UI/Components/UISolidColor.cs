@@ -17,7 +17,7 @@ internal class UISolidColor : UITextureComponent
     public UISolidColor(Color color)
     {
         this.color = color;
-        this.Texture = this.LoadTexture();
+        this.LoadTexture();
     }
 
     /// <summary>
@@ -34,16 +34,20 @@ internal class UISolidColor : UITextureComponent
             }
 
             this.color = value;
-            this.Texture = this.LoadTexture();
+            this.LoadTexture();
         }
     }
 
     /// <inheritdoc/>
-    protected override Texture2D LoadTexture()
+    /// <remarks>
+    /// If the texture is already loaded, it will
+    /// be disposed before loading a new one.
+    /// </remarks>
+    protected override void LoadTexture()
     {
         this.Texture?.Dispose();
-        var texture = new Texture2D(AnyPoly.Instance.GraphicsDevice, 1, 1);
+        var texture = new Texture2D(AnyPolyGame.Instance.GraphicsDevice, 1, 1);
         texture.SetData(new Color[] { this.color });
-        return texture;
+        this.Texture = texture;
     }
 }

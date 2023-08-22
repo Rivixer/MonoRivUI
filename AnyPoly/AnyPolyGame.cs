@@ -1,4 +1,4 @@
-using AnyPoly.Scenes;
+﻿using AnyPoly.Scenes;
 using AnyPoly.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -8,7 +8,7 @@ namespace AnyPoly;
 /// <summary>
 /// Represents the main game class.
 /// </summary>
-public class AnyPoly : Game
+public class AnyPolyGame : Game
 {
     private readonly GraphicsDeviceManager graphics;
 
@@ -17,9 +17,9 @@ public class AnyPoly : Game
     private Scene currentScene;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="AnyPoly"/> class.
+    /// Initializes a new instance of the <see cref="AnyPolyGame"/> class.
     /// </summary>
-    public AnyPoly()
+    public AnyPolyGame()
     {
         Instance = this;
 
@@ -33,9 +33,9 @@ public class AnyPoly : Game
     }
 
     /// <summary>
-    /// Gets the singleton instance of the <see cref="AnyPoly"/> class.
+    /// Gets the singleton instance of the <see cref="AnyPolyGame"/> class.
     /// </summary>
-    public static AnyPoly Instance { get; private set; } = default!;
+    public static AnyPolyGame Instance { get; private set; } = default!;
 
     /// <summary>
     /// Initializes the game.

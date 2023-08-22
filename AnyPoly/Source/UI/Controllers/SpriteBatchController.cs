@@ -1,6 +1,6 @@
-﻿using System;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System;
 
 namespace AnyPoly;
 
@@ -38,7 +38,7 @@ internal static class SpriteBatchController
 
         SpriteBatch = spriteBatch;
 
-        WhitePixel = new Texture2D(AnyPoly.Instance.GraphicsDevice, 1, 1);
+        WhitePixel = new Texture2D(AnyPolyGame.Instance.GraphicsDevice, 1, 1);
         WhitePixel.SetData(new[] { Color.White });
 
         isInitialized = true;

@@ -1,5 +1,5 @@
-﻿using System;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
+using System;
 
 namespace AnyPoly.UI;
 
@@ -126,17 +126,10 @@ internal class UIPadding : UIComponent
         Point location = this.Transform.UnscaledLocation;
         Point size = this.Transform.UnscaledSize;
 
-        Point referenceSize;
-        if (this.Transform.TransformType is TransformType.Absolute
-            || this.Parent is null
-            || this.Parent.Parent is null)
-        {
-            referenceSize = ScreenController.DefaultSize;
-        }
-        else
-        {
-            referenceSize = this.Parent.Parent.Transform.ScaledSize;
-        }
+        Point referenceSize = this.Parent is null || this.Parent.Parent is null
+            || this.Transform.TransformType is TransformType.Absolute
+            ? ScreenController.DefaultSize
+            : this.Parent.Parent.Transform.ScaledSize;
 
         float offsetX = this.Left * referenceSize.X;
         float offsetY = this.Top * referenceSize.Y;

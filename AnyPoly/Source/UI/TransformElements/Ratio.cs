@@ -32,7 +32,7 @@ internal readonly struct Ratio : IEquatable<Ratio>
     /// <value>
     /// The unspecified ratio that is equal to 0/0.
     /// </value>
-    public static Ratio Unspecified => new Ratio(0, 0);
+    public static Ratio Unspecified => new(0, 0);
 
     /// <summary>
     /// Gets the numerator of the ratio.

@@ -1,5 +1,5 @@
-using System;
 using Microsoft.Xna.Framework;
+using System;
 
 namespace AnyPoly.UI;
 
@@ -18,8 +18,8 @@ internal class UITransform
 
     private TransformType transformType;
 
-    private Point minSize = new Point(1);
-    private Point maxSize = new Point(int.MaxValue);
+    private Point minSize = new(1);
+    private Point maxSize = new(int.MaxValue);
     private Ratio ratio = Ratio.Unspecified;
     private Alignment alignment = Alignment.TopLeft;
 

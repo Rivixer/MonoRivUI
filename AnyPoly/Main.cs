@@ -1,2 +1,2 @@
-﻿using var game = new AnyPoly.AnyPoly();
+﻿using var game = new AnyPoly.AnyPolyGame();
 game.Run();

@@ -1,7 +1,7 @@
-﻿using System;
-using AnyPoly.UI;
+﻿using AnyPoly.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using System;
 
 namespace AnyPoly;
 
@@ -27,7 +27,7 @@ internal static class ScreenController
     /// Gets the scale factor of the current screen compared to <see cref="DefaultSize"/>.
     /// </summary>
     public static Vector2 Scale
-        => new Vector2(Width / (float)DefaultSize.X, Height / (float)DefaultSize.Y);
+        => new(Width / (float)DefaultSize.X, Height / (float)DefaultSize.Y);
 
     /// <summary>
     /// Gets the current width of the screen.
@@ -47,7 +47,7 @@ internal static class ScreenController
     /// <summary>
     /// Gets the current size of the screen.
     /// </summary>
-    public static Point CurrentSize => new Point(Width, Height);
+    public static Point CurrentSize => new(Width, Height);
 
     /// <summary>
     /// Initializes the <see cref="ScreenController"/> class.
@@ -127,7 +127,7 @@ internal static class ScreenController
         graphicsDeviceManager.PreferredBackBufferWidth = Width;
         graphicsDeviceManager.PreferredBackBufferHeight = Height;
         graphicsDeviceManager.IsFullScreen = ScreenType is ScreenType.FullScreen or ScreenType.Borderless;
-        AnyPoly.Instance.Window.IsBorderless = ScreenType is ScreenType.Borderless;
+        AnyPolyGame.Instance.Window.IsBorderless = ScreenType is ScreenType.Borderless;
 
         graphicsDeviceManager.ApplyChanges();
         ScreenChanged?.Invoke();
