@@ -12,6 +12,7 @@ internal class UIWrappedText : UITextComponent
 {
     private readonly List<UIText> textLines = new();
     private float lineSpacing;
+    private float scaledLineSpacing;
 
     private bool isWrapUpdateNeeded = true;
 
@@ -84,6 +85,7 @@ internal class UIWrappedText : UITextComponent
             }
 
             this.lineSpacing = value;
+            this.scaledLineSpacing = value * ScreenController.Scale.Y;
             this.isWrapUpdateNeeded = true;
         }
     }
@@ -92,7 +94,7 @@ internal class UIWrappedText : UITextComponent
     public override Vector2 GetScaledDimensions()
     {
         float maximumX = 0.0f;
-        float totalY = this.lineSpacing * (this.textLines.Count - 1);
+        float totalY = this.scaledLineSpacing * (this.textLines.Count - 1);
 
         foreach (UIText line in this.textLines)
         {
@@ -237,7 +239,7 @@ internal class UIWrappedText : UITextComponent
 
             // Update the offset for the next line
             currentOffset.Y += text.GetScaledDimensions().Y
-                + (this.lineSpacing * ScreenController.Scale.Y);
+                + (this.scaledLineSpacing * ScreenController.Scale.Y);
         }
     }
 
