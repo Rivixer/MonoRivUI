@@ -51,7 +51,7 @@ internal class UIImage : UITextureComponent
     /// </summary>
     /// <param name="cursorPosition">The position of the cursor.</param>
     /// <returns>
-    /// <see langword="true"/> if the cursor is over a non-transpaprent pixel;
+    /// <see langword="true"/> if the cursor is over a non-transparent pixel;
     /// otherwise, <see langword="false"/>.
     /// </returns>
     public bool CursorOverNonTransparentPixel(Point cursorPosition)
