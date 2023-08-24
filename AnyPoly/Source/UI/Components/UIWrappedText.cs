@@ -93,6 +93,11 @@ internal class UIWrappedText : UITextComponent
     /// <inheritdoc/>
     public override Vector2 GetScaledDimensions()
     {
+        if (this.isWrapUpdateNeeded)
+        {
+            this.WrapText();
+        }
+
         float maximumX = 0.0f;
         float totalY = this.scaledLineSpacing * (this.textLines.Count - 1);
 
