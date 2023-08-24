@@ -475,7 +475,8 @@ internal class UITransform
     /// <summary>
     /// Sets the <see cref="RelativeOffset"/> property using a scaled absolute offset.
     /// </summary>
-    /// <param name="scaledAbsoluteOffset">The scaled absolute offset.</param>
+    /// <param name="x">The scaled absolute X offset. Default is null.</param>
+    /// <param name="y">The scaled absolute Y offset. Default is null.</param>
     /// <remarks>
     /// <para>
     /// This method calculates the relative offset of the component based
@@ -488,21 +489,25 @@ internal class UITransform
     /// The relative offset is calculated by dividing
     /// the scaled absolute offset by the reference size.
     /// </para>
+    /// <para>If the parameter is null, the relative offset is not changed.</para>
     /// </remarks>
-    public void SetRelativeOffsetFromScaledAbsolute(Vector2 scaledAbsoluteOffset)
+    public void SetRelativeOffsetFromScaledAbsolute(float? x = null, float? y = null)
     {
         Point reference = this.Component.Parent is { } parent
             ? parent.Transform.ScaledSize
             : ScreenController.CurrentSize;
 
-        this.RelativeOffset = scaledAbsoluteOffset / reference.ToVector2();
+        this.RelativeOffset = new Vector2(
+            x / reference.X ?? this.RelativeOffset.X,
+            y / reference.Y ?? this.RelativeOffset.Y);
     }
 
     /// <summary>
     /// Sets the <see cref="RelativeOffset"/> property using an unscaled absolute offset.
     /// </summary>
-    /// <param name="unscaledAbsoluteOffset">The unscaled absolute offset.</param>
-    /// /// <remarks>
+    /// <param name="x">The unscaled absolute X offset. Default is null.</param>
+    /// <param name="y">The unscaled absolute Y offset. Default is null.</param>
+    /// <remarks>
     /// <para>
     /// This method calculates the relative offset of the component based
     /// on an unscaled absolute offset and a reference size. If the component
@@ -514,14 +519,17 @@ internal class UITransform
     /// The relative offset is calculated by dividing
     /// the unscaled absolute offset by the reference size.
     /// </para>
+    /// <para>If the parameter is null, the relative offset is not changed.</para>
     /// </remarks>
-    public void SetRelativeOffsetFromUnscaledAbsolute(Vector2 unscaledAbsoluteOffset)
+    public void SetRelativeOffsetFromUnscaledAbsolute(float? x = null, float? y = null)
     {
         Point reference = this.Component.Parent is { } parent
             ? parent.Transform.UnscaledSize
             : ScreenController.DefaultSize;
 
-        this.RelativeOffset = unscaledAbsoluteOffset / reference.ToVector2();
+        this.RelativeOffset = new Vector2(
+            x / reference.X ?? this.relativeOffset.X,
+            y / reference.Y ?? this.relativeOffset.Y);
     }
 
     private void Recalculate(bool withChildren = true)

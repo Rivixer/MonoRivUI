@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -218,7 +218,7 @@ internal class UIWrappedText : UITextComponent
         this.ResetTextLines();
 
         // Initialize the offset for positioning the wrapped lines
-        Vector2 currentOffset = Vector2.Zero;
+        float currentOffset = 0.0f;
 
         // Create text components for each wrapped line
         // and position them accordingly
@@ -233,12 +233,12 @@ internal class UIWrappedText : UITextComponent
             };
 
             // Position the text using the current offset
-            text.Transform.SetRelativeOffsetFromScaledAbsolute(currentOffset);
+            text.Transform.SetRelativeOffsetFromScaledAbsolute(y: currentOffset);
 
             this.textLines.Add(text);
 
             // Update the offset for the next line
-            currentOffset.Y += text.GetScaledDimensions().Y
+            currentOffset += text.GetScaledDimensions().Y
                 + (this.scaledLineSpacing * ScreenController.Scale.Y);
         }
     }
