@@ -14,7 +14,7 @@ internal class UIFrame : UIComponent
     private readonly LineData[] lines = new LineData[NumberOfLines];
     private readonly UIContainer innerContainer;
 
-    private int thickness;
+    private float relativeThickness = 0.01f;
     private Color color;
 
     private bool isUpdateNeeded = true;
@@ -22,11 +22,9 @@ internal class UIFrame : UIComponent
     /// <summary>
     /// Initializes a new instance of the <see cref="UIFrame"/> class.
     /// </summary>
-    /// <param name="thickness">The thickness of the frame lines.</param>
     /// <param name="color">The color of the frame lines.</param>
-    public UIFrame(int thickness, Color color)
+    public UIFrame(Color color)
     {
-        this.thickness = thickness;
         this.color = color;
 
         this.innerContainer = new UIContainer()
@@ -42,19 +40,22 @@ internal class UIFrame : UIComponent
     }
 
     /// <summary>
-    /// Gets or sets the thickness of the frame lines.
+    /// Gets or sets the relative thickness of the frame lines.
     /// </summary>
-    public int Thickness
+    /// <remarks>
+    /// The thickness is relative to the shorter size of the frame.
+    /// </remarks>
+    public float RelativeThickness
     {
-        get => this.thickness;
+        get => this.relativeThickness;
         set
         {
-            if (this.thickness == value)
+            if (this.relativeThickness == value)
             {
                 return;
             }
 
-            this.thickness = value;
+            this.relativeThickness = value;
             this.isUpdateNeeded = true;
         }
     }
@@ -112,7 +113,7 @@ internal class UIFrame : UIComponent
     private void UpdateLines()
     {
         Rectangle rect = this.Transform.ScaledRectangle;
-        Point scaledThickess = new Point(this.thickness).Scale(ScreenController.Scale);
+        int scaledThickness = this.GetScaledThickness();
 
         // Define pairs of start and end points for lines
         var lineEndpoints = new Vector2[]
@@ -131,16 +132,11 @@ internal class UIFrame : UIComponent
             float length = Vector2.Distance(start, end);
             float angle = (float)Math.Atan2(end.Y - start.Y, end.X - start.X);
 
-            bool isVertical = Math.Abs(angle) is > MathF.PI / 4f and < 3 * MathF.PI / 4f;
-            float destinationThickness = isVertical
-                ? scaledThickess.Y
-                : scaledThickess.X;
-
             this.lines[i] = new LineData()
             {
                 Start = start,
                 Angle = angle,
-                Scale = new Vector2(length, destinationThickness),
+                Scale = new Vector2(length, scaledThickness),
             };
         }
     }
@@ -148,13 +144,20 @@ internal class UIFrame : UIComponent
     private void UpdateInnerRectangle()
     {
         Rectangle rect = this.Transform.ScaledRectangle;
-        Point scaledThickess = new Point(this.thickness).Scale(ScreenController.Scale);
+        int scaledThickness = this.GetScaledThickness();
 
-        var location = new Point(rect.X + scaledThickess.X, rect.Y + scaledThickess.Y);
-        var size = new Point(rect.Width - (2 * scaledThickess.X), rect.Height - (2 * scaledThickess.Y));
+        var location = rect.Location += new Point(scaledThickness);
+        var size = rect.Size -= new Point(2 * scaledThickness);
 
         this.innerContainer.Transform.ScaledLocation = location;
         this.innerContainer.Transform.ScaledSize = size;
+    }
+
+    private int GetScaledThickness()
+    {
+        Point size = this.Transform.ScaledSize;
+        int shorterSize = Math.Min(size.X, size.Y);
+        return (int)(this.relativeThickness * shorterSize);
     }
 
     private void Transform_Recalculated(object? sender, EventArgs e)
