@@ -1,4 +1,4 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
 namespace AnyPoly;
@@ -12,9 +12,25 @@ internal static class MouseController
     private static MouseState currentState;
 
     /// <summary>
-    /// Gets the current mouse position.
+    /// Gets the current position of the mouse cursor.
     /// </summary>
     public static Point Position => currentState.Position;
+
+    /// <summary>
+    /// Gets the difference in position of the mouse cursor
+    /// between the current and previous frames.
+    /// </summary>
+    public static Point MouseDelta => currentState.Position - previousState.Position;
+
+    /// <summary>
+    /// Gets the amount that the mouse scroll wheel has changed
+    /// between the current and previous frames.
+    /// </summary>
+    /// <remarks>
+    /// Positive values indicate scrolling upwards,
+    /// while negative values indicate scrolling downwards.
+    /// </remarks>
+    public static int ScrollDelta => currentState.ScrollWheelValue - previousState.ScrollWheelValue;
 
     /// <summary>
     /// Updates the mouse state.
