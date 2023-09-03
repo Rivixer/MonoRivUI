@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using System;
+using System.Linq;
 
 namespace AnyPoly.UI;
 
@@ -47,6 +48,16 @@ internal class UITransform
     /// An event raised when the transformation has been recalculated.
     /// </summary>
     public event EventHandler? Recalculated;
+
+    /// <summary>
+    /// An event raised when the location has been changed.
+    /// </summary>
+    public event EventHandler<TransformElementChangedEventArgs<Point>>? LocationChanged;
+
+    /// <summary>
+    /// An event raised when the size has been changed.
+    /// </summary>
+    public event EventHandler<TransformElementChangedEventArgs<Point>>? SizeChanged;
 
     /// <summary>
     /// Gets the component associated with this transformation.
@@ -193,7 +204,7 @@ internal class UITransform
         {
             if (this.IsRecalculationNeeded)
             {
-                this.Recalculate();
+                this.RecalculateWithChildren();
             }
 
             return this.ratio;
@@ -247,7 +258,7 @@ internal class UITransform
         {
             if (this.IsRecalculationNeeded)
             {
-                this.Recalculate();
+                this.RecalculateWithChildren();
             }
 
             return this.unscaledLocation;
@@ -287,7 +298,7 @@ internal class UITransform
         {
             if (this.IsRecalculationNeeded)
             {
-                this.Recalculate();
+                this.RecalculateWithChildren();
             }
 
             return this.unscaledSize;
@@ -333,7 +344,7 @@ internal class UITransform
         {
             if (this.IsRecalculationNeeded)
             {
-                this.Recalculate();
+                this.RecalculateWithChildren();
             }
 
             return this.scaledLocation;
@@ -373,7 +384,7 @@ internal class UITransform
         {
             if (this.IsRecalculationNeeded)
             {
-                this.Recalculate();
+                this.RecalculateWithChildren();
             }
 
             return this.scaledSize;
@@ -418,7 +429,7 @@ internal class UITransform
         {
             if (this.IsRecalculationNeeded)
             {
-                this.Recalculate();
+                this.RecalculateWithChildren();
             }
 
             return new Rectangle(this.unscaledLocation, this.unscaledSize);
@@ -437,7 +448,7 @@ internal class UITransform
         {
             if (this.IsRecalculationNeeded)
             {
-                this.Recalculate();
+                this.RecalculateWithChildren();
             }
 
             return new Rectangle(this.scaledLocation, this.scaledSize);
@@ -459,17 +470,6 @@ internal class UITransform
             unscaledLocation = new Point(0, 0),
             unscaledSize = ScreenController.DefaultSize,
         };
-    }
-
-    /// <summary>
-    /// Recalucates the transformation if needed.
-    /// </summary>
-    public void RecalculateIfNeeded()
-    {
-        if (this.IsRecalculationNeeded)
-        {
-            this.Recalculate();
-        }
     }
 
     /// <summary>
@@ -498,8 +498,8 @@ internal class UITransform
             : ScreenController.CurrentSize;
 
         this.RelativeOffset = new Vector2(
-            x / reference.X ?? this.RelativeOffset.X,
-            y / reference.Y ?? this.RelativeOffset.Y);
+            x / reference.X ?? this.relativeOffset.X,
+            y / reference.Y ?? this.relativeOffset.Y);
     }
 
     /// <summary>
@@ -532,8 +532,71 @@ internal class UITransform
             y / reference.Y ?? this.relativeOffset.Y);
     }
 
-    private void Recalculate(bool withChildren = true)
+    /// <summary>
+    /// Sets the <see cref="RelativeSize"/> property using a scaled absolute size.
+    /// </summary>
+    /// <param name="x">The scaled absolute X size. Default is null.</param>
+    /// <param name="y">The scaled absolute Y size. Default is null.</param>
+    /// <remarks>
+    /// <para>
+    /// This method calculates the relative size of the component based
+    /// on a scaled absolute size and a reference size. If the component
+    /// has a parent, the reference size is the scaled size of the parent
+    /// component. Otherwise, it's the current screen size
+    /// (<see cref="ScreenController.CurrentSize"/>).
+    /// </para>
+    /// <para>
+    /// The relative size is calculated by dividing
+    /// the scaled absolute size by the reference size.
+    /// </para>
+    /// <para>If the parameter is null, the relative size is not changed.</para>
+    /// </remarks>
+    public void SetRelativeSizeFromScaledAbsolute(float? x = null, float? y = null)
     {
+        Point reference = this.Component.Parent is { } parent
+            ? parent.Transform.ScaledSize
+            : ScreenController.CurrentSize;
+
+        this.RelativeSize = new Vector2(
+            x / reference.X ?? this.RelativeSize.X,
+            y / reference.Y ?? this.RelativeSize.Y);
+    }
+
+    /// <summary>
+    /// Sets the <see cref="RelativeSize"/> property using an unscaled absolute size.
+    /// </summary>
+    /// <param name="x">The unscaled absolute X size. Default is null.</param>
+    /// <param name="y">The unscaled absolute Y size. Default is null.</param>
+    /// <remarks>
+    /// <para>
+    /// This method calculates the relative size of the component based
+    /// on an unscaled absolute size and a reference size. If the component
+    /// has a parent, the reference size is the unscaled size of the parent
+    /// component. Otherwise, it's the default screen size
+    /// (<see cref="ScreenController.DefaultSize"/>).
+    /// </para>
+    /// <para>
+    /// The relative size is calculated by dividing
+    /// the unscaled absolute size by the reference size.
+    /// </para>
+    /// <para>If the parameter is null, the relative size is not changed.</para>
+    /// </remarks>
+    public void SetRelativeSizeFromUnscaledAbsolute(float? x = null, float? y = null)
+    {
+        Point reference = this.Component.Parent is { } parent
+            ? parent.Transform.UnscaledSize
+            : ScreenController.DefaultSize;
+
+        this.RelativeSize = new Vector2(
+            x / reference.X ?? this.RelativeSize.X,
+            y / reference.Y ?? this.RelativeSize.Y);
+    }
+
+    private void Recalculate()
+    {
+        Point unscaledLocationBefore = this.unscaledLocation;
+        Point unscaledSizeBefore = this.unscaledSize;
+
         switch (this.transformType)
         {
             case TransformType.Relative:
@@ -554,12 +617,31 @@ internal class UITransform
         this.IsRecalculationNeeded = false;
         this.Recalculated?.Invoke(this, EventArgs.Empty);
 
-        if (withChildren)
+        if (this.unscaledLocation != unscaledLocationBefore)
         {
-            foreach (UIComponent child in this.Component.Children)
-            {
-                child.Transform.Recalculate();
-            }
+            this.LocationChanged?.Invoke(
+                this,
+                new TransformElementChangedEventArgs<Point>(
+                    unscaledLocationBefore,
+                    this.unscaledLocation));
+        }
+
+        if (this.unscaledSize != unscaledSizeBefore)
+        {
+            this.SizeChanged?.Invoke(
+                this,
+                new TransformElementChangedEventArgs<Point>(
+                    unscaledSizeBefore,
+                    this.unscaledSize));
+        }
+    }
+
+    private void RecalculateWithChildren()
+    {
+        this.Recalculate();
+        foreach (UIComponent child in this.Component.Children.ToList())
+        {
+            child.Transform.RecalculateWithChildren();
         }
     }
 
@@ -569,9 +651,7 @@ internal class UITransform
 
         if (reference.IsRecalculationNeeded)
         {
-            // Without children because otherwise this
-            // method will be called again by the parent
-            reference.Recalculate(withChildren: false);
+            reference.Recalculate();
         }
 
         this.unscaledLocation = reference.unscaledLocation;
@@ -622,7 +702,7 @@ internal class UITransform
 
     private void ScreenController_ScreenChanged()
     {
-        this.Recalculate();
+        this.RecalculateWithChildren();
     }
 
     private void Component_ParentChanged(object? sender, ParentChangedEventArgs e)
@@ -636,5 +716,7 @@ internal class UITransform
         {
             ScreenController.ScreenChanged += this.ScreenController_ScreenChanged;
         }
+
+        this.RecalculateWithChildren();
     }
 }

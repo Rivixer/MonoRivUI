@@ -97,7 +97,11 @@ internal abstract partial class UIComponent
     /// <summary>
     /// Gets or sets a value indicating whether the component is enabled.
     /// </summary>
-    public bool IsEnabled { get; set; }
+    /// <remarks>
+    /// <para>If component is disabled, it will not be updated or drawn.</para>
+    /// <para>The default value is <see langword="true"/>.</para>
+    /// </remarks>
+    public bool IsEnabled { get; set; } = true;
 
     /// <summary>
     /// Gets or sets a value indicating whether the component
@@ -150,7 +154,10 @@ internal abstract partial class UIComponent
     /// <param name="gameTime">The game time information.</param>
     public virtual void Update(GameTime gameTime)
     {
-        this.Transform.RecalculateIfNeeded();
+        if (!this.IsEnabled)
+        {
+            return;
+        }
         foreach (UIComponent child in this.children)
         {
             if (child.AutoUpdate)
@@ -166,6 +173,11 @@ internal abstract partial class UIComponent
     /// <param name="gameTime">The game time information.</param>
     public virtual void Draw(GameTime gameTime)
     {
+        if (!this.IsEnabled)
+        {
+            return;
+        }
+
         foreach (UIComponent child in this.children)
         {
             if (child.AutoDraw)
