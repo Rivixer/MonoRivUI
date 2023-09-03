@@ -119,8 +119,8 @@ internal class UITransform
     /// It is effective only when <see cref="TransformType"/>
     /// is set to <see cref="TransformType.Relative"/>.
     /// </remarks>
-    /// <seealso cref="SetRelativeOffsetFromScaledAbsolute(Vector2)"/>
-    /// <seealso cref="SetRelativeOffsetFromUnscaledAbsolute(Vector2)"/>
+    /// <seealso cref="SetRelativeOffsetFromScaledAbsolute(float?, float?)"/>
+    /// <seealso cref="SetRelativeOffsetFromUnscaledAbsolute(float?, float?)"/>
     public Vector2 RelativeOffset
     {
         get => this.relativeOffset;
