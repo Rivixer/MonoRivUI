@@ -155,9 +155,13 @@ internal class UIFrame : UIComponent
 
     private int GetScaledThickness()
     {
-        Point size = this.Transform.ScaledSize;
-        int shorterSize = Math.Min(size.X, size.Y);
-        return (int)(this.relativeThickness * shorterSize);
+        Point size = this.Transform.ScaledSize
+            .ToVector2()
+            .Scale(this.relativeThickness)
+            .ToPoint()
+            .Clamp(this.Transform.MinSize, this.Transform.MaxSize);
+
+        return Math.Min(size.X, size.Y);
     }
 
     private void Transform_Recalculated(object? sender, EventArgs e)
