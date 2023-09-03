@@ -28,12 +28,17 @@ internal class UIImage : UITextureComponent
     /// The relative path within the <c>"Content/Images/"</c>
     /// directory to the image, without the file extension.
     /// </param>
+    /// <remarks>
+    /// It is also set the <see cref="UITransform.Ratio"/>
+    /// to the ratio of the image.
+    /// </remarks>
     public UIImage(string relativePath)
     {
         this.path = $"Images/{relativePath}";
         this.LoadTexture();
         this.texturePixels = new Lazy<Color[]>(this.LoadImagePixels);
         this.AddTextureToReferenceCounter();
+        this.Transform.Ratio = this.TextureRatio;
     }
 
     /// <summary>
