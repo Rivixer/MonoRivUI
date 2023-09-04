@@ -125,7 +125,7 @@ internal static class TransformExtensions
     /// <param name="min">The minimum vector defining the lower bounds of clamping.</param>
     /// <param name="max">The maximum vector defining the upper bounds of clamping.</param>
     /// <returns>A vector with X and Y values clamped within the specified range.</returns>
-    public static Vector2 Clamp(this Vector2 vector, Vector2 min, Vector2 max)
+    public static Vector2 ClampVec(this Vector2 vector, Vector2 min, Vector2 max)
     {
         return new Vector2(
             Math.Clamp(vector.X, min.X, max.X),
