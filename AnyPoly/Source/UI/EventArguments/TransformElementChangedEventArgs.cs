@@ -15,7 +15,7 @@ internal class TransformElementChangedEventArgs<T> : EventArgs
     /// </summary>
     /// <param name="before">The value before the change.</param>
     /// <param name="after">The value after the change,</param>
-    public TransformElementChangedEventArgs(T? before, T after)
+    public TransformElementChangedEventArgs(T before, T after)
     {
         this.Before = before;
         this.After = after;
@@ -24,7 +24,7 @@ internal class TransformElementChangedEventArgs<T> : EventArgs
     /// <summary>
     /// Gets the value before the change.
     /// </summary>
-    public T? Before { get; }
+    public T Before { get; }
 
     /// <summary>
     /// Gets the value after the change.
