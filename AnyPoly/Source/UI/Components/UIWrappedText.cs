@@ -1,4 +1,4 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -11,10 +11,14 @@ namespace AnyPoly.UI;
 internal class UIWrappedText : UITextComponent
 {
     private readonly List<UIText> textLines = new();
-    private float lineSpacing;
+
+    private float unscaledLineSpacing;
     private float scaledLineSpacing;
 
-    private bool isWrapUpdateNeeded = true;
+    private Vector2 unscaledDimensions;
+    private Vector2 scaledDimensions;
+
+    private bool isRecalculationNeeded = true;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UIWrappedText"/> class.
@@ -23,7 +27,7 @@ internal class UIWrappedText : UITextComponent
     public UIWrappedText(Color color)
         : base(color)
     {
-        this.Transform.Recalculated += this.Transform_Recalculated;
+        this.Transform.SizeChanged += (s, e) => this.Recalculate();
     }
 
     /// <inheritdoc/>
@@ -37,7 +41,7 @@ internal class UIWrappedText : UITextComponent
             }
 
             base.Text = value;
-            this.isWrapUpdateNeeded = true;
+            this.isRecalculationNeeded = true;
         }
     }
 
@@ -46,13 +50,13 @@ internal class UIWrappedText : UITextComponent
     {
         set
         {
-            if (this.Scale == value)
+            if (base.Scale == value)
             {
                 return;
             }
 
             base.Scale = value;
-            this.isWrapUpdateNeeded = true;
+            this.isRecalculationNeeded = true;
         }
     }
 
@@ -67,60 +71,109 @@ internal class UIWrappedText : UITextComponent
             }
 
             base.TextAlignment = value;
-            this.isWrapUpdateNeeded = true;
+            this.isRecalculationNeeded = true;
         }
     }
 
     /// <summary>
     /// Gets or sets the line spacing of the text.
     /// </summary>
+    /// <remarks>
+    /// The line spacing is the distance between two lines of text.
+    /// Measure in pixels.
+    /// </remarks>
     public float LineSpacing
     {
-        get => this.lineSpacing;
+        get => this.unscaledLineSpacing;
         set
         {
-            if (this.lineSpacing == value)
+            if (this.unscaledLineSpacing == value)
             {
                 return;
             }
 
-            this.lineSpacing = value;
+            this.unscaledLineSpacing = value;
             this.scaledLineSpacing = value * ScreenController.Scale.Y;
-            this.isWrapUpdateNeeded = true;
+            this.isRecalculationNeeded = true;
         }
     }
 
     /// <inheritdoc/>
-    public override Vector2 GetScaledDimensions()
+    public override Vector2 UnscaledDimensions
     {
-        if (this.isWrapUpdateNeeded)
+        get
         {
-            this.WrapText();
+            if (this.isRecalculationNeeded)
+            {
+                this.Recalculate();
+            }
+
+            return this.unscaledDimensions;
         }
-
-        float maximumX = 0.0f;
-        float totalY = this.scaledLineSpacing * (this.textLines.Count - 1);
-
-        foreach (UIText line in this.textLines)
-        {
-            Vector2 lineDimensions = line.GetScaledDimensions();
-            maximumX = Math.Max(maximumX, lineDimensions.X);
-            totalY += lineDimensions.Y;
-        }
-
-        return new Vector2(maximumX, totalY);
     }
+
+    /// <inheritdoc/>
+    public override Vector2 ScaledDimensions
+    {
+        get
+        {
+            if (this.isRecalculationNeeded)
+            {
+                this.Recalculate();
+            }
+
+            return this.scaledDimensions;
+        }
+    }
+
+    /// <summary>
+    /// Gets a text line at the specified index.
+    /// </summary>
+    /// <param name="i">The index of the text line to retrieve.</param>
+    /// <returns>The text line at the specified index.</returns>
+    public UIText this[int i] => this.textLines[i];
 
     /// <inheritdoc/>
     public override void Update(GameTime gameTime)
     {
-        if (this.isWrapUpdateNeeded)
+        if (this.isRecalculationNeeded)
         {
-            this.WrapText();
-            this.isWrapUpdateNeeded = false;
+            this.Recalculate();
         }
 
         base.Update(gameTime);
+    }
+
+    private void Recalculate()
+    {
+        this.WrapText();
+        this.UpdateDimensions();
+
+        if (this.AdjustSizeToText)
+        {
+            this.Transform.SetRelativeSizeFromUnscaledAbsolute(
+                this.unscaledDimensions.X,
+                this.unscaledDimensions.Y);
+        }
+
+        this.isRecalculationNeeded = false;
+    }
+
+    private void UpdateDimensions()
+    {
+        float maximumX = 0.0f;
+        float totalY = this.unscaledLineSpacing * (this.textLines.Count - 1);
+
+        foreach (UIText line in this.textLines)
+        {
+            Vector2 lineDimensions = line.UnscaledDimensions;
+            maximumX = Math.Max(maximumX, lineDimensions.X);
+            totalY += lineDimensions.Y;
+        }
+
+        this.unscaledDimensions = new Vector2(maximumX, totalY);
+        this.scaledDimensions = this.unscaledDimensions
+            .Scale(ScreenController.Scale);
     }
 
     private void WrapText()
@@ -182,14 +235,14 @@ internal class UIWrappedText : UITextComponent
             float wordWidth = this.MeasureText(word).X;
 
             // If adding the current word would exceed the available width
-            if (reference.Width - currentWidth < wordWidth)
+            float remainingWidth = reference.Width - currentWidth;
+            if (wordWidth > remainingWidth)
             {
-                // Add the current line to the result and reset for the next one
                 if (currentLine.Length > 0)
                 {
+                    // Add the current line to the result and reset for the next one
                     result.Add(currentLine.ToString());
                     _ = currentLine.Clear();
-                    currentWidth = 0.0f;
                 }
                 else
                 {
@@ -197,8 +250,9 @@ internal class UIWrappedText : UITextComponent
                     // TODO: Split the word if it's too long
                     result.Add(word.ToString());
                     _ = word.Clear();
-                    currentWidth = 0.0f;
                 }
+
+                currentWidth = 0.0f;
             }
 
             // Append the word and its width to the current line
@@ -243,8 +297,7 @@ internal class UIWrappedText : UITextComponent
             this.textLines.Add(text);
 
             // Update the offset for the next line
-            currentOffset += text.GetScaledDimensions().Y
-                + (this.scaledLineSpacing * ScreenController.Scale.Y);
+            currentOffset += text.ScaledDimensions.Y + this.scaledLineSpacing;
         }
     }
 
@@ -254,6 +307,8 @@ internal class UIWrappedText : UITextComponent
         {
             textLine.Parent = null;
         }
+
+        this.textLines.Clear();
     }
 
     private Vector2 MeasureText(string text)
@@ -264,10 +319,5 @@ internal class UIWrappedText : UITextComponent
     private Vector2 MeasureText(StringBuilder text)
     {
         return this.Font.MeasureString(text) * this.Scale;
-    }
-
-    private void Transform_Recalculated(object? sender, EventArgs e)
-    {
-        this.isWrapUpdateNeeded = true;
     }
 }

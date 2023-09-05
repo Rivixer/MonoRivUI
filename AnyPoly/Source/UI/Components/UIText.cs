@@ -9,14 +9,15 @@ namespace AnyPoly.UI;
 /// </summary>
 internal class UIText : UITextComponent
 {
-    private Vector2 dimensions;
     private Vector2 destinationLocation;
+    private Vector2 unscaledDimensions;
+    private Vector2 scaledDimensions;
 
-    private TextFit textFit = TextFit.None;
-    private float fitScale = 1.0f;
+    private TextFit textFit;
+    private float fitScale;
+    private float drawScale;
 
-    private bool isFitScaleUpdateNeeded;
-    private bool isDestLocationUpdateNeeded;
+    private bool isRecalculationNeeded = true;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UIText"/> class.
@@ -25,7 +26,7 @@ internal class UIText : UITextComponent
     public UIText(Color color)
         : base(color)
     {
-        this.Transform.Recalculated += this.Transform_Recalculated;
+        this.Transform.Recalculated += (s, e) => this.Recalculate();
     }
 
     /// <inheritdoc/>
@@ -39,9 +40,7 @@ internal class UIText : UITextComponent
             }
 
             base.Text = value;
-            this.dimensions = this.MeasureDimensions();
-            this.isFitScaleUpdateNeeded = true;
-            this.isDestLocationUpdateNeeded = true;
+            this.isRecalculationNeeded = true;
         }
     }
 
@@ -56,7 +55,7 @@ internal class UIText : UITextComponent
             }
 
             base.Scale = value;
-            this.isDestLocationUpdateNeeded = true;
+            this.isRecalculationNeeded = true;
         }
     }
 
@@ -71,7 +70,7 @@ internal class UIText : UITextComponent
             }
 
             base.TextAlignment = value;
-            this.isDestLocationUpdateNeeded = true;
+            this.isRecalculationNeeded = true;
         }
     }
 
@@ -89,46 +88,62 @@ internal class UIText : UITextComponent
             }
 
             this.textFit = value;
-            this.isFitScaleUpdateNeeded = true;
-            this.isDestLocationUpdateNeeded = true;
+            this.isRecalculationNeeded = true;
         }
     }
 
     /// <inheritdoc/>
-    public override Vector2 GetScaledDimensions()
+    public override Vector2 UnscaledDimensions
     {
-        return this.GetScaledDimensions(0, this.Text.Length);
+        get
+        {
+            if (this.isRecalculationNeeded)
+            {
+                this.Recalculate();
+            }
+
+            return this.unscaledDimensions;
+        }
+    }
+
+    /// <inheritdoc/>
+    public override Vector2 ScaledDimensions
+    {
+        get
+        {
+            if (this.isRecalculationNeeded)
+            {
+                this.Recalculate();
+            }
+
+            return this.scaledDimensions;
+        }
     }
 
     /// <summary>
-    /// Returns the scaled dimensions of a portion of the text.
+    /// Gets a character at the specified index within the text.
     /// </summary>
-    /// <param name="startIndex">The index at which to start measuring the text.</param>
-    /// <param name="endIndex">The index at which to stop measuring the text.</param>
+    /// <param name="i">The index of the character to get.</param>
+    /// <returns>The character at the specified index.</returns>
+    public char this[int i] => this.Text[i];
+
+    /// <summary>
+    /// Retrieves a substring of the text specified by the given range.
+    /// </summary>
+    /// <param name="range">
+    /// The range indicating the portion of the text to retrieve.
+    /// </param>
     /// <returns>
-    /// The scaled dimensions of the specified portion of the text,
-    /// corresponds to the size of the text.
+    /// A substring of the text based on the specified range.
     /// </returns>
-    public Vector2 GetScaledDimensions(int startIndex, int endIndex)
-    {
-        return this.Font
-            .MeasureString(this.Text[startIndex..endIndex])
-            .Scale(this.fitScale)
-            .Scale(this.Scale)
-            .Scale(ScreenController.Scale);
-    }
+    public string this[Range range] => this.Text[range];
 
     /// <inheritdoc/>
     public override void Update(GameTime gameTime)
     {
-        if (this.isFitScaleUpdateNeeded)
+        if (this.isRecalculationNeeded)
         {
-            this.UpdateFitScale();
-        }
-
-        if (this.isDestLocationUpdateNeeded)
-        {
-            this.UpdateDestinationLocation();
+            this.Recalculate();
         }
 
         base.Update(gameTime);
@@ -144,26 +159,84 @@ internal class UIText : UITextComponent
             color: this.Color,
             rotation: 0.0f,
             origin: Vector2.Zero,
-            scale: Math.Min(ScreenController.Scale.X, ScreenController.Scale.Y) * this.fitScale * base.Scale,
+            scale: this.drawScale,
             effects: SpriteEffects.None,
             layerDepth: 0.0f);
 
         base.Draw(gameTime);
     }
 
+    /// <summary>
+    /// Measures the unscaled dimensions of a portion of the text.
+    /// </summary>
+    /// <param name="startIndex">The index at which to start measuring the text.</param>
+    /// <param name="endIndex">The index at which to stop measuring the text (exclusive).</param>
+    /// <returns>The unscaled dimensions of the specified portion of the text.</returns>
+    /// <remarks>
+    /// The unscaled dimensions represent the minimum size of the rectangle
+    /// that can contain the unscaled text.
+    /// </remarks>
+    public Vector2 MeasureUnscaledDimensions(int startIndex, int endIndex)
+    {
+        if (this.isRecalculationNeeded)
+        {
+            this.Recalculate();
+        }
+
+        return this.Font
+            .MeasureString(this.Text[startIndex..endIndex])
+            .Scale(this.fitScale)
+            .Scale(this.Scale);
+    }
+
+    private void Recalculate()
+    {
+        this.UpdateFitScale();
+
+        this.unscaledDimensions = this.Font
+            .MeasureString(this.Text)
+            .Scale(this.fitScale)
+            .Scale(this.Scale);
+
+        this.scaledDimensions = this.unscaledDimensions
+            .Scale(ScreenController.Scale);
+
+        this.UpdateDestinationLocation();
+
+        this.drawScale = this.fitScale * this.Scale
+            * Math.Min(ScreenController.Scale.X, ScreenController.Scale.Y);
+
+        if (this.AdjustSizeToText)
+        {
+            this.Transform.SetRelativeSizeFromUnscaledAbsolute(
+                this.unscaledDimensions.X,
+                this.unscaledDimensions.Y);
+        }
+
+        this.isRecalculationNeeded = false;
+    }
+
     private void UpdateFitScale()
     {
-        if (this.dimensions.X == 0.0f || this.dimensions.Y == 0.0f)
+        if (this.textFit is TextFit.None || this.AdjustSizeToText)
         {
+            this.fitScale = 1.0f;
             return;
         }
 
-        float scaleWidth = this.Transform.UnscaledSize.X / this.dimensions.X;
-        float scaleHeight = this.Transform.UnscaledSize.Y / this.dimensions.Y;
+        Vector2 defaultDimensions = this.Font.MeasureString(this.Text);
+
+        if (defaultDimensions == Vector2.Zero)
+        {
+            this.fitScale = 1.0f;
+            return;
+        }
+
+        float scaleWidth = this.Transform.UnscaledSize.X / defaultDimensions.X;
+        float scaleHeight = this.Transform.UnscaledSize.Y / defaultDimensions.Y;
 
         this.fitScale = this.textFit switch
         {
-            TextFit.None => 1.0f,
             TextFit.Width => scaleWidth,
             TextFit.Height => scaleHeight,
             TextFit.Both => Math.Min(scaleWidth, scaleHeight),
@@ -176,22 +249,10 @@ internal class UIText : UITextComponent
         Rectangle sourceRect = this.Transform.UnscaledRectangle;
         var currentRect = new Rectangle(
             this.Transform.UnscaledRectangle.Location,
-            this.dimensions.Scale(this.fitScale * this.Scale).ToPoint());
+            this.unscaledDimensions.ToPoint());
 
         this.destinationLocation = RecalculationUtils.AlignRectangle(
             sourceRect, currentRect, this.TextAlignment)
             .Location.ToVector2().Scale(ScreenController.Scale);
-    }
-
-    private Vector2 MeasureDimensions()
-    {
-        return this.Font.MeasureString(this.Text);
-    }
-
-    private void Transform_Recalculated(object? sender, EventArgs e)
-    {
-        this.UpdateFitScale();
-        this.destinationLocation = this.Transform.UnscaledLocation.ToVector2();
-        this.UpdateDestinationLocation();
     }
 }

@@ -28,7 +28,7 @@ internal abstract class UITextComponent : UIComponent
     /// <summary>
     /// Gets or sets the color of the displayed text.
     /// </summary>
-    public Color Color { get; set; }
+    public virtual Color Color { get; set; }
 
     /// <summary>
     /// Gets or sets the scaling factor of the text.
@@ -41,16 +41,41 @@ internal abstract class UITextComponent : UIComponent
     public virtual Alignment TextAlignment { get; set; } = Alignment.TopLeft;
 
     /// <summary>
+    /// Gets or sets a value indicating whether the transform size
+    /// should dynamically adapt to the text content.
+    /// </summary>
+    /// <remarks>
+    /// If this is set to <see langword="true"/>,
+    /// <see cref="UITransform.UnscaledSize"/> and
+    /// <see cref="UITransform.ScaledSize"/> will be adjusted
+    /// to match the size of the text content.<br/>
+    /// If this is set to <see langword="false"/>, the sizes
+    /// will remain unchanged, regardless of the text size.
+    /// </remarks>
+    public virtual bool AdjustSizeToText { get; set; }
+
+    /// <summary>
     /// Gets or sets the font used to display the text.
     /// </summary>
     public SpriteFont Font { get; protected set; }
 
     /// <summary>
-    /// Returns the scaled dimensions of the text.
+    /// Gets the unscaled dimensions of the text.
     /// </summary>
-    /// <returns>
-    /// The scaled dimensions of the text,
-    /// corresponds to the size of the text.
-    /// </returns>
-    public abstract Vector2 GetScaledDimensions();
+    /// <remarks>
+    /// The unscaled dimensions represent the minimum
+    /// size of the rectangle that can contain
+    /// the unscaled text.
+    /// </remarks>
+    public abstract Vector2 UnscaledDimensions { get; }
+
+    /// <summary>
+    /// Gets the scaled dimensions of the text.
+    /// </summary>
+    /// <remarks>
+    /// The scaled dimensions represent the minimum
+    /// size of the rectangle that can contain
+    /// the scaled text.
+    /// </remarks>
+    public abstract Vector2 ScaledDimensions { get; }
 }
