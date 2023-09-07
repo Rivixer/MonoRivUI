@@ -31,7 +31,7 @@ internal abstract partial class UIComponent
     public event EventHandler<ChildChangedEventArgs>? ChildRemoved;
 
     /// <summary>
-    /// Gets the transorm of the component.
+    /// Gets the transform of the component.
     /// </summary>
     public UITransform Transform => this.transform ??= UITransform.Default(this);
 
