@@ -148,7 +148,8 @@ internal class UITransform
     }
 
     /// <summary>
-    /// Gets or sets the minimum size of the component.
+    /// Gets or sets the minimum size of the component,
+    /// regardless of the screen size.
     /// </summary>
     public Point MinSize
     {
@@ -172,7 +173,8 @@ internal class UITransform
     }
 
     /// <summary>
-    /// Gets or sets the maximum size of the component.
+    /// Gets or sets the maximum size of the component,
+    /// regardless of the screen size.
     /// </summary>
     public Point MaxSize
     {
@@ -202,11 +204,7 @@ internal class UITransform
     {
         get
         {
-            if (this.IsRecalculationNeeded)
-            {
-                this.RecalculateWithChildren();
-            }
-
+            this.RecalculateIfNeeded();
             return this.ratio;
         }
 
@@ -256,11 +254,7 @@ internal class UITransform
     {
         get
         {
-            if (this.IsRecalculationNeeded)
-            {
-                this.RecalculateWithChildren();
-            }
-
+            this.RecalculateIfNeeded();
             return this.unscaledLocation;
         }
 
@@ -296,11 +290,7 @@ internal class UITransform
     {
         get
         {
-            if (this.IsRecalculationNeeded)
-            {
-                this.RecalculateWithChildren();
-            }
-
+            this.RecalculateIfNeeded();
             return this.unscaledSize;
         }
 
@@ -342,11 +332,7 @@ internal class UITransform
     {
         get
         {
-            if (this.IsRecalculationNeeded)
-            {
-                this.RecalculateWithChildren();
-            }
-
+            this.RecalculateIfNeeded();
             return this.scaledLocation;
         }
 
@@ -382,11 +368,7 @@ internal class UITransform
     {
         get
         {
-            if (this.IsRecalculationNeeded)
-            {
-                this.RecalculateWithChildren();
-            }
-
+            this.RecalculateIfNeeded();
             return this.scaledSize;
         }
 
@@ -427,11 +409,7 @@ internal class UITransform
     {
         get
         {
-            if (this.IsRecalculationNeeded)
-            {
-                this.RecalculateWithChildren();
-            }
-
+            this.RecalculateIfNeeded();
             return new Rectangle(this.unscaledLocation, this.unscaledSize);
         }
     }
@@ -446,11 +424,7 @@ internal class UITransform
     {
         get
         {
-            if (this.IsRecalculationNeeded)
-            {
-                this.RecalculateWithChildren();
-            }
-
+            this.RecalculateIfNeeded();
             return new Rectangle(this.scaledLocation, this.scaledSize);
         }
     }
@@ -590,6 +564,29 @@ internal class UITransform
         this.RelativeSize = new Vector2(
             x / reference.X ?? this.RelativeSize.X,
             y / reference.Y ?? this.RelativeSize.Y);
+    }
+
+    /// <summary>
+    /// Recalculates the component's transformation if needed.
+    /// </summary>
+    /// <param name="withChildren">
+    /// Indicates whether to include children in the recalculation.
+    /// </param>
+    public void RecalculateIfNeeded(bool withChildren = true)
+    {
+        if (!this.IsRecalculationNeeded)
+        {
+            return;
+        }
+
+        if (withChildren)
+        {
+            this.RecalculateWithChildren();
+        }
+        else
+        {
+            this.Recalculate();
+        }
     }
 
     private void Recalculate()

@@ -158,6 +158,9 @@ internal abstract partial class UIComponent
         {
             return;
         }
+
+        this.Transform.RecalculateIfNeeded();
+
         foreach (UIComponent child in this.children)
         {
             if (child.AutoUpdate)
