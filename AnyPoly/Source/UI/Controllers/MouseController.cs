@@ -87,6 +87,30 @@ internal static class MouseController
     }
 
     /// <summary>
+    /// Checks if the left mouse button was pressed in the previous frame.
+    /// </summary>
+    /// <returns>
+    /// <see langword="true"/> if the left mouse button was pressed in the previous frame;
+    /// otherwise, <see langword="false"/>.
+    /// </returns>
+    public static bool WasLeftButtonPressed()
+    {
+        return previousState.LeftButton == ButtonState.Pressed;
+    }
+
+    /// <summary>
+    /// Checks if the left mouse button was released in the previous frame.
+    /// </summary>
+    /// <returns>
+    /// <see langword="true"/> if the left mouse button was released in the previous frame;
+    /// otherwise, <see langword="false"/>.
+    /// </returns>
+    public static bool WasLeftButtonReleased()
+    {
+        return previousState.LeftButton == ButtonState.Released;
+    }
+
+    /// <summary>
     /// Checks if the right mouse button is currently pressed.
     /// </summary>
     /// <returns>
@@ -125,5 +149,29 @@ internal static class MouseController
     {
         return previousState.RightButton == ButtonState.Pressed
             && currentState.RightButton == ButtonState.Released;
+    }
+
+    /// <summary>
+    /// Checks if the right mouse button was pressed in the previous frame.
+    /// </summary>
+    /// <returns>
+    /// <see langword="true"/> if the right mouse button was pressed in the previous frame;
+    /// otherwise, <see langword="false"/>.
+    /// </returns>
+    public static bool WasRightButtonPressed()
+    {
+        return previousState.RightButton == ButtonState.Pressed;
+    }
+
+    /// <summary>
+    /// Checks if the right mouse button was released in the previous frame.
+    /// </summary>
+    /// <returns>
+    /// <see langword="true"/> if the right mouse button was released in the previous frame;
+    /// otherwise, <see langword="false"/>.
+    /// </returns>
+    public static bool WasRightButtonReleased()
+    {
+        return previousState.RightButton == ButtonState.Released;
     }
 }
