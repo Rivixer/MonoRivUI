@@ -30,7 +30,7 @@ internal class UIFrame : UIComponent
         this.innerContainer = new UIContainer()
         {
             Parent = this,
-            TransformType = TransformType.Absolute,
+            Transform = { Type = TransformType.Absolute },
         };
 
         this.Transform.Recalculated += this.Transform_Recalculated;

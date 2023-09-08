@@ -30,7 +30,7 @@ internal class UIPadding : UIComponent
         this.container = new UIContainer()
         {
             Parent = this,
-            TransformType = TransformType.Absolute,
+            Transform = { Type = TransformType.Absolute },
         };
 
         this.ChildAdded += this.UIPadding_ChildAdded;
@@ -127,7 +127,7 @@ internal class UIPadding : UIComponent
         Point size = this.Transform.UnscaledSize;
 
         Point referenceSize = this.Parent is null || this.Parent.Parent is null
-            || this.Transform.TransformType is TransformType.Absolute
+            || this.Transform.Type is TransformType.Absolute
             ? ScreenController.DefaultSize
             : this.Parent.Parent.Transform.ScaledSize;
 

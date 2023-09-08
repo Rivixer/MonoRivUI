@@ -67,7 +67,7 @@ internal class UITransform
     /// <summary>
     /// Gets or sets the transform type.
     /// </summary>
-    public TransformType TransformType
+    public TransformType Type
     {
         get => this.transformType;
         set
@@ -80,7 +80,7 @@ internal class UITransform
             if (value is TransformType.Relative && this.Component.Parent is null)
             {
                 throw new InvalidOperationException(
-                    $"Cannot set {nameof(this.TransformType)} to {nameof(TransformType.Relative)} " +
+                    $"Cannot set {nameof(this.Type)} to {nameof(TransformType.Relative)} " +
                     $"when {nameof(this.Component)} has no {nameof(this.Component.Parent)}");
             }
 
@@ -99,7 +99,7 @@ internal class UITransform
     /// Gets or sets the relative size of the component.
     /// </summary>
     /// <remarks>
-    /// It is effective only when <see cref="TransformType"/>
+    /// It is effective only when <see cref="Type"/>
     /// is set to <see cref="TransformType.Relative"/>.
     /// </remarks>
     public Vector2 RelativeSize
@@ -127,7 +127,7 @@ internal class UITransform
     /// Gets or sets the relative offset of the component.
     /// </summary>
     /// <remarks>
-    /// It is effective only when <see cref="TransformType"/>
+    /// It is effective only when <see cref="Type"/>
     /// is set to <see cref="TransformType.Relative"/>.
     /// </remarks>
     /// <seealso cref="SetRelativeOffsetFromScaledAbsolute(float?, float?)"/>
@@ -224,7 +224,7 @@ internal class UITransform
     /// Gets or sets the alignment of the component.
     /// </summary>
     /// <remarks>
-    /// It is effective only when <see cref="TransformType"/>
+    /// It is effective only when <see cref="Type"/>
     /// is set to <see cref="TransformType.Relative"/>.
     /// </remarks>
     public Alignment Alignment
@@ -247,7 +247,7 @@ internal class UITransform
     /// </summary>
     /// <remarks>
     /// Setting this property is effective only when
-    /// <see cref="TransformType"/> is set to <see cref="TransformType.Absolute"/>.
+    /// <see cref="Type"/> is set to <see cref="TransformType.Absolute"/>.
     /// Otherwise it will throw an <see cref="InvalidOperationException"/>.
     /// </remarks>
     public Point UnscaledLocation
@@ -265,11 +265,11 @@ internal class UITransform
                 return;
             }
 
-            if (this.TransformType is not TransformType.Absolute)
+            if (this.Type is not TransformType.Absolute)
             {
                 throw new InvalidOperationException(
                     $"Cannot set {nameof(this.UnscaledLocation)} " +
-                    $"when {nameof(this.TransformType)} " +
+                    $"when {nameof(this.Type)} " +
                     $"is not {TransformType.Absolute}.");
             }
 
@@ -283,7 +283,7 @@ internal class UITransform
     /// </summary>
     /// <remarks>
     /// Setting this property is effective only when
-    /// <see cref="TransformType"/> is set to <see cref="TransformType.Absolute"/>.
+    /// <see cref="Type"/> is set to <see cref="TransformType.Absolute"/>.
     /// Otherwise it will throw an <see cref="InvalidOperationException"/>.
     /// </remarks>
     public Point UnscaledSize
@@ -301,11 +301,11 @@ internal class UITransform
                 return;
             }
 
-            if (this.TransformType is not TransformType.Absolute)
+            if (this.Type is not TransformType.Absolute)
             {
                 throw new InvalidOperationException(
                     $"Cannot set {nameof(this.UnscaledSize)} " +
-                    $"when {nameof(this.TransformType)} " +
+                    $"when {nameof(this.Type)} " +
                     $"is not {TransformType.Absolute}.");
             }
 
@@ -325,7 +325,7 @@ internal class UITransform
     /// </summary>
     /// <remarks>
     /// Setting this property is effective only when
-    /// <see cref="TransformType"/> is set to <see cref="TransformType.Absolute"/>.
+    /// <see cref="Type"/> is set to <see cref="TransformType.Absolute"/>.
     /// Otherwise it will throw an <see cref="InvalidOperationException"/>.
     /// </remarks>
     public Point ScaledLocation
@@ -343,11 +343,11 @@ internal class UITransform
                 return;
             }
 
-            if (this.TransformType is not TransformType.Absolute)
+            if (this.Type is not TransformType.Absolute)
             {
                 throw new InvalidOperationException(
                     $"Cannot set {nameof(this.ScaledLocation)} " +
-                    $"when {nameof(this.TransformType)} " +
+                    $"when {nameof(this.Type)} " +
                     $"is not {TransformType.Absolute}.");
             }
 
@@ -361,7 +361,7 @@ internal class UITransform
     /// </summary>
     /// <remarks>
     /// Setting this property is effective only when
-    /// <see cref="TransformType"/> is set to <see cref="TransformType.Absolute"/>.
+    /// <see cref="Type"/> is set to <see cref="TransformType.Absolute"/>.
     /// Otherwise it will throw an <see cref="InvalidOperationException"/>.
     /// </remarks>
     public Point ScaledSize
@@ -379,11 +379,11 @@ internal class UITransform
                 return;
             }
 
-            if (this.TransformType is not TransformType.Absolute)
+            if (this.Type is not TransformType.Absolute)
             {
                 throw new InvalidOperationException(
                     $"Cannot set {nameof(this.ScaledSize)} " +
-                    $"when {nameof(this.TransformType)} " +
+                    $"when {nameof(this.Type)} " +
                     $"is not {TransformType.Absolute}.");
             }
 
@@ -440,7 +440,7 @@ internal class UITransform
     {
         return new UITransform(component)
         {
-            TransformType = TransformType.Absolute,
+            Type = TransformType.Absolute,
             unscaledLocation = new Point(0, 0),
             unscaledSize = ScreenController.DefaultSize,
         };

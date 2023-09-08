@@ -51,7 +51,7 @@ internal abstract partial class UIComponent
     /// and raises the <see cref="ChildAdded"/> event on the new parent.
     /// </description></item>
     /// <item><description>
-    /// Updates the <see cref="UITransform.TransformType"/> of this component
+    /// Updates the <see cref="UITransform.Type"/> of this component
     /// to <see cref="TransformType.Absolute"/> if the new parent is null,
     /// or to <see cref="TransformType.Relative"/> if there is a new parent.
     /// </description></item>
@@ -81,7 +81,7 @@ internal abstract partial class UIComponent
             this.parent?.children.Add(this);
             this.parent?.ChildAdded?.Invoke(this.parent, new ChildChangedEventArgs(this));
 
-            this.Transform.TransformType = this.parent is null
+            this.Transform.Type = this.parent is null
                 ? TransformType.Absolute
                 : TransformType.Relative;
 
