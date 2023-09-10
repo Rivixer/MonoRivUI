@@ -22,10 +22,11 @@ internal class UITransform
     private Point minSize = new(1);
     private Point maxSize = new(int.MaxValue);
     private Ratio ratio = Ratio.Unspecified;
-    private Alignment alignment = Alignment.TopLeft;
 
     private Vector2 relativeOffset = Vector2.Zero;
     private Vector2 relativeSize = Vector2.One;
+    private Vector4 padding = Vector4.Zero;
+    private Alignment alignment = Alignment.TopLeft;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UITransform"/> class.
@@ -241,6 +242,48 @@ internal class UITransform
             this.IsRecalculationNeeded = true;
         }
     }
+
+    /// <summary>
+    /// Gets or sets the padding of the component.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// It is effective only when the child <see cref="Type"/>
+    /// is set to <see cref="TransformType.Relative"/>.
+    /// </para>
+    /// <para>
+    /// The <see cref="Vector4"/> components are interpreted as follows:
+    /// <list type="bullet">
+    /// <item>X: left padding</item>
+    /// <item>Y: top padding</item>
+    /// <item>Z: right padding</item>
+    /// <item>W: bottom padding</item>
+    /// </list>
+    /// </para>
+    /// </remarks>
+    public Vector4 Padding
+    {
+        get => this.padding;
+        set
+        {
+            if (this.padding == value)
+            {
+                return;
+            }
+
+            this.padding = value;
+            foreach (UIComponent component in this.Component.Children)
+            {
+                component.Transform.IsRecalculationNeeded = true;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether
+    /// the parent padding should be ignored.
+    /// </summary>
+    public bool IgnoreParentPadding { get; set; }
 
     /// <summary>
     /// Gets or sets the unscaled location of the component.
@@ -657,6 +700,23 @@ internal class UITransform
         this.RecalculateRatio();
 
         Rectangle sourceRect = reference.UnscaledRectangle;
+        if (!this.IgnoreParentPadding && reference.padding != Vector4.Zero)
+        {
+            Point referenceUnscaledSize = reference.unscaledSize;
+
+            int paddingLeft = (int)(reference.Padding.X * referenceUnscaledSize.X);
+            int paddingTop = (int)(reference.Padding.Y * referenceUnscaledSize.Y);
+            int paddingRight = (int)(reference.Padding.Z * referenceUnscaledSize.X);
+            int paddingBottom = (int)(reference.Padding.W * referenceUnscaledSize.Y);
+
+            sourceRect.X += paddingLeft;
+            sourceRect.Y += paddingTop;
+            sourceRect.Width -= paddingLeft + paddingRight;
+            sourceRect.Height -= paddingTop + paddingBottom;
+            this.unscaledSize.X -= paddingLeft + paddingRight;
+            this.unscaledSize.Y -= paddingTop + paddingBottom;
+        }
+
         var currentRect = new Rectangle(this.unscaledLocation, this.unscaledSize);
 
         this.unscaledLocation = RecalculationUtils.AlignRectangle(

@@ -20,6 +20,9 @@ internal static class RecalculationUtils
     /// </remarks>
     public static Rectangle AlignRectangle(Rectangle source, Rectangle target, Alignment alignment)
     {
+        // Move to the top left corner
+        target.Location = source.Location;
+
         int x = target.X;
         int y = target.Y;
 
