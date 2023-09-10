@@ -10,7 +10,7 @@ namespace AnyPoly.UI;
 /// <remarks>
 /// It is responsible for positioning and sizing the component.
 /// </remarks>
-internal class UITransform
+internal class UITransform : IUIReadOnlyTransform
 {
     private Point unscaledLocation;
     private Point unscaledSize;
@@ -687,7 +687,7 @@ internal class UITransform
 
     private void RecalculateRelative()
     {
-        UITransform reference = this.Component.Parent!.Transform;
+        var reference = (UITransform)this.Component.Parent!.Transform;
 
         if (reference.IsRecalculationNeeded)
         {

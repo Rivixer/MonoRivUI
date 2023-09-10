@@ -8,7 +8,7 @@ namespace AnyPoly.UI;
 /// <summary>
 /// Represents a base class for UI components.
 /// </summary>
-internal abstract partial class UIComponent
+internal abstract partial class UIComponent : IUIReadOnlyComponent
 {
     private static uint idCounter;
     private readonly List<UIComponent> children = new();
@@ -30,10 +30,14 @@ internal abstract partial class UIComponent
     /// </summary>
     public event EventHandler<ChildChangedEventArgs>? ChildRemoved;
 
-    /// <summary>
-    /// Gets the transform of the component.
-    /// </summary>
-    public UITransform Transform => this.transform ??= UITransform.Default(this);
+    /// <inheritdoc/>
+    IUIReadOnlyTransform IUIReadOnlyComponent.Transform => this.Transform;
+
+    /// <inheritdoc/>
+    IUIReadOnlyComponent? IUIReadOnlyComponent.Parent => this.parent;
+
+    /// <inheritdoc/>
+    IEnumerable<IUIReadOnlyComponent> IUIReadOnlyComponent.Children => this.Children;
 
     /// <summary>
     /// Gets or sets the parent component.
@@ -61,12 +65,12 @@ internal abstract partial class UIComponent
     /// </description></item>
     /// </list>
     /// </remarks>
-    public UIComponent? Parent
+    public IUIReadOnlyComponent? Parent
     {
         get => this.parent;
         set
         {
-            if (this.parent == value)
+            if (this.parent == (UIComponent)value!)
             {
                 return;
             }
@@ -76,7 +80,7 @@ internal abstract partial class UIComponent
             _ = this.parent?.children.Remove(this);
             this.parent?.ChildRemoved?.Invoke(this.parent, new ChildChangedEventArgs(this));
 
-            this.parent = value;
+            this.parent = (UIComponent)value!;
 
             this.parent?.children.Add(this);
             this.parent?.ChildAdded?.Invoke(this.parent, new ChildChangedEventArgs(this));
@@ -88,6 +92,11 @@ internal abstract partial class UIComponent
             this.ParentChanged?.Invoke(this, new ParentChangedEventArgs(this.parent, oldParent));
         }
     }
+
+    /// <summary>
+    /// Gets the transform of the component.
+    /// </summary>
+    public UITransform Transform => this.transform ??= UITransform.Default(this);
 
     /// <summary>
     /// Gets an enumerable collection of child components.
@@ -116,7 +125,7 @@ internal abstract partial class UIComponent
     /// the update logic must be invoked manually.
     /// The default value is <see langword="true"/>.
     /// </remarks>
-    public bool AutoUpdate { protected get; set; } = true;
+    public bool AutoUpdate { get; set; } = true;
 
     /// <summary>
     /// Gets or sets a value indicating whether the component
@@ -131,12 +140,10 @@ internal abstract partial class UIComponent
     /// the drawing logic must be invoked manually.
     /// The default value is <see langword="true"/>.
     /// </remarks>
-    public bool AutoDraw { protected get; set; } = true;
+    public bool AutoDraw { get; set; } = true;
 
-    /// <summary>
-    /// Gets a unique indentifier for the component.
-    /// </summary>
-    protected uint Id { get; } = idCounter++;
+    /// <inheritdoc/>
+    public uint Id { get; } = idCounter++;
 
     public static bool operator ==(UIComponent? a, UIComponent? b)
     {
