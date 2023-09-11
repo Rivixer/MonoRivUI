@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 
@@ -34,7 +34,6 @@ internal class UIFrame : UIComponent
         };
 
         this.Transform.Recalculated += this.Transform_Recalculated;
-        this.ChildAdded += this.UIFrame_ChildAdded;
 
         this.isUpdateNeeded = true;
     }
@@ -77,6 +76,27 @@ internal class UIFrame : UIComponent
         }
     }
 
+    /// <summary>
+    /// Gets the read-only inner container of the frame.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The inner container serves as a designated rectangle within
+    /// the frame where child UI elements can be positioned and organized.
+    /// </para>
+    /// <para>
+    /// It is automatically created when <see cref="UIFrame"/>
+    /// is initialized and is intended to provide a structured
+    /// layout for nested components.
+    /// </para>
+    /// <para>
+    /// Since it is automatically generated and managed by the
+    /// <see cref="UIFrame"/> component, it is provided
+    /// as a read-only property to avoid external modification.
+    /// </para>
+    /// </remarks>
+    public IUIReadOnlyComponent InnerContainer => this.innerContainer;
+
     /// <inheritdoc/>
     public override void Update(GameTime gameTime)
     {
@@ -93,6 +113,11 @@ internal class UIFrame : UIComponent
     /// <inheritdoc/>
     public override void Draw(GameTime gameTime)
     {
+        if (!this.IsEnabled)
+        {
+            return;
+        }
+
         foreach (LineData line in this.lines)
         {
             SpriteBatchController.SpriteBatch.Draw(
@@ -169,11 +194,6 @@ internal class UIFrame : UIComponent
         this.UpdateLines();
         this.UpdateInnerRectangle();
         this.isUpdateNeeded = false;
-    }
-
-    private void UIFrame_ChildAdded(object? sender, ChildChangedEventArgs e)
-    {
-        this.ReparentChild(e.Child, this.innerContainer);
     }
 
     private struct LineData
