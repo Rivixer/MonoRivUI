@@ -1,4 +1,4 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 
@@ -176,6 +176,7 @@ internal class UIFrame : UIComponent
 
         this.innerContainer.Transform.ScaledLocation = location;
         this.innerContainer.Transform.ScaledSize = size;
+        this.innerContainer.Transform.RelativePadding = this.Transform.RelativePadding;
     }
 
     private int GetScaledThickness()
