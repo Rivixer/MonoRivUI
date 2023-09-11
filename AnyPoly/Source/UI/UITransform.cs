@@ -244,12 +244,15 @@ internal class UITransform : IUIReadOnlyTransform
     }
 
     /// <summary>
-    /// Gets or sets the padding of the component.
+    /// Gets or sets the relative padding of the component.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// It is effective only when the child <see cref="Type"/>
+    /// It is effective only when the child component's <see cref="Type"/>
     /// is set to <see cref="TransformType.Relative"/>.
+    /// </para>
+    /// <para>
+    /// The padding values are relative to the size of this component.
     /// </para>
     /// <para>
     /// The <see cref="Vector4"/> components are interpreted as follows:
@@ -261,7 +264,7 @@ internal class UITransform : IUIReadOnlyTransform
     /// </list>
     /// </para>
     /// </remarks>
-    public Vector4 Padding
+    public Vector4 RelativePadding
     {
         get => this.padding;
         set
@@ -272,6 +275,7 @@ internal class UITransform : IUIReadOnlyTransform
             }
 
             this.padding = value;
+
             foreach (UIComponent component in this.Component.Children)
             {
                 component.Transform.IsRecalculationNeeded = true;
@@ -704,10 +708,10 @@ internal class UITransform : IUIReadOnlyTransform
         {
             Point referenceUnscaledSize = reference.unscaledSize;
 
-            int paddingLeft = (int)(reference.Padding.X * referenceUnscaledSize.X);
-            int paddingTop = (int)(reference.Padding.Y * referenceUnscaledSize.Y);
-            int paddingRight = (int)(reference.Padding.Z * referenceUnscaledSize.X);
-            int paddingBottom = (int)(reference.Padding.W * referenceUnscaledSize.Y);
+            int paddingLeft = (int)(reference.RelativePadding.X * referenceUnscaledSize.X);
+            int paddingTop = (int)(reference.RelativePadding.Y * referenceUnscaledSize.Y);
+            int paddingRight = (int)(reference.RelativePadding.Z * referenceUnscaledSize.X);
+            int paddingBottom = (int)(reference.RelativePadding.W * referenceUnscaledSize.Y);
 
             sourceRect.X += paddingLeft;
             sourceRect.Y += paddingTop;

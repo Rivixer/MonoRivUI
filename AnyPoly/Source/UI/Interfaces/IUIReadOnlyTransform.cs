@@ -65,7 +65,7 @@ internal interface IUIReadOnlyTransform
     /// <summary>
     /// Gets the padding of the component.
     /// </summary>
-    public Vector4 Padding { get; }
+    public Vector4 RelativePadding { get; }
 
     /// <summary>
     /// Gets a value indicating whether
