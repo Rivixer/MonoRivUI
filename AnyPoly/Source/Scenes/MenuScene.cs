@@ -17,15 +17,62 @@ internal class MenuScene : Scene
     {
         this.ThrowErrorIfAlreadyInitialized();
 
-        this.BaseComponent = new UIContainer();
+        this.BaseComponent = new UISolidColor(Color.Khaki);
 
         var text = new UIText(Color.Black)
         {
             Parent = this.BaseComponent,
-            Text = "Hello World!",
-            TextAlignment = Alignment.Center,
+            Text = "Hello world!",
+            TextAlignment = Alignment.Top,
             Scale = 3.0f,
         };
+
+        var buttonListBox = new UIListBox()
+        {
+            Parent = this.BaseComponent,
+            RelativeSpacing = 0.01f,
+            Orientation = Orientation.Vertical,
+            ResizeContent = true,
+            Transform =
+            {
+                Alignment = Alignment.Bottom,
+                RelativeSize = new Vector2(0.20f),
+                RelativeOffset = new Vector2(0.0f, -0.2f),
+            },
+        };
+
+        var newGameButton = CreateMenuButton(buttonListBox.ContentContainer, "New game");
+        newGameButton.Clicked += (s, e) =>
+        {
+            Debug.WriteLine("New game button has been clicked.");
+        };
+
+        var settingsButton = CreateMenuButton(buttonListBox.ContentContainer, "Settings");
+        settingsButton.Clicked += (s, e) =>
+        {
+            Debug.WriteLine("Settings button has been clicked.");
+        };
+
+        var exitButton = CreateMenuButton(buttonListBox.ContentContainer, "Exit");
+        exitButton.Clicked += (s, e) => AnyPolyGame.Instance.Exit();
+
+        static UIButton<UIFrame> CreateMenuButton(IUIReadOnlyComponent parent, string text)
+        {
+            var frame = new UIFrame(Color.Black) { RelativeThickness = 0.01f };
+            var frameFill = new UISolidColor(Color.Gray) { Parent = frame.InnerContainer };
+            var button = new UIButton<UIFrame>(frame) { Parent = parent };
+            var buttonText = new UIText(Color.White)
+            {
+                Parent = button,
+                Text = text,
+                TextAlignment = Alignment.Center,
+                TextFit = TextFit.Both,
+                Scale = 0.8f,
+            };
+            button.HoverEntered += (s, e) => frameFill.Color = Color.DarkGray;
+            button.HoverExited += (s, e) => frameFill.Color = Color.Gray;
+            return button;
+        }
 
         this.MakeAsInitialized();
     }
