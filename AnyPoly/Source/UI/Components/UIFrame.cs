@@ -7,7 +7,7 @@ namespace AnyPoly.UI;
 /// <summary>
 /// Represents a UI frame component.
 /// </summary>
-internal class UIFrame : UIComponent
+internal class UIFrame : UIComponent, IUIButtonContent<UIFrame>
 {
     private const int NumberOfLines = 4;
 
@@ -17,7 +17,7 @@ internal class UIFrame : UIComponent
     private float relativeThickness = 0.01f;
     private Color color;
 
-    private bool isUpdateNeeded = true;
+    private bool isRecalculationNeeded = true;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UIFrame"/> class.
@@ -33,9 +33,9 @@ internal class UIFrame : UIComponent
             Transform = { Type = TransformType.Absolute },
         };
 
-        this.Transform.Recalculated += this.Transform_Recalculated;
+        this.Transform.Recalculated += (s, e) => this.Recalculate();
 
-        this.isUpdateNeeded = true;
+        this.isRecalculationNeeded = true;
     }
 
     /// <summary>
@@ -55,7 +55,7 @@ internal class UIFrame : UIComponent
             }
 
             this.relativeThickness = value;
-            this.isUpdateNeeded = true;
+            this.isRecalculationNeeded = true;
         }
     }
 
@@ -100,11 +100,9 @@ internal class UIFrame : UIComponent
     /// <inheritdoc/>
     public override void Update(GameTime gameTime)
     {
-        if (this.isUpdateNeeded)
+        if (this.isRecalculationNeeded)
         {
-            this.UpdateLines();
-            this.UpdateInnerRectangle();
-            this.isUpdateNeeded = false;
+            this.Recalculate();
         }
 
         base.Update(gameTime);
@@ -133,6 +131,31 @@ internal class UIFrame : UIComponent
         }
 
         base.Draw(gameTime);
+    }
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// The button content is hovered if the mouse
+    /// cursor is within <see cref="InnerContainer"/>.
+    /// </remarks>
+    bool IUIButtonContent<UIFrame>.IsButtonContentHovered(Point mousePosition)
+    {
+        if (this.isRecalculationNeeded)
+        {
+            this.Recalculate();
+        }
+
+        return this.innerContainer
+            .Transform
+            .ScaledRectangle
+            .Contains(mousePosition);
+    }
+
+    private void Recalculate()
+    {
+        this.UpdateLines();
+        this.UpdateInnerRectangle();
+        this.isRecalculationNeeded = false;
     }
 
     private void UpdateLines()
@@ -188,13 +211,6 @@ internal class UIFrame : UIComponent
             .Clamp(this.Transform.MinSize, this.Transform.MaxSize);
 
         return Math.Min(size.X, size.Y);
-    }
-
-    private void Transform_Recalculated(object? sender, EventArgs e)
-    {
-        this.UpdateLines();
-        this.UpdateInnerRectangle();
-        this.isUpdateNeeded = false;
     }
 
     private struct LineData
