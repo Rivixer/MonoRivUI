@@ -8,7 +8,7 @@ namespace AnyPoly.UI;
 /// </summary>
 /// <typeparam name="T">The type of the contained component.</typeparam>
 internal class UIButton<T> : UIComponent
-    where T : UIComponent
+    where T : UIComponent, IUIButtonContent<UIComponent>
 {
     private readonly T component;
 
@@ -21,36 +21,26 @@ internal class UIButton<T> : UIComponent
     /// This constructor initializes a button with
     /// <paramref name="component"/> as its content.
     /// </para>
-    /// <para>The <paramref name="component"/>'s parent is set to this button.</para>
+    /// <para>
+    /// The <paramref name="component"/>'s parent is set to this button.
+    /// </para>
+    /// <para>
+    /// <see cref="HoverMethod"/> is set to
+    /// <see cref="IUIButtonContent{T}.IsButtonContentHovered"/>.
+    /// </para>
+    /// <para>
+    /// The button's <see cref="UITransform.Ratio"/> is set to the
+    /// <paramref name="component"/>'s <see cref="UITransform.Ratio"/>.
+    /// </para>
     /// </remarks>
     public UIButton(T component)
     {
         this.component = component;
         component.Parent = this;
-    }
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="UIButton{T}"/>
-    /// class with an image component.
-    /// </summary>
-    /// <param name="image">The image component.</param>
-    /// <remarks>
-    /// <para>
-    /// This constructor initializes a button with
-    /// <paramref name="image"/> component as its content.
-    /// </para>
-    /// <para>The <paramref name="image"/> component's parent is set to this button.</para>
-    /// <para>
-    /// Additionally, it sets the button's <see cref="UITransform.Ratio"/> to the
-    /// <paramref name="image"/>'s texture ratio and sets <see cref="HoverMethod"/>
-    /// to <see cref="UIImage.CursorOverNonTransparentPixel"/>.
-    /// </para>
-    /// </remarks>
-    public UIButton(UIImage image)
-        : this((image as T)!)
-    {
-        this.Transform.Ratio = image.TextureRatio;
-        this.HoverMethod = image.CursorOverNonTransparentPixel;
+        this.HoverMethod = component.IsButtonContentHovered;
+
+        this.Transform.Ratio = component.Transform.Ratio;
     }
 
     /// <summary>
@@ -90,7 +80,12 @@ internal class UIButton<T> : UIComponent
     /// Both conditions must be met for the button
     /// to be considered as hovered.
     /// </remarks>
-    public Func<Point, bool>? HoverMethod { get; set; }
+    public Func<Point, bool> HoverMethod { get; set; }
+
+    /// <summary>
+    /// Gets the read-only component associated with this button.
+    /// </summary>
+    public IUIReadOnlyComponent Component => this.component;
 
     /// <inheritdoc/>
     public override void Update(GameTime gameTime)
