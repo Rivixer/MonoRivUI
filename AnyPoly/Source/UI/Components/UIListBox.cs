@@ -8,10 +8,71 @@ namespace AnyPoly.UI;
 /// <summary>
 /// Represents a list box component.
 /// </summary>
+/// <remarks>
+/// <para>
+/// The <see cref="UIListBox"/> component serves as a fundamental building
+/// block for creating scrollable lists of UI components. It provides a
+/// structured layout for arranging various UI components.
+/// </para>
+/// <para>
+/// This component automatically creates a <see cref="ContentContainer"/>
+/// when initialized. The content container is designed to host and organize
+/// nested UI components within the list box.
+/// </para>
+/// <para>
+/// Key features of the <see cref="UIListBox"/> component include support for
+/// vertical and horizontal orientations, adjustable spacing between components,
+/// scrollability for handling large amounts of content, and the option to
+/// automatically resize its components to fit the available space
+/// when scrollability is disabled.
+/// </para>
+/// <para>
+/// The appearance of the scrollbar can be customized using properties like
+/// <see cref="ScrollBarFrameColor"/>, <see cref="ScrollBarThumbColor"/>,
+/// and <see cref="ScrollBarRelativeSize"/>.
+/// </para>
+/// <para>
+/// The content components cannot be drawn outside of the list box's boundaries.
+/// </para>
+/// <para>
+/// While it is possible to set the list box as a parent of a component,
+/// the component will not be treated as a content component.
+/// </para>
+/// </remarks>
+/// <example>
+/// <code>
+/// // Create a new list box with a vertical orientation:
+/// var listBox = new UIListBox()
+/// {
+///     Orientation = Orientation.Vertical
+/// };
+/// </code>
+/// <code>
+/// // Add a new text component to the list box:
+/// var text = new UIText(Color.White)
+/// {
+///     Parent = listBox.ContentContainer
+/// };
+/// </code>
+/// <code>
+/// // Make the list box scrollable:
+/// listBox.IsScrollable = true;
+/// </code>
+/// <code>
+/// // Custom scrollbar appearance:
+/// listBox.ScrollBarFrameColor = Color.White;
+/// listBox.ScrollBarThumbColor = Color.Gray;
+/// listBox.ScrollBarRelativeSize = 0.1f;
+/// </code>
+/// <code>
+/// // Automatically resize components to fit the available space:
+/// listBox.IsScrollable = false; // Disable scrollability, if enabled.
+/// listBox.ResizeContent = true;
+/// </code>
+/// </example>
 internal class UIListBox : UIComponent
 {
     private readonly List<UIComponent> components = new();
-    private readonly List<UIComponent> watingComponents = new();
     private readonly UIContainer container;
     private Orientation orientation;
 
@@ -26,6 +87,8 @@ internal class UIListBox : UIComponent
     private Color scrollBarThumbColor;
     private float scrollBarRelativeSize;
 
+    private bool resizeContent;
+
     private bool isRecalculationNeeded;
 
     /// <summary>
@@ -37,7 +100,6 @@ internal class UIListBox : UIComponent
         this.container.ChildAdded += this.UIListBox_Container_ChildAdded;
         this.container.ChildRemoved += this.UIListBox_Container_ChildRemoved;
 
-        this.ChildAdded += this.UIListBox_ChildAdded;
         this.Transform.SizeChanged += this.Transform_SizeChanged;
     }
 
@@ -45,6 +107,28 @@ internal class UIListBox : UIComponent
     /// Gets the list box's components.
     /// </summary>
     public IEnumerable<UIComponent> Components => this.components;
+
+    /// <summary>
+    /// Gets the read-only content container of the list box.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The content container serves as a designated rectangle where UI
+    /// components can be positioned and organized within the list box.
+    /// </para>
+    /// <para>
+    /// It is automatically created and managed by the <see cref="UIListBox"/>
+    /// component, providing a structured layout for nested components.
+    /// </para>
+    /// <para>
+    /// This property is read-only to prevent external modification.
+    /// </para>
+    /// <para>
+    /// Use this inner container as a parent for nesting and
+    /// organizing UI components within the list box.
+    /// </para>
+    /// </remarks>
+    public IUIReadOnlyComponent ContentContainer => this.container;
 
     /// <summary>
     /// Gets or sets the color of the scroll bar's frame.
@@ -147,6 +231,9 @@ internal class UIListBox : UIComponent
     /// <summary>
     /// Gets or sets a value indicating whether the list box is scrollable.
     /// </summary>
+    /// <remarks>
+    /// Cannot be set to true when <see cref="ResizeContent"/> is set to true.
+    /// </remarks>
     public bool IsScrollable
     {
         get => this.isScrollable;
@@ -157,20 +244,50 @@ internal class UIListBox : UIComponent
                 return;
             }
 
+            if (this.resizeContent)
+            {
+                throw new InvalidOperationException(
+                    "Cannot make list box scrollable when " +
+                    $"{nameof(this.ResizeContent)} is set to true.");
+            }
+
             this.isScrollable = value;
             this.UpdateScrollBarPresence();
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the list box's components
+    /// should be resized to fit the list box.
+    /// </summary>
+    /// <remarks>
+    /// Cannot be set to true when <see cref="IsScrollable"/> is set to true.
+    /// </remarks>
+    public bool ResizeContent
+    {
+        get => this.resizeContent;
+        set
+        {
+            if (this.resizeContent == value)
+            {
+                return;
+            }
+
+            if (this.isScrollable)
+            {
+                throw new InvalidOperationException(
+                    "Cannot resize elements when " +
+                    $"{nameof(this.IsScrollable)} is set to true.");
+            }
+
+            this.resizeContent = value;
+            this.isRecalculationNeeded = true;
         }
     }
 
     /// <inheritdoc/>
     public override void Update(GameTime gameTime)
     {
-        while (this.watingComponents.Count > 0)
-        {
-            this.ReparentChild(this.watingComponents[0], this.container);
-            this.watingComponents.RemoveAt(0);
-        }
-
         // We update all components before recalculating ListBox
         // to act on already calculated components.
         foreach (UIComponent component in this.components)
@@ -273,6 +390,17 @@ internal class UIListBox : UIComponent
 
     private void RecalculateElements()
     {
+        if (this.resizeContent)
+        {
+            float remainingSpace = -this.totalLength + this.orientation switch
+            {
+                Orientation.Vertical => this.Transform.UnscaledSize.Y,
+                Orientation.Horizontal => this.Transform.UnscaledSize.X,
+                _ => throw new NotImplementedException(),
+            };
+            this.ResizeElements(remainingSpace);
+        }
+
         float currentOffset = -this.currentOffset;
         foreach (UIComponent component in this.components)
         {
@@ -294,7 +422,7 @@ internal class UIListBox : UIComponent
     /// Updates the size of the container
     /// based on the scroll bar's presence.
     /// </summary>
-    private void AdjustContainerSize()
+    private void AdjustContentContainerSize()
     {
         if (this.scrollBar is null)
         {
@@ -335,7 +463,6 @@ internal class UIListBox : UIComponent
         {
             if (this.scrollBar is null)
             {
-                this.ChildAdded -= this.UIListBox_ChildAdded;
                 this.scrollBar = new UIScrollBar(this.orientation)
                 {
                     Parent = this,
@@ -343,9 +470,8 @@ internal class UIListBox : UIComponent
                     ThumbColor = this.scrollBarThumbColor,
                     RelativeSize = this.scrollBarRelativeSize,
                 };
-                this.ChildAdded += this.UIListBox_ChildAdded;
                 this.scrollBar.Scrolled += this.ScrollBar_Scrolled;
-                this.AdjustContainerSize();
+                this.AdjustContentContainerSize();
             }
 
             this.scrollBar.TotalLength = this.totalLength;
@@ -355,13 +481,23 @@ internal class UIListBox : UIComponent
             this.scrollBar.Scrolled -= this.ScrollBar_Scrolled;
             this.scrollBar.IsEnabled = false;
             this.scrollBar = null;
-            this.AdjustContainerSize();
+            this.AdjustContentContainerSize();
         }
     }
 
-    private void UIListBox_ChildAdded(object? sender, ChildChangedEventArgs e)
+    private void ResizeElements(float remainingSpace)
     {
-        this.watingComponents.Add(e.Child);
+        float totalLengthWithoutSpacing = this.totalLength - (this.components.Count * this.unscaledSpacing);
+        float resizeFactor = 1 + (remainingSpace / totalLengthWithoutSpacing);
+        foreach (UIComponent component in this.components)
+        {
+            component.Transform.RelativeSize *= this.orientation switch
+            {
+                Orientation.Vertical => new Vector2(1, resizeFactor),
+                Orientation.Horizontal => new Vector2(resizeFactor, 1),
+                _ => throw new NotImplementedException(),
+            };
+        }
     }
 
     private void UIListBox_Container_ChildAdded(object? sender, ChildChangedEventArgs e)
@@ -407,6 +543,6 @@ internal class UIListBox : UIComponent
     private void Transform_SizeChanged(object? sender, TransformElementChangedEventArgs<Point> e)
     {
         this.UpdateScrollBarPresence();
-        this.AdjustContainerSize();
+        this.AdjustContentContainerSize();
     }
 }
