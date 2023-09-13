@@ -8,7 +8,7 @@ namespace AnyPoly.UI;
 /// <summary>
 /// Represents an image component.
 /// </summary>
-internal class UIImage : UITextureComponent
+internal class UIImage : UITextureComponent, IUIButtonContent<UIImage>
 {
     // We use a reference counter to keep track of how many times a texture is used.
     // This way, we can dispose of the texture when it is no longer used anywhere.
@@ -54,16 +54,16 @@ internal class UIImage : UITextureComponent
     /// <summary>
     /// Checks if the cursor is over a non-transparent pixel in the image.
     /// </summary>
-    /// <param name="cursorPosition">The position of the cursor.</param>
+    /// <param name="mousePosition">The position of the cursor.</param>
     /// <returns>
     /// <see langword="true"/> if the cursor is over a non-transparent pixel;
     /// otherwise, <see langword="false"/>.
     /// </returns>
-    public bool CursorOverNonTransparentPixel(Point cursorPosition)
+    bool IUIButtonContent<UIImage>.IsButtonContentHovered(Point mousePosition)
     {
         Point location = this.Transform.ScaledLocation;
         Point size = this.Transform.ScaledSize;
-        Point mouseOffset = cursorPosition - location;
+        Point mouseOffset = mousePosition - location;
         int mouseOffsetX = mouseOffset.X * this.Texture.Width / size.X;
         int mouseOffsetY = mouseOffset.Y * this.Texture.Height / size.Y;
         int index = (mouseOffsetY * this.Texture.Width) + mouseOffsetX;

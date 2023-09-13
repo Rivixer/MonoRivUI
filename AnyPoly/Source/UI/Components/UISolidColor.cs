@@ -6,7 +6,7 @@ namespace AnyPoly.UI;
 /// <summary>
 /// Represents a UI component that draws a solid color.
 /// </summary>
-internal class UISolidColor : UITextureComponent
+internal class UISolidColor : UITextureComponent, IUIButtonContent<UISolidColor>
 {
     private Color color;
 
@@ -36,6 +36,16 @@ internal class UISolidColor : UITextureComponent
             this.color = value;
             this.LoadTexture();
         }
+    }
+
+    /// <remarks>
+    /// <para>The solid color is always hovered.</para>
+    /// <inheritdoc/>
+    /// </remarks>
+    /// <inheritdoc/>
+    bool IUIButtonContent<UISolidColor>.IsButtonContentHovered(Point mousePosition)
+    {
+        return true;
     }
 
     /// <inheritdoc/>
