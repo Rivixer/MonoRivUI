@@ -73,6 +73,7 @@ namespace AnyPoly.UI;
 internal class UIListBox : UIComponent
 {
     private readonly List<UIComponent> components = new();
+    private readonly Queue<UIComponent> queuedComponents = new();
     private readonly UIContainer container;
     private Orientation orientation;
 
@@ -288,6 +289,11 @@ internal class UIListBox : UIComponent
     /// <inheritdoc/>
     public override void Update(GameTime gameTime)
     {
+        while (this.queuedComponents.Count > 0)
+        {
+            this.DequeueComponent();
+        }
+
         // We update all components before recalculating ListBox
         // to act on already calculated components.
         foreach (UIComponent component in this.components)
@@ -502,23 +508,30 @@ internal class UIListBox : UIComponent
 
     private void UIListBox_Container_ChildAdded(object? sender, ChildChangedEventArgs e)
     {
-        UIComponent child = e.Child;
-        child.Transform.SizeChanged += this.Component_Transform_SizeChanged;
-
         // Improve performance by disabling automatic updating and drawing of the
         // child component. It will only be updated and drawn when it is visible.
+        // Disabling these options also allows the component
+        // to be queued until initialization is done.
         e.Child.AutoUpdate = false;
         e.Child.AutoDraw = false;
+        this.queuedComponents.Enqueue(e.Child);
+    }
+
+    private void DequeueComponent()
+    {
+        UIComponent component = this.queuedComponents.Dequeue();
+
+        component.Transform.SizeChanged += this.Component_Transform_SizeChanged;
 
         if (this.components.Count > 0)
         {
             this.totalLength += this.unscaledSpacing;
         }
 
-        float componentLength = this.GetComponentLength(child);
+        float componentLength = this.GetComponentLength(component);
         this.totalLength += componentLength;
 
-        this.components.Add(child);
+        this.components.Add(component);
         this.isRecalculationNeeded = true;
     }
 
