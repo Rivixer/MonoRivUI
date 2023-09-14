@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System;
 
 namespace AnyPoly.UI;
 
@@ -8,6 +9,8 @@ namespace AnyPoly.UI;
 /// </summary>
 internal abstract class UITextComponent : UIComponent
 {
+    private string text = string.Empty;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="UITextComponent"/> class.
     /// </summary>
@@ -23,7 +26,11 @@ internal abstract class UITextComponent : UIComponent
     /// <summary>
     /// Gets or sets the text content.
     /// </summary>
-    public virtual string Text { get; set; } = string.Empty;
+    public virtual string Text
+    {
+        get => this.text;
+        set => this.text = value.Replace("\t", "    ", StringComparison.Ordinal);
+    }
 
     /// <summary>
     /// Gets or sets the color of the displayed text.
