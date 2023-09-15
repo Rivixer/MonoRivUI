@@ -329,9 +329,7 @@ internal class UIListBox : UIComponent
             rasterizerState: rasterizerState);
 
         Rectangle tempRectangle = spriteBatch.GraphicsDevice.ScissorRectangle;
-        spriteBatch.GraphicsDevice.ScissorRectangle = this.Transform.ScaledRectangle;
-
-        base.Draw(gameTime);
+        spriteBatch.GraphicsDevice.ScissorRectangle = this.ContentContainer.Transform.ScaledRectangle;
 
         foreach (UIComponent component in this.components)
         {
@@ -345,6 +343,8 @@ internal class UIListBox : UIComponent
         rasterizerState.Dispose();
         spriteBatch.GraphicsDevice.ScissorRectangle = tempRectangle;
         spriteBatch.Begin();
+
+        base.Draw(gameTime);
     }
 
     private void ScrollBar_Scrolled(object? sender, ScrolledEventArgs e)
@@ -469,12 +469,13 @@ internal class UIListBox : UIComponent
         {
             if (this.scrollBar is null)
             {
-                this.scrollBar = new UIScrollBar(this.orientation)
+                this.scrollBar = new UIScrollBar(this.orientation, this.ContentContainer)
                 {
                     Parent = this,
                     FrameColor = this.scrollBarFrameColor,
                     ThumbColor = this.scrollBarThumbColor,
                     RelativeSize = this.scrollBarRelativeSize,
+                    Transform = { IgnoreParentPadding = true },
                 };
                 this.scrollBar.Scrolled += this.ScrollBar_Scrolled;
                 this.AdjustContentContainerSize();

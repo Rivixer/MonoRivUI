@@ -11,6 +11,7 @@ internal class UIScrollBar : UIComponent
     private readonly UIFrame frame;
     private readonly UISolidColor thumb;
     private readonly Orientation orientation;
+    private readonly IUIReadOnlyComponent contentContainer;
 
     private float relativeSize = 0.02f;
     private float total;
@@ -22,12 +23,16 @@ internal class UIScrollBar : UIComponent
     /// Initializes a new instance of the <see cref="UIScrollBar"/> class.
     /// </summary>
     /// <param name="orientation">The oritentation of the scroll bar.</param>
-    public UIScrollBar(Orientation orientation)
+    /// <param name="contentContainer">
+    /// The container that contains the content that is scrolled.
+    /// </param>
+    public UIScrollBar(Orientation orientation, IUIReadOnlyComponent contentContainer)
     {
         this.orientation = orientation;
         this.frame = new UIFrame(Color.Gray) { Parent = this, RelativeThickness = 0.01f };
         this.thumb = new UISolidColor(Color.DarkGray) { Parent = this.frame };
         this.ParentChanged += this.UIScrollBar_ParentChanged;
+        this.contentContainer = contentContainer;
     }
 
     /// <summary>
@@ -107,7 +112,7 @@ internal class UIScrollBar : UIComponent
 
         this.IsThumbDragging = MouseController.IsLeftButtonPressed()
             && ((MouseController.WasLeftButtonReleased()
-                && this.thumb.Transform.ScaledRectangle.Contains(MouseController.Position))
+                    && MouseController.IsComponentFocused(this.thumb))
                 || this.IsThumbDragging);
 
         if (this.IsThumbDragging)
@@ -115,7 +120,7 @@ internal class UIScrollBar : UIComponent
             this.HandleThumbDrag();
         }
         else if (this.IsScrollBarClicked()
-            && !this.thumb.Transform.ScaledRectangle.Contains(MouseController.Position))
+            && !MouseController.IsComponentFocused(this.thumb))
         {
             this.HandleScrollBarClick();
         }
@@ -129,14 +134,14 @@ internal class UIScrollBar : UIComponent
 
     private bool IsScrollBarClicked()
     {
-        return MouseController.IsLeftButtonClicked() &&
-            this.Transform.ScaledRectangle.Contains(MouseController.Position);
+        return MouseController.IsLeftButtonClicked()
+            && MouseController.IsComponentFocused(this.thumb);
     }
 
     private bool IsScrollWheelScrolledOnParent()
     {
-        return (MouseController.ScrollDelta != 0)
-            && this.Parent!.Transform.ScaledRectangle.Contains(MouseController.Position);
+        return MouseController.ScrollDelta != 0
+            && MouseController.IsComponentFocused(this.contentContainer);
     }
 
     private void HandleThumbDrag()
@@ -175,8 +180,8 @@ internal class UIScrollBar : UIComponent
     {
         float maxCurrentLength = this.total - this.orientation switch
         {
-            Orientation.Vertical => this.Transform.UnscaledSize.Y,
-            Orientation.Horizontal => this.Transform.UnscaledSize.X,
+            Orientation.Vertical => this.contentContainer.Transform.UnscaledSize.Y,
+            Orientation.Horizontal => this.contentContainer.Transform.UnscaledSize.X,
             _ => throw new NotImplementedException(),
         };
 
