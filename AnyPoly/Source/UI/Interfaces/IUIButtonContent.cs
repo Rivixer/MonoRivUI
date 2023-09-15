@@ -20,10 +20,5 @@ internal interface IUIButtonContent<out T>
     /// <see langword="true"/> if the button content is hovered;
     /// otherwise, <see langword="false"/>.
     /// </returns>
-    /// <remarks>
-    /// This method is used in addition to checking if the cursor is within
-    /// the button's <see cref="UITransform.ScaledRectangle"/>.
-    /// Both conditions must be met for the button content to be considered hovered.
-    /// </remarks>
     bool IsButtonContentHovered(Point mousePosition);
 }

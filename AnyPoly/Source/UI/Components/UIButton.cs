@@ -25,10 +25,6 @@ internal class UIButton<T> : UIComponent
     /// The <paramref name="component"/>'s parent is set to this button.
     /// </para>
     /// <para>
-    /// <see cref="HoverMethod"/> is set to
-    /// <see cref="IUIButtonContent{T}.IsButtonContentHovered"/>.
-    /// </para>
-    /// <para>
     /// The button's <see cref="UITransform.Ratio"/> is set to the
     /// <paramref name="component"/>'s <see cref="UITransform.Ratio"/>.
     /// </para>
@@ -37,8 +33,6 @@ internal class UIButton<T> : UIComponent
     {
         this.component = component;
         component.Parent = this;
-
-        this.HoverMethod = component.IsButtonContentHovered;
 
         this.Transform.Ratio = component.Transform.Ratio;
     }
@@ -71,18 +65,6 @@ internal class UIButton<T> : UIComponent
     public bool WasHovered { get; private set; }
 
     /// <summary>
-    /// Gets or sets the method used to determine
-    /// if the button is being hovered over.
-    /// </summary>
-    /// <remarks>
-    /// Setting this method does not exempt checking if the
-    /// cursor is within <see cref="UITransform.ScaledRectangle"/>.
-    /// Both conditions must be met for the button
-    /// to be considered as hovered.
-    /// </remarks>
-    public Func<Point, bool> HoverMethod { get; set; }
-
-    /// <summary>
     /// Gets the read-only component associated with this button.
     /// </summary>
     public IUIReadOnlyComponent Component => this.component;
@@ -90,14 +72,13 @@ internal class UIButton<T> : UIComponent
     /// <inheritdoc/>
     public override void Update(GameTime gameTime)
     {
-        Point cursorPosition = MouseController.Position;
-        bool isCursorInRect = this.Transform.ScaledRectangle.Contains(cursorPosition);
+        Point mousePosition = MouseController.Position;
+        bool isFocused = MouseController.IsComponentFocused(this);
 
         this.WasHovered = this.IsHovered;
-        this.IsHovered = isCursorInRect
-            && (this.HoverMethod?.Invoke(cursorPosition) ?? true);
+        this.IsHovered = isFocused && this.component.IsButtonContentHovered(mousePosition);
 
-        if (!this.WasHovered && this.IsHovered)
+        if (isFocused && !this.WasHovered && this.IsHovered)
         {
             this.InvokeHoverEvent(this.HoverEntered);
         }
@@ -106,7 +87,7 @@ internal class UIButton<T> : UIComponent
             this.InvokeHoverEvent(this.HoverExited);
         }
 
-        if (MouseController.IsLeftButtonClicked() && this.IsHovered)
+        if (isFocused && MouseController.IsLeftButtonClicked() && this.IsHovered)
         {
             this.Clicked?.Invoke(this, EventArgs.Empty);
         }
