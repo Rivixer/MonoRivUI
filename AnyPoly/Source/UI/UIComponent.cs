@@ -8,7 +8,7 @@ namespace AnyPoly.UI;
 /// <summary>
 /// Represents a base class for UI components.
 /// </summary>
-internal abstract partial class UIComponent : IUIReadOnlyComponent
+internal abstract partial class UIComponent : IUIComponentHierarchy, IUIReadOnlyComponent
 {
     private static uint idCounter;
     private readonly List<UIComponent> children = new();
@@ -38,6 +38,12 @@ internal abstract partial class UIComponent : IUIReadOnlyComponent
 
     /// <inheritdoc/>
     IEnumerable<IUIReadOnlyComponent> IUIReadOnlyComponent.Children => this.Children;
+
+    /// <inheritdoc/>
+    IUIComponentHierarchy? IUIComponentHierarchy.Parent => this.Parent;
+
+    /// <inheritdoc/>
+    IEnumerable<IUIComponentHierarchy> IUIComponentHierarchy.Children => this.Children;
 
     /// <summary>
     /// Gets or sets the parent component.
