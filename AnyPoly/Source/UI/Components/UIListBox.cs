@@ -493,7 +493,7 @@ internal class UIListBox : UIComponent
 
     private void ResizeElements(float remainingSpace)
     {
-        float totalLengthWithoutSpacing = this.totalLength - (this.components.Count * this.unscaledSpacing);
+        float totalLengthWithoutSpacing = this.totalLength - ((this.components.Count - 1) * this.unscaledSpacing);
         float resizeFactor = 1 + (remainingSpace / totalLengthWithoutSpacing);
         foreach (UIComponent component in this.components)
         {
