@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+using AnyPoly.UI;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
 namespace AnyPoly;
@@ -10,6 +11,8 @@ internal static class MouseController
 {
     private static MouseState previousState;
     private static MouseState currentState;
+
+    private static IUIReadOnlyComponent? focusedComponent;
 
     /// <summary>
     /// Gets the current position of the mouse cursor.
@@ -41,8 +44,47 @@ internal static class MouseController
     /// </remarks>
     public static void Update()
     {
+        static void UpdateFocusedComponent(IUIReadOnlyComponent component)
+        {
+            if (component.Transform.ScaledRectangle.Contains(Position))
+            {
+                focusedComponent = component;
+            }
+
+            foreach (IUIReadOnlyComponent child in component.Children)
+            {
+                UpdateFocusedComponent(child);
+            }
+        }
+
+        UpdateFocusedComponent(AnyPolyGame.Instance.CurrentScene.BaseComponent);
+
         previousState = currentState;
         currentState = Mouse.GetState();
+    }
+
+    /// <summary>
+    /// Checks if a UI component is currently focused by the mouse.
+    /// </summary>
+    /// <param name="component">The UI component to be checked.</param>
+    /// <returns>
+    /// <see langword="true"/> if the specified component is focused by the mouse;
+    /// otherwise, <see langword="false"/>.
+    /// </returns>
+    /// <remarks>
+    /// The <paramref name="component"/> is considered focused
+    /// if the mouse cursor is within its boundaries and
+    /// no other components appear above it.<br/>
+    /// It is also considered focused if it is an ancestor
+    /// of the currently focused component and the mouse position
+    /// is within the <paramref name="component"/>'s boundaries.
+    /// </remarks>
+    public static bool IsComponentFocused(IUIReadOnlyComponent component)
+    {
+        return focusedComponent is not null
+            && (focusedComponent == component
+                || (component.Transform.ScaledRectangle.Contains(Position)
+                    && component.IsAncestor(focusedComponent)));
     }
 
     /// <summary>
