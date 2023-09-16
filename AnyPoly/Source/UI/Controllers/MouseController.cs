@@ -1,4 +1,4 @@
-using AnyPoly.UI;
+﻿using AnyPoly.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
@@ -58,6 +58,11 @@ internal static class MouseController
         }
 
         UpdateFocusedComponent(AnyPolyGame.Instance.CurrentScene.BaseComponent);
+
+        if (DebugConsole.IsOpen)
+        {
+            UpdateFocusedComponent(DebugConsole.BaseFrame);
+        }
 
         previousState = currentState;
         currentState = Mouse.GetState();

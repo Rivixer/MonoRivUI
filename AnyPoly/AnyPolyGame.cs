@@ -15,8 +15,6 @@ internal class AnyPolyGame : Game
 
     private readonly MenuScene menuScene;
 
-    private Scene currentScene;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="AnyPolyGame"/> class.
     /// </summary>
@@ -54,6 +52,12 @@ internal class AnyPolyGame : Game
         ScreenController.Change(1366, 768, ScreenType.Windowed);
         ScreenController.ApplyChanges();
 
+        DebugConsole.Initialize();
+
+#if DEBUG
+        DebugConsole.SendWarning("You are running on a debug build.");
+#endif
+
         base.Initialize();
     }
 
@@ -80,6 +84,8 @@ internal class AnyPolyGame : Game
 
         this.CurrentScene.Update(gameTime);
 
+        DebugConsole.Update(gameTime);
+
         base.Update(gameTime);
     }
 
@@ -95,6 +101,8 @@ internal class AnyPolyGame : Game
         SpriteBatchController.SpriteBatch.Begin();
 
         this.CurrentScene.Draw(gameTime);
+
+        DebugConsole.Draw(gameTime);
 
         SpriteBatchController.SpriteBatch.End();
 
