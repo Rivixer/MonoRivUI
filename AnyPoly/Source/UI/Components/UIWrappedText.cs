@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
@@ -8,7 +9,7 @@ namespace AnyPoly.UI;
 /// <summary>
 /// Represents a UI component that displays wrapped text.
 /// </summary>
-internal class UIWrappedText : UITextComponent
+internal class UIWrappedText : UITextComponent, IEnumerable<UIText>
 {
     private readonly List<UIText> textLines = new();
 
@@ -27,7 +28,13 @@ internal class UIWrappedText : UITextComponent
     public UIWrappedText(Color color)
         : base(color)
     {
-        this.Transform.SizeChanged += (s, e) => this.Recalculate();
+        this.Transform.SizeChanged += (s, e) =>
+        {
+            if (e.Before.X != e.After.X)
+            {
+                this.Recalculate();
+            }
+        };
     }
 
     /// <inheritdoc/>
@@ -71,6 +78,21 @@ internal class UIWrappedText : UITextComponent
             }
 
             base.TextAlignment = value;
+            this.isRecalculationNeeded = true;
+        }
+    }
+
+    /// <inheritdoc/>
+    public override bool AdjustSizeToText
+    {
+        set
+        {
+            if (base.AdjustSizeToText == value)
+            {
+                return;
+            }
+
+            base.AdjustSizeToText = value;
             this.isRecalculationNeeded = true;
         }
     }
@@ -133,6 +155,33 @@ internal class UIWrappedText : UITextComponent
     /// <returns>The text line at the specified index.</returns>
     public UIText this[int i] => this.textLines[i];
 
+    public static explicit operator UIWrappedText(UIText text)
+    {
+        return new UIWrappedText(text.Color)
+        {
+            Text = text.Text,
+            Scale = text.Scale,
+            TextAlignment = text.TextAlignment,
+        };
+    }
+
+    /// <summary>
+    /// Returns an enumerator that iterates through the text lines.
+    /// </summary>
+    /// <returns>
+    /// An enumerator that can be used to iterate through the text lines.
+    /// </returns>
+    public IEnumerator<UIText> GetEnumerator()
+    {
+        return this.textLines.GetEnumerator();
+    }
+
+    /// <inheritdoc cref="GetEnumerator"/>
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return this.GetEnumerator();
+    }
+
     /// <inheritdoc/>
     public override void Update(GameTime gameTime)
     {
@@ -152,26 +201,24 @@ internal class UIWrappedText : UITextComponent
         if (this.AdjustSizeToText)
         {
             this.Transform.SetRelativeSizeFromUnscaledAbsolute(
-                this.unscaledDimensions.X,
-                this.unscaledDimensions.Y);
+                y: this.unscaledDimensions.Y);
         }
 
+        this.PositionTextLines();
         this.isRecalculationNeeded = false;
     }
 
     private void UpdateDimensions()
     {
-        float maximumX = 0.0f;
         float totalY = this.unscaledLineSpacing * (this.textLines.Count - 1);
-
         foreach (UIText line in this.textLines)
         {
             Vector2 lineDimensions = line.UnscaledDimensions;
-            maximumX = Math.Max(maximumX, lineDimensions.X);
             totalY += lineDimensions.Y;
         }
 
-        this.unscaledDimensions = new Vector2(maximumX, totalY);
+        var dimX = this.Transform.UnscaledSize.X;
+        this.unscaledDimensions = new Vector2(dimX, totalY);
         this.scaledDimensions = this.unscaledDimensions
             .Scale(ScreenController.Scale);
     }
@@ -186,14 +233,8 @@ internal class UIWrappedText : UITextComponent
         if (this.MeasureText(this.Text).X < reference.Width)
         {
             this.ResetTextLines();
-            var text = new UIText(this.Color)
-            {
-                Parent = this,
-                Text = this.Text,
-                Scale = this.Scale,
-                TextAlignment = this.TextAlignment,
-            };
-            this.textLines.Add(text);
+            UIText textLine = this.CreateTextLine(this.Text);
+            this.textLines.Add(textLine);
             return;
         }
 
@@ -276,28 +317,34 @@ internal class UIWrappedText : UITextComponent
 
         this.ResetTextLines();
 
-        // Initialize the offset for positioning the wrapped lines
-        float currentOffset = 0.0f;
-
         // Create text components for each wrapped line
-        // and position them accordingly
         foreach (string line in result)
         {
-            var text = new UIText(this.Color)
-            {
-                Parent = this,
-                Text = line,
-                Scale = this.Scale,
-                TextAlignment = this.TextAlignment,
-            };
+            UIText textLine = this.CreateTextLine(line);
+            this.textLines.Add(textLine);
+        }
+    }
 
-            // Position the text using the current offset
-            text.Transform.SetRelativeOffsetFromScaledAbsolute(y: currentOffset);
+    private UIText CreateTextLine(string text)
+    {
+        return new UIText(this.Color)
+        {
+            Parent = this,
+            Text = text,
+            Color = this.Color,
+            Scale = this.Scale,
+            TextAlignment = this.TextAlignment,
+            AdjustSizeToText = this.AdjustSizeToText,
+        };
+    }
 
-            this.textLines.Add(text);
-
-            // Update the offset for the next line
-            currentOffset += text.ScaledDimensions.Y + this.scaledLineSpacing;
+    private void PositionTextLines()
+    {
+        float currentOffset = 0.0f;
+        foreach (UIText textLine in this.textLines)
+        {
+            textLine.Transform.SetRelativeOffsetFromScaledAbsolute(y: currentOffset);
+            currentOffset += textLine.ScaledDimensions.Y + this.scaledLineSpacing;
         }
     }
 
