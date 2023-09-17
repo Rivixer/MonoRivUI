@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using System;
 
@@ -238,8 +238,7 @@ internal class UITextInput : UIComponent
 
     private void HandleSelection()
     {
-        Point mousePosition = MouseController.Position;
-        if (this.Transform.ScaledRectangle.Contains(mousePosition))
+        if (MouseController.IsComponentFocused(this))
         {
             this.Select();
         }
