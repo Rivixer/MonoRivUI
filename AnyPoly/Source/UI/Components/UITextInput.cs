@@ -257,6 +257,7 @@ internal class UITextInput : UIComponent
         {
             this.text.Text = string.Empty;
             this.caretPosition = 0;
+            this.OnTextChanged();
         }
 
         if (this.DeselectAfterSend)
@@ -270,6 +271,12 @@ internal class UITextInput : UIComponent
         this.caretEnableTime += elapsedSeconds;
         float caretOffset = this.text.MeasureUnscaledDimensions(0, this.caretPosition).X;
         this.caret.Transform.SetRelativeOffsetFromUnscaledAbsolute(x: caretOffset);
+    }
+
+    private void OnTextChanged()
+    {
+        var args = new TextInputEventArgs(this.text.Text);
+        this.TextChanged?.Invoke(this, args);
     }
 
     private void Window_KeyDown(object? sender, InputKeyEventArgs e)
@@ -359,7 +366,7 @@ internal class UITextInput : UIComponent
                 break;
         }
 
-        this.TextChanged?.Invoke(this, new TextInputEventArgs(this.text.Text));
+        this.OnTextChanged();
     }
 
     private void Window_TextInput(object? sender, Microsoft.Xna.Framework.TextInputEventArgs e)
@@ -374,7 +381,7 @@ internal class UITextInput : UIComponent
         if (this.text.Font.Characters.Contains(e.Character))
         {
             this.text.Text = this.text.Text.Insert(this.caretPosition++, e.Character.ToString());
-            this.TextChanged?.Invoke(this, new TextInputEventArgs(this.text.Text));
+            this.OnTextChanged();
             this.caretEnableTime = 0.0f;
         }
     }
