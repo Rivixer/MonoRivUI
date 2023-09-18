@@ -1,4 +1,4 @@
-﻿using AnyPoly.UI;
+using AnyPoly.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using System;
@@ -60,9 +60,8 @@ internal static partial class DebugConsole
             throw new InvalidOperationException("Debug console is already initialized.");
         }
 
-        baseFrame = new UIFrame(Color.Black)
+        baseFrame = new UIFrame(Color.Black, thickness: 2)
         {
-            RelativeThickness = 0.008f,
             Transform =
             {
                 UnscaledLocation = new Point(60, 60),
@@ -123,10 +122,9 @@ internal static partial class DebugConsole
 
         // Messages
         {
-            var frame = new UIFrame(new Color(60, 60, 60, 255))
+            var frame = new UIFrame(new Color(60, 60, 60, 255), thickness: 2)
             {
                 Parent = baseFrame.InnerContainer,
-                RelativeThickness = 0.005f,
                 Transform =
                 {
                     Alignment = Alignment.Top,
@@ -145,7 +143,7 @@ internal static partial class DebugConsole
             {
                 Parent = frame.InnerContainer,
                 Orientation = Orientation.Vertical,
-                RelativeSpacing = 0.006f,
+                Spacing = 6,
                 IsScrollable = true,
                 ScrollBarFrameColor = Color.Gray,
                 ScrollBarThumbColor = Color.DarkGray,
@@ -156,10 +154,9 @@ internal static partial class DebugConsole
 
         // Text input
         {
-            var frame = new UIFrame(new Color(60, 60, 60, 255))
+            var frame = new UIFrame(new Color(60, 60, 60, 255), thickness: 2)
             {
                 Parent = baseFrame.InnerContainer,
-                RelativeThickness = 0.005f,
                 Transform =
                 {
                     Alignment = Alignment.Bottom,

@@ -14,7 +14,7 @@ internal class UIFrame : UIComponent, IUIButtonContent<UIFrame>
     private readonly LineData[] lines = new LineData[NumberOfLines];
     private readonly UIContainer innerContainer;
 
-    private float relativeThickness = 0.01f;
+    private int thickness;
     private Color color;
 
     private bool isRecalculationNeeded = true;
@@ -23,9 +23,10 @@ internal class UIFrame : UIComponent, IUIButtonContent<UIFrame>
     /// Initializes a new instance of the <see cref="UIFrame"/> class.
     /// </summary>
     /// <param name="color">The color of the frame lines.</param>
-    public UIFrame(Color color)
+    public UIFrame(Color color, int thickness)
     {
         this.color = color;
+        this.thickness = thickness;
 
         this.innerContainer = new UIContainer()
         {
@@ -39,22 +40,22 @@ internal class UIFrame : UIComponent, IUIButtonContent<UIFrame>
     }
 
     /// <summary>
-    /// Gets or sets the relative thickness of the frame lines.
+    /// Gets or sets the thickness of the frame lines.
     /// </summary>
     /// <remarks>
-    /// The thickness is relative to the shorter size of the frame.
+    /// The thickness is measured in pixels.
     /// </remarks>
-    public float RelativeThickness
+    public int Thickness
     {
-        get => this.relativeThickness;
+        get => this.thickness;
         set
         {
-            if (this.relativeThickness == value)
+            if (this.thickness == value)
             {
                 return;
             }
 
-            this.relativeThickness = value;
+            this.thickness = value;
             this.isRecalculationNeeded = true;
         }
     }
@@ -204,13 +205,7 @@ internal class UIFrame : UIComponent, IUIButtonContent<UIFrame>
 
     private int GetScaledThickness()
     {
-        Point size = this.Transform.ScaledSize
-            .ToVector2()
-            .Scale(this.relativeThickness)
-            .ToPoint()
-            .Clamp(this.Transform.MinSize, this.Transform.MaxSize);
-
-        return Math.Min(size.X, size.Y);
+        return (int)(this.thickness * Math.Max(ScreenController.Scale.X, ScreenController.Scale.Y));
     }
 
     private struct LineData

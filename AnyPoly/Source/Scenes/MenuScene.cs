@@ -30,7 +30,7 @@ internal class MenuScene : Scene
         var buttonListBox = new UIListBox()
         {
             Parent = this.BaseComponent,
-            RelativeSpacing = 0.01f,
+            Spacing = 12,
             Orientation = Orientation.Vertical,
             ResizeContent = true,
             Transform =
@@ -58,7 +58,7 @@ internal class MenuScene : Scene
 
         static UIButton<UIFrame> CreateMenuButton(IUIReadOnlyComponent parent, string text)
         {
-            var frame = new UIFrame(Color.Black) { RelativeThickness = 0.01f };
+            var frame = new UIFrame(Color.Black, thickness: 2);
             var frameFill = new UISolidColor(Color.Gray) { Parent = frame.InnerContainer };
             var button = new UIButton<UIFrame>(frame) { Parent = parent };
             var buttonText = new UIText(Color.White)

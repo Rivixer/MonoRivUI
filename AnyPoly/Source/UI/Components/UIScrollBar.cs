@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using System;
 
 namespace AnyPoly.UI;
@@ -29,7 +29,7 @@ internal class UIScrollBar : UIComponent
     public UIScrollBar(Orientation orientation, IUIReadOnlyComponent contentContainer)
     {
         this.orientation = orientation;
-        this.frame = new UIFrame(Color.Gray) { Parent = this, RelativeThickness = 0.01f };
+        this.frame = new UIFrame(Color.Gray, thickness: 2) { Parent = this };
         this.thumb = new UISolidColor(Color.DarkGray) { Parent = this.frame };
         this.ParentChanged += this.UIScrollBar_ParentChanged;
         this.contentContainer = contentContainer;

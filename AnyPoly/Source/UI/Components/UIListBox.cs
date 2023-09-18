@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
@@ -77,8 +77,7 @@ internal class UIListBox : UIComponent
     private readonly UIContainer container;
     private Orientation orientation;
 
-    private float relativeSpacing;
-    private float unscaledSpacing;
+    private int spacing;
     private float totalLength;
     private float currentOffset;
 
@@ -183,30 +182,24 @@ internal class UIListBox : UIComponent
     }
 
     /// <summary>
-    /// Gets or sets the relative spacing of the components.
+    /// Gets or sets the spacing of the components.
     /// </summary>
-    public float RelativeSpacing
+    /// <remarks>
+    /// The spacing is measured in pixels.
+    /// </remarks>
+    public int Spacing
     {
-        get => this.relativeSpacing;
+        get => this.spacing;
         set
         {
-            if (this.relativeSpacing == value)
+            if (this.spacing == value)
             {
                 return;
             }
 
             int spacingCount = this.components.Count > 0 ? this.components.Count - 1 : 0;
-            float spacingBefore = this.unscaledSpacing;
-
-            this.relativeSpacing = value;
-            this.unscaledSpacing = this.orientation switch
-            {
-                Orientation.Vertical => this.relativeSpacing * this.Transform.UnscaledSize.Y,
-                Orientation.Horizontal => this.relativeSpacing * this.Transform.UnscaledSize.X,
-                _ => throw new NotImplementedException(),
-            };
-
-            this.totalLength += (this.unscaledSpacing - spacingBefore) * spacingCount;
+            this.totalLength += (this.spacing - value) * spacingCount;
+            this.spacing = value;
             this.isRecalculationNeeded = true;
         }
     }
@@ -420,7 +413,7 @@ internal class UIListBox : UIComponent
                     break;
             }
 
-            currentOffset += this.GetComponentLength(component) + this.unscaledSpacing;
+            currentOffset += this.GetComponentLength(component) + this.spacing;
         }
     }
 
@@ -494,7 +487,7 @@ internal class UIListBox : UIComponent
 
     private void ResizeElements(float remainingSpace)
     {
-        float totalLengthWithoutSpacing = this.totalLength - ((this.components.Count - 1) * this.unscaledSpacing);
+        float totalLengthWithoutSpacing = this.totalLength - ((this.components.Count - 1) * this.spacing);
         float resizeFactor = 1 + (remainingSpace / totalLengthWithoutSpacing);
         foreach (UIComponent component in this.components)
         {
@@ -526,7 +519,7 @@ internal class UIListBox : UIComponent
 
         if (this.components.Count > 0)
         {
-            this.totalLength += this.unscaledSpacing;
+            this.totalLength += this.spacing;
         }
 
         float componentLength = this.GetComponentLength(component);
@@ -543,7 +536,7 @@ internal class UIListBox : UIComponent
 
         if (this.components.Count > 0)
         {
-            this.totalLength -= this.unscaledSpacing;
+            this.totalLength -= this.spacing;
         }
 
         float componentLength = this.GetComponentLength(child);
