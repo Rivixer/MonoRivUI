@@ -135,7 +135,7 @@ internal class UIScrollBar : UIComponent
     private bool IsScrollBarClicked()
     {
         return MouseController.IsLeftButtonClicked()
-            && MouseController.IsComponentFocused(this.thumb);
+            && MouseController.IsComponentFocused(this);
     }
 
     private bool IsScrollWheelScrolledOnParent()
