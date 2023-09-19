@@ -1,10 +1,10 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using System;
 
 namespace AnyPoly.UI;
 
 /// <summary>
-/// Represents a scroll bar component.
+/// Represents a scrollbar component.
 /// </summary>
 internal class UIScrollBar : UIComponent
 {
@@ -22,7 +22,7 @@ internal class UIScrollBar : UIComponent
     /// <summary>
     /// Initializes a new instance of the <see cref="UIScrollBar"/> class.
     /// </summary>
-    /// <param name="orientation">The oritentation of the scroll bar.</param>
+    /// <param name="orientation">The oritentation of the scrollbar.</param>
     /// <param name="contentContainer">
     /// The container that contains the content that is scrolled.
     /// </param>
@@ -30,24 +30,39 @@ internal class UIScrollBar : UIComponent
     {
         this.orientation = orientation;
         this.frame = new UIFrame(Color.Gray, thickness: 2) { Parent = this };
-        this.thumb = new UISolidColor(Color.DarkGray) { Parent = this.frame };
+        this.thumb = new UISolidColor(Color.DarkGray) { Parent = this.frame.InnerContainer };
         this.ParentChanged += this.UIScrollBar_ParentChanged;
+        this.Transform.Recalculated += this.Transform_Recalculated;
         this.contentContainer = contentContainer;
     }
 
     /// <summary>
-    /// An event that is raised when the scroll bar is scrolled.
+    /// An event that is raised when the scrollbar is scrolled.
     /// </summary>
     public event EventHandler<ScrolledEventArgs>? Scrolled;
 
     /// <summary>
     /// Gets a value indicating whether
-    /// the scroll bar thumb is being dragged.
+    /// the scrollbar thumb is being dragged.
     /// </summary>
     public bool IsThumbDragging { get; private set; }
 
     /// <summary>
-    /// Gets or sets the color of the scroll bar frame.
+    /// Gets the current scroll position.
+    /// </summary>
+    /// <remarks>
+    /// The value is between <c>0.0f</c> and <c>1.0f</c>
+    /// where <c>0.0f</c> is the top and <c>1.0f</c> is the bottom.
+    /// </remarks>
+    public float Position => this.current / (this.total - this.orientation switch
+    {
+        Orientation.Vertical => this.contentContainer.Transform.UnscaledSize.Y,
+        Orientation.Horizontal => this.contentContainer.Transform.UnscaledSize.X,
+        _ => throw new NotImplementedException(),
+    });
+
+    /// <summary>
+    /// Gets or sets the color of the scrollbar frame.
     /// </summary>
     public Color FrameColor
     {
@@ -56,7 +71,7 @@ internal class UIScrollBar : UIComponent
     }
 
     /// <summary>
-    /// Gets or sets the color of the scroll bar thumb.
+    /// Gets or sets the color of the scrollbar thumb.
     /// </summary>
     public Color ThumbColor
     {
@@ -65,7 +80,7 @@ internal class UIScrollBar : UIComponent
     }
 
     /// <summary>
-    /// Gets or sets the relative size of the scroll bar.
+    /// Gets or sets the relative size of the scrollbar.
     /// </summary>
     public float RelativeSize
     {
@@ -98,6 +113,27 @@ internal class UIScrollBar : UIComponent
             this.total = value;
             this.isUpdateThumbSizeNeeded = true;
         }
+    }
+
+    /// <summary>
+    /// Scrolls to the specified position.
+    /// </summary>
+    /// <param name="position">The position to scroll to.</param>
+    /// <remarks>
+    /// The value should be between <c>0.0f</c> and <c>1.0f</c>
+    /// where <c>0.0f</c> is the top and <c>1.0f</c> is the bottom.
+    /// </remarks>
+    public void ScrollTo(float position)
+    {
+        if (position is < 0.0f or > 1.0f)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(position),
+                "The position should be between 0.0f and 1.0f.");
+        }
+
+        float destination = position * this.total;
+        this.UpdateThumbPosition(this.current - destination);
     }
 
     /// <inheritdoc/>
@@ -147,7 +183,7 @@ internal class UIScrollBar : UIComponent
     private void HandleThumbDrag()
     {
         Point mouseDelta = MouseController.MouseDelta;
-        Rectangle frameScaledRect = this.frame.Transform.ScaledRectangle;
+        Rectangle frameScaledRect = this.frame.InnerContainer.Transform.ScaledRectangle;
 
         float scrollPercentage = this.orientation switch
         {
@@ -220,12 +256,12 @@ internal class UIScrollBar : UIComponent
         switch (this.orientation)
         {
             case Orientation.Vertical:
-                int frameHeight = this.frame.Transform.UnscaledSize.Y;
+                int frameHeight = this.contentContainer.Transform.UnscaledSize.Y;
                 float newRelativeThumbHeight = Math.Clamp(frameHeight / this.total, 0.0f, 1.0f);
                 this.thumb.Transform.RelativeSize = new Vector2(1.0f, newRelativeThumbHeight);
                 break;
             case Orientation.Horizontal:
-                int frameWidth = this.frame.Transform.UnscaledSize.X;
+                int frameWidth = this.contentContainer.Transform.UnscaledSize.X;
                 float newRelativeThumbWidth = Math.Clamp(frameWidth / this.total, 0.0f, 1.0f);
                 this.thumb.Transform.RelativeSize = new Vector2(newRelativeThumbWidth, 1.0f);
                 break;
@@ -241,5 +277,12 @@ internal class UIScrollBar : UIComponent
             Orientation.Horizontal => new Vector2(relativeScrollPosition, 0.0f),
             _ => throw new NotImplementedException(),
         };
+    }
+
+    private void Transform_Recalculated(object? sender, EventArgs e)
+    {
+        this.UpdateScrollBarSize();
+        this.UpdateThumbSize();
+        this.UpdateThumbOffset();
     }
 }
