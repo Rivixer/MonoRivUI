@@ -44,13 +44,13 @@ internal class MenuScene : Scene
         var newGameButton = CreateMenuButton(buttonListBox.ContentContainer, "New game");
         newGameButton.Clicked += (s, e) =>
         {
-            Debug.WriteLine("New game button has been clicked.");
+            DebugConsole.ThrowError("The new game button is not implemented yet.");
         };
 
         var settingsButton = CreateMenuButton(buttonListBox.ContentContainer, "Settings");
         settingsButton.Clicked += (s, e) =>
         {
-            Debug.WriteLine("Settings button has been clicked.");
+            DebugConsole.ThrowError("The settings button is not implemented yet.");
         };
 
         var exitButton = CreateMenuButton(buttonListBox.ContentContainer, "Exit");

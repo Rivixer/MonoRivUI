@@ -69,6 +69,8 @@ internal class AnyPolyGame : Game
         this.menuScene.Initialize();
 
         base.LoadContent();
+
+        DebugConsole.SendMessage("Type 'help' to get list of available commands.");
     }
 
     /// <summary>
