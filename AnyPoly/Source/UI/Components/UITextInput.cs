@@ -194,6 +194,17 @@ internal class UITextInput : UIComponent
         }
     }
 
+    /// <summary>
+    /// Sets the text of the text input.
+    /// </summary>
+    /// <param name="text">The text to be set.</param>
+    public void SetText(string text)
+    {
+        this.text.Text = text;
+        this.caretPosition = text.Length;
+        this.OnTextChanged();
+    }
+
     /// <inheritdoc/>
     public override void Update(GameTime gameTime)
     {
