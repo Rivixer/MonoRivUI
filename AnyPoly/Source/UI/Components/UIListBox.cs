@@ -1,4 +1,4 @@
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
@@ -17,7 +17,13 @@ namespace AnyPoly.UI;
 /// <para>
 /// This component automatically creates a <see cref="ContentContainer"/>
 /// when initialized. The content container is designed to host and organize
-/// nested UI components within the list box.
+/// nested UI components within the list box and should be used as a parent for them.
+/// </para>
+/// <para>
+/// After setting the <see cref="ContentContainer"/> as a parent for a component,
+/// the component will be queued unit the next update cycle. This allows adding
+/// multiple components to the list box without having to recalculate the list
+/// box's layout after each addition.
 /// </para>
 /// <para>
 /// Key features of the <see cref="UIListBox"/> component include support for
@@ -104,9 +110,26 @@ internal class UIListBox : UIComponent
     }
 
     /// <summary>
+    /// An event that is raised when components are being dequeued
+    /// and are being added to the list box content.
+    /// </summary>
+    public event EventHandler? ComponentsDequeuing;
+
+    /// <summary>
+    /// An event that is raised when components have been dequeued
+    /// and added to the list box content.
+    /// </summary>
+    public event EventHandler? ComponentsDequeued;
+
+    /// <summary>
     /// Gets the list box's components.
     /// </summary>
     public IEnumerable<UIComponent> Components => this.components;
+
+    /// <summary>
+    /// Gets the list box's queued components.
+    /// </summary>
+    public IEnumerable<UIComponent> QueuedComponents => this.queuedComponents;
 
     /// <summary>
     /// Gets the read-only content container of the list box.
@@ -130,8 +153,17 @@ internal class UIListBox : UIComponent
     /// </remarks>
     public IUIReadOnlyComponent ContentContainer => this.container;
 
+    /// <remarks>
+    /// <inheritdoc cref="UIScrollBar.Position"/>
+    /// <para>
+    /// Returns <see langword="null"/> when the scrollbar is not present.
+    /// </para>
+    /// </remarks>
+    /// <inheritdoc cref="UIScrollBar.Position"/>
+    public float? ScrollPosition => this.scrollBar?.Position;
+
     /// <summary>
-    /// Gets or sets the color of the scroll bar's frame.
+    /// Gets or sets the color of the scrollbar's frame.
     /// </summary>
     public Color ScrollBarFrameColor
     {
@@ -148,7 +180,7 @@ internal class UIListBox : UIComponent
     }
 
     /// <summary>
-    /// Gets or sets the color of the scroll bar's thumb.
+    /// Gets or sets the color of the scrollbar's thumb.
     /// </summary>
     public Color ScrollBarThumbColor
     {
@@ -165,7 +197,7 @@ internal class UIListBox : UIComponent
     }
 
     /// <summary>
-    /// Gets or sets the relative size of the scroll bar.
+    /// Gets or sets the relative size of the scrollbar.
     /// </summary>
     public float ScrollBarRelativeSize
     {
@@ -279,12 +311,36 @@ internal class UIListBox : UIComponent
         }
     }
 
+    /// <summary>
+    /// Gets the list box scrollbar, if it exists.
+    /// </summary>
+    public IUIReadOnlyComponent? ScrollBar => this.scrollBar;
+
+    /// <summary>
+    /// Scrolls the list box to the specified position.
+    /// </summary>
+    /// <param name="position">
+    /// <para>The position to scroll to.</para>
+    /// The value is between <c>0.0f</c> and <c>1.0f</c>
+    /// where <c>0.0f</c> is the top and <c>1.0f</c> is the bottom.
+    /// </param>
+    public void ScrollTo(float position)
+    {
+        this.scrollBar?.ScrollTo(position);
+    }
+
     /// <inheritdoc/>
     public override void Update(GameTime gameTime)
     {
-        while (this.queuedComponents.Count > 0)
+        bool isAnyComponentDequeued = this.queuedComponents.Count > 0;
+
+        if (isAnyComponentDequeued)
         {
-            this.DequeueComponent();
+            this.ComponentsDequeuing?.Invoke(this, EventArgs.Empty);
+            while (this.queuedComponents.Count > 0)
+            {
+                this.DequeueComponent();
+            }
         }
 
         // We update all components before recalculating ListBox
@@ -302,6 +358,11 @@ internal class UIListBox : UIComponent
             this.RecalculateElements();
             this.UpdateScrollBarPresence();
             this.isRecalculationNeeded = false;
+        }
+
+        if (isAnyComponentDequeued)
+        {
+            this.ComponentsDequeued?.Invoke(this, EventArgs.Empty);
         }
 
         base.Update(gameTime);
@@ -419,7 +480,7 @@ internal class UIListBox : UIComponent
 
     /// <summary>
     /// Updates the size of the container
-    /// based on the scroll bar's presence.
+    /// based on the scrollbar's presence.
     /// </summary>
     private void AdjustContentContainerSize()
     {
@@ -549,6 +610,15 @@ internal class UIListBox : UIComponent
 
     private void Transform_SizeChanged(object? sender, TransformElementChangedEventArgs<Point> e)
     {
+        Vector2 factor = e.Before.ToVector2() / e.After.ToVector2();
+        this.Transform.RelativePadding *= new Vector4(factor, factor.X, factor.Y);
+
+        foreach (var component in this.components)
+        {
+            component.Transform.RelativeSize *= factor;
+        }
+
+        this.RecalculateElements();
         this.UpdateScrollBarPresence();
         this.AdjustContentContainerSize();
     }
