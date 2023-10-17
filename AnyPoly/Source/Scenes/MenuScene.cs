@@ -44,7 +44,7 @@ internal class MenuScene : Scene
         var newGameButton = CreateMenuButton(buttonListBox.ContentContainer, "New game");
         newGameButton.Clicked += (s, e) =>
         {
-            DebugConsole.ThrowError("The new game button is not implemented yet.");
+            Change<LobbyScene>();
         };
 
         var settingsButton = CreateMenuButton(buttonListBox.ContentContainer, "Settings");

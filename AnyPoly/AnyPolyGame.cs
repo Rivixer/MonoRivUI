@@ -1,8 +1,6 @@
-using AnyPoly.Scenes;
 using AnyPoly.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using System;
 
 namespace AnyPoly;
 
@@ -12,8 +10,6 @@ namespace AnyPoly;
 internal class AnyPolyGame : Game
 {
     private readonly GraphicsDeviceManager graphics;
-
-    private readonly MenuScene menuScene;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AnyPolyGame"/> class.
@@ -26,17 +22,12 @@ internal class AnyPolyGame : Game
 
         this.Content.RootDirectory = "Content";
         this.IsMouseVisible = true;
-
-        this.menuScene = new MenuScene();
-        this.CurrentScene = this.menuScene;
     }
 
     /// <summary>
     /// Gets the singleton instance of the <see cref="AnyPolyGame"/> class.
     /// </summary>
     public static AnyPolyGame Instance { get; private set; } = default!;
-
-    public Scene CurrentScene { get; private set; } = default!;
 
     /// <summary>
     /// Initializes the game.
@@ -66,7 +57,7 @@ internal class AnyPolyGame : Game
     /// </summary>
     protected override void LoadContent()
     {
-        this.menuScene.Initialize();
+        Scene.InitializeScenes();
 
         base.LoadContent();
 
@@ -84,7 +75,7 @@ internal class AnyPolyGame : Game
         MouseController.Update();
         ScreenController.Update();
 
-        this.CurrentScene.Update(gameTime);
+        Scene.Current.Update(gameTime);
 
         DebugConsole.Update(gameTime);
 
@@ -102,7 +93,7 @@ internal class AnyPolyGame : Game
 
         SpriteBatchController.SpriteBatch.Begin();
 
-        this.CurrentScene.Draw(gameTime);
+        Scene.Current.Draw(gameTime);
 
         DebugConsole.Draw(gameTime);
 

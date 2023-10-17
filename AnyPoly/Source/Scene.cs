@@ -1,6 +1,9 @@
-﻿using AnyPoly.UI;
+﻿using AnyPoly.Scenes;
+using AnyPoly.UI;
 using Microsoft.Xna.Framework;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace AnyPoly;
 
@@ -9,12 +12,48 @@ namespace AnyPoly;
 /// </summary>
 internal abstract class Scene
 {
+    private static readonly List<Scene> Scenes = new();
     private bool isInitialized;
+
+    /// <summary>
+    /// Gets the current scene.
+    /// </summary>
+    public static Scene Current { get; private set; } = default!;
 
     /// <summary>
     /// Gets or sets the components of the scene.
     /// </summary>
     public UIComponent BaseComponent { get; protected set; } = default!;
+
+    /// <summary>
+    /// Initializes all scenes.
+    /// </summary>
+    public static void InitializeScenes()
+    {
+        var sceneTypes = typeof(Scene).Assembly.GetTypes()
+            .Where(t => t.IsSubclassOf(typeof(Scene)) && !t.IsAbstract);
+
+        foreach (var sceneType in sceneTypes)
+        {
+            var scene = (Scene)Activator.CreateInstance(sceneType)!;
+            Scenes.Add(scene);
+            scene.Initialize();
+        }
+
+        Change<MenuScene>();
+    }
+
+    /// <summary>
+    /// Changes the current scene to the specified scene.
+    /// </summary>
+    /// <typeparam name="T">The type of the scene to change to.</typeparam>
+    public static void Change<T>()
+        where T : Scene
+    {
+        var scene = Scenes.OfType<T>().Single();
+        Current = scene;
+        DebugConsole.SendMessage($"Changed to {scene.GetType().Name} scene.");
+    }
 
     /// <summary>
     /// Initializes the scene.

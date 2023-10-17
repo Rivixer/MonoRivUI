@@ -57,7 +57,7 @@ internal static class MouseController
             }
         }
 
-        UpdateFocusedComponent(AnyPolyGame.Instance.CurrentScene.BaseComponent);
+        UpdateFocusedComponent(Scene.Current.BaseComponent);
 
         if (DebugConsole.IsOpen)
         {
