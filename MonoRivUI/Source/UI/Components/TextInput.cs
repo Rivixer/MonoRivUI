@@ -174,8 +174,8 @@ public class TextInput : Component
     {
         if (!this.IsSelected)
         {
-            MonoRivUIGame.Instance.Window.TextInput += this.Window_TextInput;
-            MonoRivUIGame.Instance.Window.KeyDown += this.Window_KeyDown;
+            ScreenController.GameWindow.TextInput += this.Window_TextInput;
+            ScreenController.GameWindow.KeyDown += this.Window_KeyDown;
             this.IsSelected = true;
             this.caretEnableTime = 0.0f;
         }
@@ -188,8 +188,8 @@ public class TextInput : Component
     {
         if (this.IsSelected)
         {
-            MonoRivUIGame.Instance.Window.TextInput -= this.Window_TextInput;
-            MonoRivUIGame.Instance.Window.KeyDown -= this.Window_KeyDown;
+            ScreenController.GameWindow.TextInput -= this.Window_TextInput;
+            ScreenController.GameWindow.KeyDown -= this.Window_KeyDown;
             this.IsSelected = false;
         }
     }

@@ -25,6 +25,11 @@ public static class ScreenController
     public static GraphicsDevice GraphicsDevice => graphicsDeviceManager.GraphicsDevice;
 
     /// <summary>
+    /// Gets the GameWindow.
+    /// </summary>
+    public static GameWindow GameWindow => gameWindow;
+
+    /// <summary>
     /// Gets the default size the UI is designed for.
     /// </summary>
     public static Point DefaultSize { get; } = new Point(1920, 1080);

@@ -56,7 +56,7 @@ public class SolidColor : TextureComponent, IButtonContent<SolidColor>
     protected override void LoadTexture()
     {
         this.Texture?.Dispose();
-        var texture = new Texture2D(MonoRivUIGame.Instance.GraphicsDevice, 1, 1);
+        var texture = new Texture2D(ScreenController.GraphicsDevice, 1, 1);
         texture.SetData(new Color[] { this.color });
         this.Texture = texture;
     }
