@@ -8,7 +8,7 @@ namespace MonoRivUI;
 /// <summary>
 /// Represents an image component.
 /// </summary>
-internal class Image : TextureComponent, IButtonContent<Image>
+public class Image : TextureComponent, IButtonContent<Image>
 {
     // We use a reference counter to keep track of how many times a texture is used.
     // This way, we can dispose of the texture when it is no longer used anywhere.

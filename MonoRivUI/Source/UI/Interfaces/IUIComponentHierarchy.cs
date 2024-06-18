@@ -6,7 +6,7 @@ namespace MonoRivUI;
 /// <summary>
 /// Represents a UI component hierarchy.
 /// </summary>
-internal interface IUIComponentHierarchy
+public interface IUIComponentHierarchy
 {
     /// <summary>
     /// Gets the parent of the component.

@@ -8,7 +8,7 @@ namespace MonoRivUI;
 /// <summary>
 /// Represents a base class for UI components.
 /// </summary>
-internal abstract partial class Component : IUIComponentHierarchy, IUIReadOnlyComponent
+public abstract partial class Component : IUIComponentHierarchy, IUIReadOnlyComponent
 {
     private static uint idCounter;
     private readonly List<Component> children = new();

@@ -6,7 +6,7 @@ namespace MonoRivUI;
 /// <summary>
 /// Provides extension methods for transformation.
 /// </summary>
-internal static class TransformExtensions
+public static class TransformExtensions
 {
     /// <summary>
     /// Scales a point by a vector.

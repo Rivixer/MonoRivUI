@@ -3,7 +3,7 @@
 /// <summary>
 /// Specifies the orientation of a UI component.
 /// </summary>
-internal enum Orientation
+public enum Orientation
 {
     /// <summary>
     /// The component is oriented vertically.

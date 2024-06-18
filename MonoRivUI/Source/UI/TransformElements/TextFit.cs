@@ -6,7 +6,7 @@ namespace MonoRivUI;
 /// Specifies different text scaling modes for fitting within its rectangle.
 /// </summary>
 [Flags]
-internal enum TextFit
+public enum TextFit
 {
     /// <summary>
     /// No scaling applied.

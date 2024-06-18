@@ -8,7 +8,7 @@ namespace MonoRivUI;
 /// <summary>
 /// Represents a UI component that displays wrapped text.
 /// </summary>
-internal class WrappedText : TextComponent, IEnumerable<Text>
+public class WrappedText : TextComponent, IEnumerable<Text>
 {
     private readonly List<Text> textLines = new();
 

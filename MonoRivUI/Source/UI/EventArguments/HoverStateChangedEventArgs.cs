@@ -6,7 +6,7 @@
 /// <typeparam name="T">
 /// The type of the component that changed its hover state.
 /// </typeparam>
-internal class HoverStateChangedEventArgs<T>
+public class HoverStateChangedEventArgs<T>
     where T : Component
 {
     /// <summary>

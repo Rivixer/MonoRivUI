@@ -6,7 +6,7 @@ namespace MonoRivUI;
 /// <summary>
 /// Represents a scrollbar component.
 /// </summary>
-internal class ScrollBar : Component
+public class ScrollBar : Component
 {
     private readonly Frame frame;
     private readonly SolidColor thumb;

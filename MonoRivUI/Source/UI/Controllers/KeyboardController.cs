@@ -5,7 +5,7 @@ namespace MonoRivUI;
 /// <summary>
 /// A static class responsible for managing keyboard input.
 /// </summary>
-internal static class KeyboardController
+public static class KeyboardController
 {
     private static KeyboardState previousState;
     private static KeyboardState currentState;

@@ -6,7 +6,7 @@ namespace MonoRivUI;
 /// Represents event data for changes in a transform element.
 /// </summary>
 /// <typeparam name="T">The type of the transform element.</typeparam>
-internal class TransformElementChangedEventArgs<T> : EventArgs
+public class TransformElementChangedEventArgs<T> : EventArgs
     where T : struct
 {
     /// <summary>

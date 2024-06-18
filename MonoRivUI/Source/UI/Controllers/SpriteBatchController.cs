@@ -7,7 +7,7 @@ namespace MonoRivUI;
 /// <summary>
 /// A static class that provides access to the sprite batch.
 /// </summary>
-internal static class SpriteBatchController
+public static class SpriteBatchController
 {
     private static bool isInitialized;
 
@@ -38,7 +38,7 @@ internal static class SpriteBatchController
 
         SpriteBatch = spriteBatch;
 
-        WhitePixel = new Texture2D(MonoRivUIGame.Instance.GraphicsDevice, 1, 1);
+        WhitePixel = new Texture2D(ScreenController.GraphicsDevice, 1, 1);
         WhitePixel.SetData(new[] { Color.White });
 
         isInitialized = true;

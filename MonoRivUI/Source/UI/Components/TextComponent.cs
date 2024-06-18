@@ -9,7 +9,7 @@ namespace MonoRivUI;
 /// <summary>
 /// Represents a base class for UI components that display text.
 /// </summary>
-internal abstract class TextComponent : Component
+public abstract class TextComponent : Component
 {
     private string text = string.Empty;
 

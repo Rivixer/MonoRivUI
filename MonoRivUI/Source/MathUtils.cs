@@ -3,7 +3,7 @@
 /// <summary>
 /// A utility class that provides mathematical methods.
 /// </summary>
-internal static class MathUtils
+public static class MathUtils
 {
     /// <summary>
     /// Calculates the greatest common divisor (GCD) of two integers.

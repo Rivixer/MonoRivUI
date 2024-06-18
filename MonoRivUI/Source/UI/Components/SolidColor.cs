@@ -6,7 +6,7 @@ namespace MonoRivUI;
 /// <summary>
 /// Represents a UI component that draws a solid color.
 /// </summary>
-internal class SolidColor : TextureComponent, IButtonContent<SolidColor>
+public class SolidColor : TextureComponent, IButtonContent<SolidColor>
 {
     private Color color;
 

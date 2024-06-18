@@ -7,7 +7,7 @@ namespace MonoRivUI;
 /// Represents a button component with a specific component as its content.
 /// </summary>
 /// <typeparam name="T">The type of the contained component.</typeparam>
-internal class Button<T> : Component
+public class Button<T> : Component
     where T : Component, IButtonContent<Component>
 {
     private readonly T component;

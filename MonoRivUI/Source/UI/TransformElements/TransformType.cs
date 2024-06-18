@@ -3,7 +3,7 @@
 /// <summary>
 /// Specifies the type of transformation.
 /// </summary>
-internal enum TransformType
+public enum TransformType
 {
     /// <summary>
     /// Represents a relative transformation.

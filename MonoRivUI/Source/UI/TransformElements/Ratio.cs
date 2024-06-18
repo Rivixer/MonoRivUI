@@ -5,7 +5,7 @@ namespace MonoRivUI;
 /// <summary>
 /// Represents a ratio between two integers.
 /// </summary>
-internal readonly struct Ratio : IEquatable<Ratio>
+public readonly struct Ratio : IEquatable<Ratio>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="Ratio"/> struct.

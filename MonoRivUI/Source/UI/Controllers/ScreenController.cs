@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
 namespace MonoRivUI;
@@ -7,15 +8,21 @@ namespace MonoRivUI;
 /// <summary>
 /// A static class responsible for managing screen settings and changes.
 /// </summary>
-internal static class ScreenController
+public static class ScreenController
 {
     private static bool isInitialized;
     private static GraphicsDeviceManager graphicsDeviceManager = default!;
+    private static GameWindow gameWindow = default!;
 
     /// <summary>
     /// An event raised when the screen settings have been changed.
     /// </summary>
-    public static event Action? ScreenChanged;
+    public static event EventHandler? ScreenChanged;
+
+    /// <summary>
+    /// Gets the GraphicDevice.
+    /// </summary>
+    public static GraphicsDevice GraphicsDevice => graphicsDeviceManager.GraphicsDevice;
 
     /// <summary>
     /// Gets the default size the UI is designed for.
@@ -52,7 +59,8 @@ internal static class ScreenController
     /// Initializes the <see cref="ScreenController"/> class.
     /// </summary>
     /// <param name="graphics">The GraphicsDeviceManager class provided by MonoGame.</param>
-    public static void Initialize(GraphicsDeviceManager graphics)
+    /// <param name="window">The GameWindow class provided by MonoGame.</param>
+    public static void Initialize(GraphicsDeviceManager graphics, GameWindow window)
     {
         if (isInitialized)
         {
@@ -60,8 +68,19 @@ internal static class ScreenController
                 "The ScreenController class has already been initialized.");
         }
 
+        gameWindow = window;
         graphicsDeviceManager = graphics;
         isInitialized = true;
+    }
+
+    /// <summary>
+    /// Initializes the <see cref="ScreenController"/> class.
+    /// </summary>
+    /// <param name="graphics">The GraphicsDeviceManager class provided by MonoGame.</param>
+    internal static void Initialize(GraphicsDeviceManager graphics)
+    {
+        var window = MonoRivUIGame.Instance.Window;
+        Initialize(graphics, window);
     }
 
     /// <summary>
@@ -126,9 +145,9 @@ internal static class ScreenController
         graphicsDeviceManager.PreferredBackBufferWidth = Width;
         graphicsDeviceManager.PreferredBackBufferHeight = Height;
         graphicsDeviceManager.IsFullScreen = ScreenType is ScreenType.FullScreen or ScreenType.Borderless;
-        MonoRivUIGame.Instance.Window.IsBorderless = ScreenType is ScreenType.Borderless;
+        gameWindow.IsBorderless = ScreenType is ScreenType.Borderless;
 
         graphicsDeviceManager.ApplyChanges();
-        ScreenChanged?.Invoke();
+        ScreenChanged?.Invoke(null, EventArgs.Empty);
     }
 }

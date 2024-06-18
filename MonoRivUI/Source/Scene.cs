@@ -8,7 +8,7 @@ namespace MonoRivUI;
 /// <summary>
 /// Represents a base class for scenes.
 /// </summary>
-internal abstract class Scene
+public abstract class Scene
 {
     private static readonly List<Scene> Scenes = new();
     private bool isInitialized;

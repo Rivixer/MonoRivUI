@@ -7,7 +7,7 @@ namespace MonoRivUI;
 /// <summary>
 /// Represents a UI frame component.
 /// </summary>
-internal class Frame : Component, IButtonContent<Frame>
+public class Frame : Component, IButtonContent<Frame>
 {
     private const int NumberOfLines = 4;
 

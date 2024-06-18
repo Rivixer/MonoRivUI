@@ -7,7 +7,7 @@ namespace MonoRivUI;
 /// <summary>
 /// Represents a UI text component.
 /// </summary>
-internal class Text : TextComponent
+public class Text : TextComponent
 {
     private Vector2 destinationLocation;
     private Vector2 unscaledDimensions;

@@ -5,7 +5,7 @@ namespace MonoRivUI;
 /// <summary>
 /// Represents event data for a text input event.
 /// </summary>
-internal class TextInputEventArgs : EventArgs
+public class TextInputEventArgs : EventArgs
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="TextInputEventArgs"/> class.

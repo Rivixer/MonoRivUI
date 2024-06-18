@@ -5,7 +5,7 @@ namespace MonoRivUI;
 /// <summary>
 /// Represents event data for a child change event.
 /// </summary>
-internal class ChildChangedEventArgs : EventArgs
+public class ChildChangedEventArgs : EventArgs
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="ChildChangedEventArgs"/> class.

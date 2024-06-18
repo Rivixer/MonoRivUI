@@ -76,7 +76,7 @@ namespace MonoRivUI;
 /// listBox.ResizeContent = true;
 /// </code>
 /// </example>
-internal class ListBox : Component
+public class ListBox : Component
 {
     private readonly List<Component> components = new();
     private readonly Queue<Component> queuedComponents = new();

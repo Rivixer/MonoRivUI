@@ -6,7 +6,7 @@ namespace MonoRivUI;
 /// <summary>
 /// A static class that provides access to the content manager.
 /// </summary>
-internal static class ContentController
+public static class ContentController
 {
     private static bool isInitialized;
 

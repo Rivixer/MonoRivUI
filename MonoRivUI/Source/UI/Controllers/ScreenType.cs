@@ -3,7 +3,7 @@
 /// <summary>
 /// Enumeration of the different screen types.
 /// </summary>
-internal enum ScreenType
+public enum ScreenType
 {
     /// <summary>
     /// The screen is displayed as a window.

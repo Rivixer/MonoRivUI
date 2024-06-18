@@ -6,7 +6,7 @@ namespace MonoRivUI;
 /// <summary>
 /// Represents a base class for UI components that draw a texture.
 /// </summary>
-internal abstract class TextureComponent : Component
+public abstract class TextureComponent : Component
 {
     private Texture2D? texture;
 

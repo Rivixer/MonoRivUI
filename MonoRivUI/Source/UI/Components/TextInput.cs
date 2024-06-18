@@ -7,7 +7,7 @@ namespace MonoRivUI;
 /// <summary>
 /// Represents a text input component.
 /// </summary>
-internal class TextInput : Component
+public class TextInput : Component
 {
     private const int CursorBlinkTime = 500; // ms
 

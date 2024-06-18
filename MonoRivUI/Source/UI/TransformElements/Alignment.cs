@@ -3,7 +3,7 @@
 /// <summary>
 /// Represents alignment options for UI components.
 /// </summary>
-internal enum Alignment
+public enum Alignment
 {
     /// <summary>
     /// Aligns to the top-left corner.

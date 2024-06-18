@@ -5,7 +5,7 @@ namespace MonoRivUI;
 /// <summary>
 /// Represents event data for a scroll event.
 /// </summary>
-internal class ScrolledEventArgs : EventArgs
+public class ScrolledEventArgs : EventArgs
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="ScrolledEventArgs"/> class.

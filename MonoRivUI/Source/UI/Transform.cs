@@ -10,7 +10,7 @@ namespace MonoRivUI;
 /// <remarks>
 /// It is responsible for positioning and sizing the component.
 /// </remarks>
-internal class Transform : IUIReadOnlyTransform
+public class Transform : IUIReadOnlyTransform
 {
     private Point unscaledLocation;
     private Point unscaledSize;
@@ -761,7 +761,7 @@ internal class Transform : IUIReadOnlyTransform
         this.unscaledSize = unscaledSize;
     }
 
-    private void ScreenController_ScreenChanged()
+    private void ScreenController_ScreenChanged(object? sender, EventArgs args)
     {
         this.RecalculateWithChildren();
     }

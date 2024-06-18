@@ -5,7 +5,7 @@ namespace MonoRivUI;
 /// <summary>
 /// A utility class that provides methods for recalculating UI components.
 /// </summary>
-internal static class RecalculationUtils
+public static class RecalculationUtils
 {
     /// <summary>
     /// Aligns a rectangle's position within a source rectangle based on the specified alignment.
