@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Reflection;
 using Microsoft.Xna.Framework;
 
 namespace MonoRivUI;
@@ -26,9 +28,10 @@ public abstract class Scene
     /// <summary>
     /// Initializes all scenes.
     /// </summary>
-    public static void InitializeScenes()
+    /// <param name="assembly">The assembly.</param>
+    public static void InitializeScenes([NotNull] Assembly assembly)
     {
-        var sceneTypes = typeof(Scene).Assembly.GetTypes()
+        var sceneTypes = assembly.GetTypes()
             .Where(t => t.IsSubclassOf(typeof(Scene)) && !t.IsAbstract);
 
         foreach (var sceneType in sceneTypes)
@@ -37,6 +40,16 @@ public abstract class Scene
             Scenes.Add(scene);
             scene.Initialize();
         }
+    }
+
+    /// <summary>
+    /// Initializes all scenes.
+    /// </summary>
+    /// <param name="assemblyPath">The assembly path.</param>
+    public static void InitializeScenes(string assemblyPath)
+    {
+        var assembly = Assembly.LoadFrom(assemblyPath);
+        InitializeScenes(assembly);
     }
 
     /// <summary>
@@ -71,6 +84,14 @@ public abstract class Scene
     public virtual void Draw(GameTime gameTime)
     {
         this.BaseComponent.Draw(gameTime);
+    }
+
+    /// <summary>
+    /// Initializes all scenes in the MonoRivUI assembly.
+    /// </summary>
+    internal static void InitializeScenes()
+    {
+        InitializeScenes(typeof(Scene).Assembly);
     }
 
     /// <summary>
