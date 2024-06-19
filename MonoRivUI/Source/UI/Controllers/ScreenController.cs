@@ -12,7 +12,6 @@ public static class ScreenController
 {
     private static bool isInitialized;
     private static GraphicsDeviceManager graphicsDeviceManager = default!;
-    private static GameWindow gameWindow = default!;
 
     /// <summary>
     /// An event raised when the screen settings have been changed.
@@ -27,7 +26,7 @@ public static class ScreenController
     /// <summary>
     /// Gets the GameWindow.
     /// </summary>
-    public static GameWindow GameWindow => gameWindow;
+    public static GameWindow GameWindow { get; private set; } = default!;
 
     /// <summary>
     /// Gets the default size the UI is designed for.
@@ -73,19 +72,9 @@ public static class ScreenController
                 "The ScreenController class has already been initialized.");
         }
 
-        gameWindow = window;
+        GameWindow = window;
         graphicsDeviceManager = graphics;
         isInitialized = true;
-    }
-
-    /// <summary>
-    /// Initializes the <see cref="ScreenController"/> class.
-    /// </summary>
-    /// <param name="graphics">The GraphicsDeviceManager class provided by MonoGame.</param>
-    internal static void Initialize(GraphicsDeviceManager graphics)
-    {
-        var window = MonoRivUIGame.Instance.Window;
-        Initialize(graphics, window);
     }
 
     /// <summary>
@@ -150,7 +139,7 @@ public static class ScreenController
         graphicsDeviceManager.PreferredBackBufferWidth = Width;
         graphicsDeviceManager.PreferredBackBufferHeight = Height;
         graphicsDeviceManager.IsFullScreen = ScreenType is ScreenType.FullScreen or ScreenType.Borderless;
-        gameWindow.IsBorderless = ScreenType is ScreenType.Borderless;
+        GameWindow.IsBorderless = ScreenType is ScreenType.Borderless;
 
         graphicsDeviceManager.ApplyChanges();
         ScreenChanged?.Invoke(null, EventArgs.Empty);

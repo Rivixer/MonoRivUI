@@ -87,14 +87,6 @@ public abstract class Scene
     }
 
     /// <summary>
-    /// Initializes all scenes in the MonoRivUI assembly.
-    /// </summary>
-    internal static void InitializeScenes()
-    {
-        InitializeScenes(typeof(Scene).Assembly);
-    }
-
-    /// <summary>
     /// Makes the scene as initialized.
     /// </summary>
     protected void MakeAsInitialized()
