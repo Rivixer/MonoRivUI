@@ -45,7 +45,7 @@ public static class MouseController
     {
         static void UpdateFocusedComponent(IUIReadOnlyComponent component)
         {
-            if (component.Transform.ScaledRectangle.Contains(Position))
+            if (component.Transform.DestRectangle.Contains(Position))
             {
                 focusedComponent = component;
             }
@@ -82,7 +82,7 @@ public static class MouseController
     {
         return focusedComponent is not null
             && (focusedComponent == component
-                || (component.Transform.ScaledRectangle.Contains(Position)
+                || (component.Transform.DestRectangle.Contains(Position)
                     && component.IsAncestor(focusedComponent)));
     }
 

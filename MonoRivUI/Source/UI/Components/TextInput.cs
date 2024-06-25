@@ -20,14 +20,17 @@ public class TextInput : Component
     private Text? placeholder;
     private float placeholderOpacity = 1.0f;
 
+    private uint maxLength = int.MaxValue;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="TextInput"/> class.
     /// </summary>
+    /// <param name="font">The font of the text.</param>
     /// <param name="color">The color of the displayed text.</param>
     /// <param name="caretColor">The color of the caret.</param>
-    public TextInput(Color color, Color caretColor)
+    public TextInput(ScalableFont font, Color color, Color caretColor)
     {
-        this.text = new Text(color)
+        this.text = new Text(font, color)
         {
             Parent = this,
             Value = string.Empty,
@@ -75,6 +78,30 @@ public class TextInput : Component
     public bool DeselectAfterSend { get; set; } = true;
 
     /// <summary>
+    /// Gets or sets a value indicating
+    /// maximum length of the text input.
+    /// </summary>
+    public uint MaxLength
+    {
+        get => this.maxLength;
+        set
+        {
+            if (this.maxLength == value)
+            {
+                return;
+            }
+
+            this.maxLength = value;
+
+            if (this.text.Value.Length > this.maxLength)
+            {
+                this.text.Value = this.text.Value[..(int)this.maxLength];
+                this.OnTextChanged();
+            }
+        }
+    }
+
+    /// <summary>
     /// Gets or sets the input text alignment.
     /// </summary>
     /// <remarks>
@@ -116,7 +143,7 @@ public class TextInput : Component
             }
             else
             {
-                this.placeholder = new Text(this.text.Color * this.placeholderOpacity)
+                this.placeholder = new Text(this.text.Font, this.text.Color * this.placeholderOpacity)
                 {
                     Parent = this,
                     Value = value,
@@ -280,8 +307,8 @@ public class TextInput : Component
     private void UpdateCursorBlinking(float elapsedSeconds)
     {
         this.caretEnableTime += elapsedSeconds;
-        float caretOffset = this.text.MeasureUnscaledDimensions(0, this.caretPosition).X;
-        this.caret.Transform.SetRelativeOffsetFromUnscaledAbsolute(x: caretOffset);
+        float caretOffset = this.text.MeasureDimensions(0, this.caretPosition).X;
+        this.caret.Transform.SetRelativeOffsetFromAbsolute(x: caretOffset);
     }
 
     private void OnTextChanged()
@@ -382,14 +409,7 @@ public class TextInput : Component
 
     private void Window_TextInput(object? sender, Microsoft.Xna.Framework.TextInputEventArgs e)
     {
-        // Delete key is handled in KeyDown event.
-        // It can also be drawn by SpriteFont, so we ignore it.
-        if (e.Key == Keys.Delete)
-        {
-            return;
-        }
-
-        if (this.text.Font.Characters.Contains(e.Character))
+        if (this.text.Value.Length < this.MaxLength && this.text.Font.MeasureString(e.Character.ToString()).X > 0)
         {
             this.text.Value = this.text.Value.Insert(this.caretPosition++, e.Character.ToString());
             this.OnTextChanged();

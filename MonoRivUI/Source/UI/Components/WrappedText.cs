@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using Microsoft.Xna.Framework;
 
@@ -12,20 +13,18 @@ public class WrappedText : TextComponent, IEnumerable<Text>
 {
     private readonly List<Text> textLines = new();
 
-    private float unscaledLineSpacing;
-    private float scaledLineSpacing;
-
-    private Vector2 unscaledDimensions;
-    private Vector2 scaledDimensions;
+    private float lineSpacing;
+    private Vector2 dimensions;
 
     private bool isRecalculationNeeded = true;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WrappedText"/> class.
     /// </summary>
+    /// <param name="font">The font of the text.</param>
     /// <param name="color">The color of the text.</param>
-    public WrappedText(Color color)
-        : base(color)
+    public WrappedText(ScalableFont font, Color color)
+        : base(font, color)
     {
         this.Transform.SizeChanged += (s, e) =>
         {
@@ -105,22 +104,21 @@ public class WrappedText : TextComponent, IEnumerable<Text>
     /// </remarks>
     public float LineSpacing
     {
-        get => this.unscaledLineSpacing;
+        get => this.lineSpacing;
         set
         {
-            if (this.unscaledLineSpacing == value)
+            if (this.lineSpacing == value)
             {
                 return;
             }
 
-            this.unscaledLineSpacing = value;
-            this.scaledLineSpacing = value * ScreenController.Scale.Y;
+            this.lineSpacing = value;
             this.isRecalculationNeeded = true;
         }
     }
 
     /// <inheritdoc/>
-    public override Vector2 UnscaledDimensions
+    public override Vector2 Dimensions
     {
         get
         {
@@ -129,21 +127,7 @@ public class WrappedText : TextComponent, IEnumerable<Text>
                 this.Recalculate();
             }
 
-            return this.unscaledDimensions;
-        }
-    }
-
-    /// <inheritdoc/>
-    public override Vector2 ScaledDimensions
-    {
-        get
-        {
-            if (this.isRecalculationNeeded)
-            {
-                this.Recalculate();
-            }
-
-            return this.scaledDimensions;
+            return this.dimensions;
         }
     }
 
@@ -156,7 +140,7 @@ public class WrappedText : TextComponent, IEnumerable<Text>
 
     public static explicit operator WrappedText(Text text)
     {
-        return new WrappedText(text.Color)
+        return new WrappedText(text.Font, text.Color)
         {
             Value = text.Value,
             Scale = text.Scale,
@@ -199,8 +183,8 @@ public class WrappedText : TextComponent, IEnumerable<Text>
 
         if (this.AdjustSizeToText)
         {
-            this.Transform.SetRelativeSizeFromUnscaledAbsolute(
-                y: this.unscaledDimensions.Y);
+            this.Transform.SetRelativeSizeFromAbsolute(
+                y: this.dimensions.Y);
         }
 
         this.PositionTextLines();
@@ -209,23 +193,21 @@ public class WrappedText : TextComponent, IEnumerable<Text>
 
     private void UpdateDimensions()
     {
-        float totalY = this.unscaledLineSpacing * (this.textLines.Count - 1);
+        float totalY = this.lineSpacing * (this.textLines.Count - 1);
         foreach (Text line in this.textLines)
         {
-            Vector2 lineDimensions = line.UnscaledDimensions;
+            Vector2 lineDimensions = line.Dimensions;
             totalY += lineDimensions.Y;
         }
 
-        var dimX = this.Transform.UnscaledSize.X;
-        this.unscaledDimensions = new Vector2(dimX, totalY);
-        this.scaledDimensions = this.unscaledDimensions
-            .Scale(ScreenController.Scale);
+        var dimX = this.Transform.Size.X;
+        this.dimensions = new Vector2(dimX, totalY);
     }
 
     private void WrapText()
     {
         // Get the reference rectangle
-        Rectangle reference = this.Transform.UnscaledRectangle;
+        Rectangle reference = this.Transform.DestRectangle;
 
         // If the width of the text is smaller than
         // the reference width, no wrapping is needed
@@ -326,7 +308,7 @@ public class WrappedText : TextComponent, IEnumerable<Text>
 
     private Text CreateTextLine(string text)
     {
-        return new Text(this.Color)
+        return new Text(this.Font, this.Color)
         {
             Parent = this,
             Value = text,
@@ -342,8 +324,8 @@ public class WrappedText : TextComponent, IEnumerable<Text>
         float currentOffset = 0.0f;
         foreach (Text textLine in this.textLines)
         {
-            textLine.Transform.SetRelativeOffsetFromScaledAbsolute(y: currentOffset);
-            currentOffset += textLine.ScaledDimensions.Y + this.scaledLineSpacing;
+            textLine.Transform.SetRelativeOffsetFromAbsolute(y: currentOffset);
+            currentOffset += textLine.Dimensions.Y + this.lineSpacing;
         }
     }
 
@@ -359,11 +341,11 @@ public class WrappedText : TextComponent, IEnumerable<Text>
 
     private Vector2 MeasureText(string text)
     {
-        return this.Font.MeasureString(text) * this.Scale;
+        return this.Font.MeasureString(text);// * this.Scale;
     }
 
     private Vector2 MeasureText(StringBuilder text)
     {
-        return this.Font.MeasureString(text) * this.Scale;
+        return this.Font.MeasureString(text);// * this.Scale;
     }
 }

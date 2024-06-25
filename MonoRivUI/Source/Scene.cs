@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
@@ -13,7 +14,26 @@ namespace MonoRivUI;
 public abstract class Scene
 {
     private static readonly List<Scene> Scenes = new();
-    private bool isInitialized;
+    private readonly Component baseComponent;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Scene"/> class.
+    /// </summary>
+    /// <param name="backgroundColor">The color of the background.</param>
+    protected Scene(Color backgroundColor)
+    {
+        this.baseComponent = new SolidColor(backgroundColor)
+        {
+            Transform =
+            {
+                Type = TransformType.Absolute,
+            },
+        };
+
+        this.baseComponent.Transform.Recalculated += (s, e) => (s as Transform)!.Size = ScreenController.CurrentSize;
+
+        this.Initialize();
+    }
 
     /// <summary>
     /// Gets the current scene.
@@ -21,9 +41,9 @@ public abstract class Scene
     public static Scene Current { get; private set; } = default!;
 
     /// <summary>
-    /// Gets or sets the components of the scene.
+    /// Gets the base component of the scene.
     /// </summary>
-    public Component BaseComponent { get; protected set; } = default!;
+    public IUIReadOnlyComponent BaseComponent => this.baseComponent;
 
     /// <summary>
     /// Initializes all scenes.
@@ -38,7 +58,6 @@ public abstract class Scene
         {
             var scene = (Scene)Activator.CreateInstance(sceneType)!;
             Scenes.Add(scene);
-            scene.Initialize();
         }
     }
 
@@ -64,17 +83,12 @@ public abstract class Scene
     }
 
     /// <summary>
-    /// Initializes the scene.
-    /// </summary>
-    public abstract void Initialize();
-
-    /// <summary>
     /// Updates the scene's components.
     /// </summary>
     /// <param name="gameTime">The game time.</param>
     public virtual void Update(GameTime gameTime)
     {
-        this.BaseComponent.Update(gameTime);
+        this.baseComponent.Update(gameTime);
     }
 
     /// <summary>
@@ -83,29 +97,11 @@ public abstract class Scene
     /// <param name="gameTime">The game time.</param>
     public virtual void Draw(GameTime gameTime)
     {
-        this.BaseComponent.Draw(gameTime);
+        this.baseComponent.Draw(gameTime);
     }
 
     /// <summary>
-    /// Makes the scene as initialized.
+    /// Initializes the scene.
     /// </summary>
-    protected void MakeAsInitialized()
-    {
-        this.isInitialized = true;
-    }
-
-    /// <summary>
-    /// Throws an exception if the scene has already been created.
-    /// </summary>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown if the scene has already been created.
-    /// </exception>
-    protected void ThrowErrorIfAlreadyInitialized()
-    {
-        if (this.isInitialized)
-        {
-            throw new InvalidOperationException(
-                $"The {this.GetType()} scene has already been created.");
-        }
-    }
+    protected abstract void Initialize();
 }

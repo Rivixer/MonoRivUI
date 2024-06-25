@@ -56,8 +56,8 @@ public class ScrollBar : Component
     /// </remarks>
     public float Position => this.current / (this.total - this.orientation switch
     {
-        Orientation.Vertical => this.contentContainer.Transform.UnscaledSize.Y,
-        Orientation.Horizontal => this.contentContainer.Transform.UnscaledSize.X,
+        Orientation.Vertical => this.contentContainer.Transform.Size.Y,
+        Orientation.Horizontal => this.contentContainer.Transform.Size.X,
         _ => throw new NotImplementedException(),
     });
 
@@ -183,12 +183,12 @@ public class ScrollBar : Component
     private void HandleThumbDrag()
     {
         Point mouseDelta = MouseController.MouseDelta;
-        Rectangle frameScaledRect = this.frame.InnerContainer.Transform.ScaledRectangle;
+        Rectangle frameRect = this.frame.InnerContainer.Transform.DestRectangle;
 
         float scrollPercentage = this.orientation switch
         {
-            Orientation.Vertical => mouseDelta.Y / (float)frameScaledRect.Height,
-            Orientation.Horizontal => mouseDelta.X / (float)frameScaledRect.Width,
+            Orientation.Vertical => mouseDelta.Y / (float)frameRect.Height,
+            Orientation.Horizontal => mouseDelta.X / (float)frameRect.Width,
             _ => throw new NotImplementedException(),
         };
 
@@ -198,8 +198,8 @@ public class ScrollBar : Component
     private void HandleScrollBarClick()
     {
         bool clickedAbove = (this.orientation == Orientation.Vertical)
-            ? MouseController.Position.Y < this.thumb.Transform.ScaledRectangle.Y
-            : MouseController.Position.X < this.thumb.Transform.ScaledRectangle.X;
+            ? MouseController.Position.Y < this.thumb.Transform.DestRectangle.Y
+            : MouseController.Position.X < this.thumb.Transform.DestRectangle.X;
 
         Vector2 thumbRelativeSize = this.thumb.Transform.RelativeSize;
         float shiftValue = this.total * this.orientation switch
@@ -216,8 +216,8 @@ public class ScrollBar : Component
     {
         float maxCurrentLength = this.total - this.orientation switch
         {
-            Orientation.Vertical => this.contentContainer.Transform.UnscaledSize.Y,
-            Orientation.Horizontal => this.contentContainer.Transform.UnscaledSize.X,
+            Orientation.Vertical => this.contentContainer.Transform.Size.Y,
+            Orientation.Horizontal => this.contentContainer.Transform.Size.X,
             _ => throw new NotImplementedException(),
         };
 
@@ -256,12 +256,12 @@ public class ScrollBar : Component
         switch (this.orientation)
         {
             case Orientation.Vertical:
-                int frameHeight = this.contentContainer.Transform.UnscaledSize.Y;
+                int frameHeight = this.contentContainer.Transform.Size.Y;
                 float newRelativeThumbHeight = Math.Clamp(frameHeight / this.total, 0.0f, 1.0f);
                 this.thumb.Transform.RelativeSize = new Vector2(1.0f, newRelativeThumbHeight);
                 break;
             case Orientation.Horizontal:
-                int frameWidth = this.contentContainer.Transform.UnscaledSize.X;
+                int frameWidth = this.contentContainer.Transform.Size.X;
                 float newRelativeThumbWidth = Math.Clamp(frameWidth / this.total, 0.0f, 1.0f);
                 this.thumb.Transform.RelativeSize = new Vector2(newRelativeThumbWidth, 1.0f);
                 break;

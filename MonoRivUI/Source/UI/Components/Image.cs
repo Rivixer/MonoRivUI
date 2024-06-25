@@ -61,8 +61,8 @@ public class Image : TextureComponent, IButtonContent<Image>
     /// </returns>
     bool IButtonContent<Image>.IsButtonContentHovered(Point mousePosition)
     {
-        Point location = this.Transform.ScaledLocation;
-        Point size = this.Transform.ScaledSize;
+        Point location = this.Transform.Location;
+        Point size = this.Transform.Size;
         Point mouseOffset = mousePosition - location;
         int mouseOffsetX = mouseOffset.X * this.Texture.Width / size.X;
         int mouseOffsetY = mouseOffset.Y * this.Texture.Height / size.Y;

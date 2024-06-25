@@ -63,7 +63,7 @@ public abstract class TextureComponent : Component
     {
         SpriteBatchController.SpriteBatch.Draw(
             texture: this.Texture,
-            destinationRectangle: this.Transform.ScaledRectangle,
+            destinationRectangle: this.Transform.DestRectangle,
             sourceRectangle: null,
             color: Color.White * this.Opacity,
             rotation: this.Rotation,

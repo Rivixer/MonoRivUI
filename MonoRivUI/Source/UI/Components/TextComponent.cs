@@ -1,8 +1,5 @@
 ﻿using System;
-using System.IO;
-using System.Reflection;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 
 namespace MonoRivUI;
 
@@ -16,14 +13,12 @@ public abstract class TextComponent : Component
     /// <summary>
     /// Initializes a new instance of the <see cref="TextComponent"/> class.
     /// </summary>
+    /// <param name="font">The font of the text.</param>
     /// <param name="color">The color of the text.</param>
-    protected TextComponent(Color color)
+    protected TextComponent(ScalableFont font, Color color)
     {
+        this.Font = font;
         this.Color = color;
-
-        // TODO: Change default font
-        var fontPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + @"..\..\..\..\Content\DebugFont";
-        this.Font = ContentController.Content.Load<SpriteFont>(fontPath);
     }
 
     /// <summary>
@@ -34,6 +29,11 @@ public abstract class TextComponent : Component
         get => this.text;
         set => this.text = value.Replace("\t", "    ", StringComparison.Ordinal);
     }
+
+    /// <summary>
+    /// Gets or sets the font.
+    /// </summary>
+    public ScalableFont Font { get; set; }
 
     /// <summary>
     /// Gets or sets the color of the displayed text.
@@ -56,8 +56,7 @@ public abstract class TextComponent : Component
     /// </summary>
     /// <remarks>
     /// If this is set to <see langword="true"/>,
-    /// <see cref="Transform.UnscaledSize"/> and
-    /// <see cref="Transform.ScaledSize"/> will be adjusted
+    /// <see cref="Transform.Size"/> will be adjusted
     /// to match the size of the text content.<br/>
     /// If this is set to <see langword="false"/>, the sizes
     /// will remain unchanged, regardless of the text size.
@@ -65,27 +64,11 @@ public abstract class TextComponent : Component
     public virtual bool AdjustSizeToText { get; set; }
 
     /// <summary>
-    /// Gets or sets the font used to display the text.
-    /// </summary>
-    public SpriteFont Font { get; protected set; }
-
-    /// <summary>
-    /// Gets the unscaled dimensions of the text.
+    /// Gets the dimensions of the text.
     /// </summary>
     /// <remarks>
-    /// The unscaled dimensions represent the minimum
-    /// size of the rectangle that can contain
-    /// the unscaled text.
+    /// The dimensions represent the minimum size
+    /// of the rectangle that can contain the text.
     /// </remarks>
-    public abstract Vector2 UnscaledDimensions { get; }
-
-    /// <summary>
-    /// Gets the scaled dimensions of the text.
-    /// </summary>
-    /// <remarks>
-    /// The scaled dimensions represent the minimum
-    /// size of the rectangle that can contain
-    /// the scaled text.
-    /// </remarks>
-    public abstract Vector2 ScaledDimensions { get; }
+    public abstract Vector2 Dimensions { get; }
 }

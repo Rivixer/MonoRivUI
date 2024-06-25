@@ -149,7 +149,7 @@ public class Frame : Component, IButtonContent<Frame>
 
         return this.innerContainer
             .Transform
-            .ScaledRectangle
+            .DestRectangle
             .Contains(mousePosition);
     }
 
@@ -162,16 +162,15 @@ public class Frame : Component, IButtonContent<Frame>
 
     private void UpdateLines()
     {
-        Rectangle rect = this.Transform.ScaledRectangle;
-        int scaledThickness = this.GetScaledThickness();
+        Rectangle rect = this.Transform.DestRectangle;
 
         // Define pairs of start and end points for lines
         var lineEndpoints = new Vector2[]
         {
-            new Vector2(rect.Left, rect.Top),
-            new Vector2(rect.Right, rect.Top),
-            new Vector2(rect.Right, rect.Bottom),
-            new Vector2(rect.Left, rect.Bottom),
+            new(rect.Left, rect.Top),
+            new(rect.Right, rect.Top),
+            new(rect.Right, rect.Bottom),
+            new(rect.Left, rect.Bottom),
         };
 
         for (int i = 0; i < NumberOfLines; i++)
@@ -186,27 +185,21 @@ public class Frame : Component, IButtonContent<Frame>
             {
                 Start = start,
                 Angle = angle,
-                Scale = new Vector2(length, scaledThickness),
+                Scale = new Vector2(length, this.thickness),
             };
         }
     }
 
     private void UpdateInnerRectangle()
     {
-        Rectangle rect = this.Transform.ScaledRectangle;
-        int scaledThickness = this.GetScaledThickness();
+        Rectangle rect = this.Transform.DestRectangle;
 
-        var location = rect.Location += new Point(scaledThickness);
-        var size = rect.Size -= new Point(2 * scaledThickness);
+        var location = rect.Location += new Point(this.thickness);
+        var size = rect.Size -= new Point(2 * this.thickness);
 
-        this.innerContainer.Transform.ScaledLocation = location;
-        this.innerContainer.Transform.ScaledSize = size;
+        this.innerContainer.Transform.Location = location;
+        this.innerContainer.Transform.Size = size;
         this.innerContainer.Transform.RelativePadding = this.Transform.RelativePadding;
-    }
-
-    private int GetScaledThickness()
-    {
-        return (int)(this.thickness * Math.Max(ScreenController.Scale.X, ScreenController.Scale.Y));
     }
 
     private struct LineData

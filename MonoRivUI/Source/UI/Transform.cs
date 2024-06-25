@@ -12,10 +12,8 @@ namespace MonoRivUI;
 /// </remarks>
 public class Transform : IUIReadOnlyTransform
 {
-    private Point unscaledLocation;
-    private Point unscaledSize;
-    private Point scaledLocation;
-    private Point scaledSize;
+    private Point location;
+    private Point size;
 
     private TransformType transformType;
 
@@ -131,8 +129,7 @@ public class Transform : IUIReadOnlyTransform
     /// It is effective only when <see cref="Type"/>
     /// is set to <see cref="TransformType.Relative"/>.
     /// </remarks>
-    /// <seealso cref="SetRelativeOffsetFromScaledAbsolute(float?, float?)"/>
-    /// <seealso cref="SetRelativeOffsetFromUnscaledAbsolute(float?, float?)"/>
+    /// <seealso cref="SetRelativeOffsetFromAbsolute(float?, float?)"/>
     public Vector2 RelativeOffset
     {
         get => this.relativeOffset;
@@ -290,24 +287,24 @@ public class Transform : IUIReadOnlyTransform
     public bool IgnoreParentPadding { get; set; }
 
     /// <summary>
-    /// Gets or sets the unscaled location of the component.
+    /// Gets or sets the location of the component.
     /// </summary>
     /// <remarks>
     /// Setting this property is effective only when
     /// <see cref="Type"/> is set to <see cref="TransformType.Absolute"/>.
     /// Otherwise it will throw an <see cref="InvalidOperationException"/>.
     /// </remarks>
-    public Point UnscaledLocation
+    public Point Location
     {
         get
         {
             this.RecalculateIfNeeded();
-            return this.unscaledLocation;
+            return this.location;
         }
 
         set
         {
-            if (this.unscaledLocation == value)
+            if (this.location == value)
             {
                 return;
             }
@@ -315,35 +312,35 @@ public class Transform : IUIReadOnlyTransform
             if (this.Type is not TransformType.Absolute)
             {
                 throw new InvalidOperationException(
-                    $"Cannot set {nameof(this.UnscaledLocation)} " +
+                    $"Cannot set {nameof(this.Location)} " +
                     $"when {nameof(this.Type)} " +
                     $"is not {TransformType.Absolute}.");
             }
 
-            this.unscaledLocation = value;
+            this.location = value;
             this.IsRecalculationNeeded = true;
         }
     }
 
     /// <summary>
-    /// Gets or sets the unscaled size of the component.
+    /// Gets or sets the size of the component.
     /// </summary>
     /// <remarks>
     /// Setting this property is effective only when
     /// <see cref="Type"/> is set to <see cref="TransformType.Absolute"/>.
     /// Otherwise it will throw an <see cref="InvalidOperationException"/>.
     /// </remarks>
-    public Point UnscaledSize
+    public Point Size
     {
         get
         {
             this.RecalculateIfNeeded();
-            return this.unscaledSize;
+            return this.size;
         }
 
         set
         {
-            if (this.unscaledSize == value)
+            if (this.size == value)
             {
                 return;
             }
@@ -351,128 +348,31 @@ public class Transform : IUIReadOnlyTransform
             if (this.Type is not TransformType.Absolute)
             {
                 throw new InvalidOperationException(
-                    $"Cannot set {nameof(this.UnscaledSize)} " +
+                    $"Cannot set {nameof(this.Size)} " +
                     $"when {nameof(this.Type)} " +
                     $"is not {TransformType.Absolute}.");
             }
 
-            if (value.X < 0 || value.Y < 0)
+            if (value.X < -10 || value.Y < 0)
             {
                 throw new ArgumentException(
-                    $"{nameof(this.UnscaledSize)} cannot have negative components.");
+                    $"{nameof(this.Size)} cannot have negative components.");
             }
 
-            this.unscaledSize = value;
+            this.size = value;
             this.IsRecalculationNeeded = true;
         }
     }
 
     /// <summary>
-    /// Gets or sets the scaled location of the component.
+    /// Gets the destination rectangle of the component.
     /// </summary>
-    /// <remarks>
-    /// Setting this property is effective only when
-    /// <see cref="Type"/> is set to <see cref="TransformType.Absolute"/>.
-    /// Otherwise it will throw an <see cref="InvalidOperationException"/>.
-    /// </remarks>
-    public Point ScaledLocation
+    public Rectangle DestRectangle
     {
         get
         {
             this.RecalculateIfNeeded();
-            return this.scaledLocation;
-        }
-
-        set
-        {
-            if (this.scaledLocation == value)
-            {
-                return;
-            }
-
-            if (this.Type is not TransformType.Absolute)
-            {
-                throw new InvalidOperationException(
-                    $"Cannot set {nameof(this.ScaledLocation)} " +
-                    $"when {nameof(this.Type)} " +
-                    $"is not {TransformType.Absolute}.");
-            }
-
-            this.unscaledLocation = value.Unscale(ScreenController.Scale);
-            this.IsRecalculationNeeded = true;
-        }
-    }
-
-    /// <summary>
-    /// Gets or sets the scaled size of the component.
-    /// </summary>
-    /// <remarks>
-    /// Setting this property is effective only when
-    /// <see cref="Type"/> is set to <see cref="TransformType.Absolute"/>.
-    /// Otherwise it will throw an <see cref="InvalidOperationException"/>.
-    /// </remarks>
-    public Point ScaledSize
-    {
-        get
-        {
-            this.RecalculateIfNeeded();
-            return this.scaledSize;
-        }
-
-        set
-        {
-            if (this.scaledSize == value)
-            {
-                return;
-            }
-
-            if (this.Type is not TransformType.Absolute)
-            {
-                throw new InvalidOperationException(
-                    $"Cannot set {nameof(this.ScaledSize)} " +
-                    $"when {nameof(this.Type)} " +
-                    $"is not {TransformType.Absolute}.");
-            }
-
-            if (value.X < 0 || value.Y < 0)
-            {
-                throw new ArgumentException(
-                    $"{nameof(this.ScaledSize)} cannot have negative components.");
-            }
-
-            this.unscaledSize = value.Unscale(ScreenController.Scale);
-            this.IsRecalculationNeeded = true;
-        }
-    }
-
-    /// <summary>
-    /// Gets the unscaled rectangle of the component.
-    /// </summary>
-    /// <remarks>
-    /// The rectangle is specified for
-    /// <see cref="ScreenController.DefaultSize"/> resolution.
-    /// </remarks>
-    public Rectangle UnscaledRectangle
-    {
-        get
-        {
-            this.RecalculateIfNeeded();
-            return new Rectangle(this.unscaledLocation, this.unscaledSize);
-        }
-    }
-
-    /// <summary>
-    /// Gets the scaled rectangle of the component.
-    /// </summary>
-    /// <remarks>
-    /// The rectangle is scaled to current screen resolution.
-    /// </remarks>
-    public Rectangle ScaledRectangle
-    {
-        get
-        {
-            this.RecalculateIfNeeded();
-            return new Rectangle(this.scaledLocation, this.scaledSize);
+            return new Rectangle(this.location, this.size);
         }
     }
 
@@ -488,126 +388,54 @@ public class Transform : IUIReadOnlyTransform
         return new Transform(component)
         {
             Type = TransformType.Absolute,
-            unscaledLocation = new Point(0, 0),
-            unscaledSize = ScreenController.DefaultSize,
+            location = new Point(0, 0),
+            size = ScreenController.DefaultSize,
         };
     }
 
     /// <summary>
-    /// Sets the <see cref="RelativeOffset"/> property using a scaled absolute offset.
+    /// Sets the <see cref="RelativeOffset"/> property using an absolute offset.
     /// </summary>
-    /// <param name="x">The scaled absolute X offset. Default is null.</param>
-    /// <param name="y">The scaled absolute Y offset. Default is null.</param>
+    /// <param name="x">The absolute X offset. Default is null.</param>
+    /// <param name="y">The absolute Y offset. Default is null.</param>
     /// <remarks>
     /// <para>
     /// This method calculates the relative offset of the component based
-    /// on a scaled absolute offset and a reference size. If the component
-    /// has a parent, the reference size is the scaled size of the parent
-    /// component. Otherwise, it's the current screen size
-    /// (<see cref="ScreenController.CurrentSize"/>).
+    /// on an absolute offset and a reference as parent size.
     /// </para>
     /// <para>
     /// The relative offset is calculated by dividing
-    /// the scaled absolute offset by the reference size.
+    /// the absolute offset by the reference size.
     /// </para>
     /// <para>If the parameter is null, the relative offset is not changed.</para>
     /// </remarks>
-    public void SetRelativeOffsetFromScaledAbsolute(float? x = null, float? y = null)
+    public void SetRelativeOffsetFromAbsolute(float? x = null, float? y = null)
     {
-        Point reference = this.Component.Parent is { } parent
-            ? parent.Transform.ScaledSize
-            : ScreenController.CurrentSize;
-
+        Point reference = this.Component.Parent!.Transform.Size;
         this.RelativeOffset = new Vector2(
             x / reference.X ?? this.relativeOffset.X,
             y / reference.Y ?? this.relativeOffset.Y);
     }
 
     /// <summary>
-    /// Sets the <see cref="RelativeOffset"/> property using an unscaled absolute offset.
+    /// Sets the <see cref="RelativeSize"/> property using an absolute size.
     /// </summary>
-    /// <param name="x">The unscaled absolute X offset. Default is null.</param>
-    /// <param name="y">The unscaled absolute Y offset. Default is null.</param>
-    /// <remarks>
-    /// <para>
-    /// This method calculates the relative offset of the component based
-    /// on an unscaled absolute offset and a reference size. If the component
-    /// has a parent, the reference size is the unscaled size of the parent
-    /// component. Otherwise, it's the default screen size
-    /// (<see cref="ScreenController.DefaultSize"/>).
-    /// </para>
-    /// <para>
-    /// The relative offset is calculated by dividing
-    /// the unscaled absolute offset by the reference size.
-    /// </para>
-    /// <para>If the parameter is null, the relative offset is not changed.</para>
-    /// </remarks>
-    public void SetRelativeOffsetFromUnscaledAbsolute(float? x = null, float? y = null)
-    {
-        Point reference = this.Component.Parent is { } parent
-            ? parent.Transform.UnscaledSize
-            : ScreenController.DefaultSize;
-
-        this.RelativeOffset = new Vector2(
-            x / reference.X ?? this.relativeOffset.X,
-            y / reference.Y ?? this.relativeOffset.Y);
-    }
-
-    /// <summary>
-    /// Sets the <see cref="RelativeSize"/> property using a scaled absolute size.
-    /// </summary>
-    /// <param name="x">The scaled absolute X size. Default is null.</param>
-    /// <param name="y">The scaled absolute Y size. Default is null.</param>
+    /// <param name="x">The absolute X size. Default is null.</param>
+    /// <param name="y">The absolute Y size. Default is null.</param>
     /// <remarks>
     /// <para>
     /// This method calculates the relative size of the component based
-    /// on a scaled absolute size and a reference size. If the component
-    /// has a parent, the reference size is the scaled size of the parent
-    /// component. Otherwise, it's the current screen size
-    /// (<see cref="ScreenController.CurrentSize"/>).
+    /// on an absolute size and a reference as parent size.
     /// </para>
     /// <para>
     /// The relative size is calculated by dividing
-    /// the scaled absolute size by the reference size.
+    /// the absolute size by the reference size.
     /// </para>
     /// <para>If the parameter is null, the relative size is not changed.</para>
     /// </remarks>
-    public void SetRelativeSizeFromScaledAbsolute(float? x = null, float? y = null)
+    public void SetRelativeSizeFromAbsolute(float? x = null, float? y = null)
     {
-        Point reference = this.Component.Parent is { } parent
-            ? parent.Transform.ScaledSize
-            : ScreenController.CurrentSize;
-
-        this.RelativeSize = new Vector2(
-            x / reference.X ?? this.RelativeSize.X,
-            y / reference.Y ?? this.RelativeSize.Y);
-    }
-
-    /// <summary>
-    /// Sets the <see cref="RelativeSize"/> property using an unscaled absolute size.
-    /// </summary>
-    /// <param name="x">The unscaled absolute X size. Default is null.</param>
-    /// <param name="y">The unscaled absolute Y size. Default is null.</param>
-    /// <remarks>
-    /// <para>
-    /// This method calculates the relative size of the component based
-    /// on an unscaled absolute size and a reference size. If the component
-    /// has a parent, the reference size is the unscaled size of the parent
-    /// component. Otherwise, it's the default screen size
-    /// (<see cref="ScreenController.DefaultSize"/>).
-    /// </para>
-    /// <para>
-    /// The relative size is calculated by dividing
-    /// the unscaled absolute size by the reference size.
-    /// </para>
-    /// <para>If the parameter is null, the relative size is not changed.</para>
-    /// </remarks>
-    public void SetRelativeSizeFromUnscaledAbsolute(float? x = null, float? y = null)
-    {
-        Point reference = this.Component.Parent is { } parent
-            ? parent.Transform.UnscaledSize
-            : ScreenController.DefaultSize;
-
+        Point reference = this.Component.Parent!.Transform.Size;
         this.RelativeSize = new Vector2(
             x / reference.X ?? this.RelativeSize.X,
             y / reference.Y ?? this.RelativeSize.Y);
@@ -638,8 +466,8 @@ public class Transform : IUIReadOnlyTransform
 
     private void Recalculate()
     {
-        Point unscaledLocationBefore = this.unscaledLocation;
-        Point unscaledSizeBefore = this.unscaledSize;
+        Point locationBefore = this.location;
+        Point sizeBefore = this.size;
 
         switch (this.transformType)
         {
@@ -651,32 +479,25 @@ public class Transform : IUIReadOnlyTransform
                 break;
         }
 
-        this.scaledLocation = this.unscaledLocation
-            .Scale(ScreenController.Scale);
-
-        this.scaledSize = this.unscaledSize
-            .Scale(ScreenController.Scale)
-            .Clamp(this.MinSize, this.MaxSize);
-
         this.IsRecalculationNeeded = false;
         this.Recalculated?.Invoke(this, EventArgs.Empty);
 
-        if (this.unscaledLocation != unscaledLocationBefore)
+        if (this.location != locationBefore)
         {
             this.LocationChanged?.Invoke(
                 this,
                 new TransformElementChangedEventArgs<Point>(
-                    unscaledLocationBefore,
-                    this.unscaledLocation));
+                    locationBefore,
+                    this.location));
         }
 
-        if (this.unscaledSize != unscaledSizeBefore)
+        if (this.size != sizeBefore)
         {
             this.SizeChanged?.Invoke(
                 this,
                 new TransformElementChangedEventArgs<Point>(
-                    unscaledSizeBefore,
-                    this.unscaledSize));
+                    sizeBefore,
+                    this.size));
         }
     }
 
@@ -698,35 +519,42 @@ public class Transform : IUIReadOnlyTransform
             reference.Recalculate();
         }
 
-        this.unscaledLocation = reference.unscaledLocation;
-        this.unscaledSize = reference.unscaledSize.Scale(this.relativeSize);
+        this.location = reference.location;
+        this.size = reference.size.Scale(this.relativeSize);
 
         this.RecalculateRatio();
 
-        Rectangle sourceRect = reference.UnscaledRectangle;
+        Rectangle sourceRect = reference.DestRectangle;
         if (!this.IgnoreParentPadding && reference.padding != Vector4.Zero)
         {
-            Point referenceUnscaledSize = reference.unscaledSize;
+            Point referenceSize = reference.size;
 
-            int paddingLeft = (int)(reference.RelativePadding.X * referenceUnscaledSize.X);
-            int paddingTop = (int)(reference.RelativePadding.Y * referenceUnscaledSize.Y);
-            int paddingRight = (int)(reference.RelativePadding.Z * referenceUnscaledSize.X);
-            int paddingBottom = (int)(reference.RelativePadding.W * referenceUnscaledSize.Y);
+            int paddingLeft = (int)(reference.RelativePadding.X * referenceSize.X);
+            int paddingTop = (int)(reference.RelativePadding.Y * referenceSize.Y);
+            int paddingRight = (int)(reference.RelativePadding.Z * referenceSize.X);
+            int paddingBottom = (int)(reference.RelativePadding.W * referenceSize.Y);
 
             sourceRect.X += paddingLeft;
             sourceRect.Y += paddingTop;
             sourceRect.Width -= paddingLeft + paddingRight;
             sourceRect.Height -= paddingTop + paddingBottom;
-            this.unscaledSize.X -= paddingLeft + paddingRight;
-            this.unscaledSize.Y -= paddingTop + paddingBottom;
+            this.size.X -= paddingLeft + paddingRight;
+            this.size.Y -= paddingTop + paddingBottom;
         }
 
-        var currentRect = new Rectangle(this.unscaledLocation, this.unscaledSize);
+        sourceRect.Size = sourceRect.Size;
 
-        this.unscaledLocation = RecalculationUtils.AlignRectangle(
+        if (this.Component.Parent is null)
+        {
+            sourceRect.Size = sourceRect.Size.Scale(ScreenController.Scale);
+        }
+
+        var currentRect = new Rectangle(this.location, this.size);
+
+        this.location = RecalculationUtils.AlignRectangle(
             sourceRect, currentRect, this.alignment).Location;
 
-        this.unscaledLocation += reference.unscaledSize.Scale(this.relativeOffset);
+        this.location += reference.size.Scale(this.relativeOffset);
     }
 
     private void RecalculateAbsolute()
@@ -741,24 +569,24 @@ public class Transform : IUIReadOnlyTransform
             return;
         }
 
-        var currentRatio = this.unscaledSize.ToRatio();
+        var currentRatio = this.size.ToRatio();
         if (currentRatio == this.ratio)
         {
             return;
         }
 
-        Point unscaledSize = this.unscaledSize;
+        Point size = this.size;
         bool heightIsOversized = currentRatio.ToFloat() < this.ratio.ToFloat();
         if (heightIsOversized)
         {
-            unscaledSize.Y = (int)(unscaledSize.X / this.ratio.ToFloat());
+            size.Y = (int)(size.X / this.ratio.ToFloat());
         }
         else
         {
-            unscaledSize.X = (int)(unscaledSize.Y * this.ratio.ToFloat());
+            size.X = (int)(size.Y * this.ratio.ToFloat());
         }
 
-        this.unscaledSize = unscaledSize;
+        this.size = size;
     }
 
     private void ScreenController_ScreenChanged(object? sender, EventArgs args)
@@ -777,7 +605,9 @@ public class Transform : IUIReadOnlyTransform
         {
             ScreenController.ScreenChanged += this.ScreenController_ScreenChanged;
         }
-
-        this.RecalculateWithChildren();
+        else
+        {
+            this.RecalculateWithChildren();
+        }
     }
 }

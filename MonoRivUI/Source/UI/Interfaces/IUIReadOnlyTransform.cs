@@ -8,24 +8,14 @@ namespace MonoRivUI;
 public interface IUIReadOnlyTransform
 {
     /// <summary>
-    /// Gets the unscaled location of the component.
+    /// Gets the location of the component.
     /// </summary>
-    public Point UnscaledLocation { get; }
+    public Point Location { get; }
 
     /// <summary>
-    /// Gets the unscaled size of the component.
+    /// Gets the size of the component.
     /// </summary>
-    public Point UnscaledSize { get; }
-
-    /// <summary>
-    /// Gets the scaled location of the component.
-    /// </summary>
-    public Point ScaledLocation { get; }
-
-    /// <summary>
-    /// Gets the scaled size of the component.
-    /// </summary>
-    public Point ScaledSize { get; }
+    public Point Size { get; }
 
     /// <summary>
     /// Gets the type of the transformation.
@@ -74,12 +64,7 @@ public interface IUIReadOnlyTransform
     public bool IgnoreParentPadding { get; }
 
     /// <summary>
-    /// Gets the unscaled rectangle of the component.
+    /// Gets the rectangle of the component.
     /// </summary>
-    public Rectangle UnscaledRectangle { get; }
-
-    /// <summary>
-    /// Gets the scaled rectangle of the component.
-    /// </summary>
-    public Rectangle ScaledRectangle { get; }
+    public Rectangle DestRectangle { get; }
 }

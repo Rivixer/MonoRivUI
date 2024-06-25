@@ -105,8 +105,6 @@ public class ListBox : Component
         this.container = new Container() { Parent = this };
         this.container.ChildAdded += this.UIListBox_Container_ChildAdded;
         this.container.ChildRemoved += this.UIListBox_Container_ChildRemoved;
-
-        this.Transform.SizeChanged += this.Transform_SizeChanged;
     }
 
     /// <summary>
@@ -377,13 +375,13 @@ public class ListBox : Component
         var rasterizerState = new RasterizerState() { ScissorTestEnable = true };
         spriteBatch.Begin(
             sortMode: SpriteSortMode.Immediate,
-            blendState: BlendState.AlphaBlend,
+            blendState: BlendState.NonPremultiplied,
             samplerState: null,
             depthStencilState: null,
             rasterizerState: rasterizerState);
 
         Rectangle tempRectangle = spriteBatch.GraphicsDevice.ScissorRectangle;
-        spriteBatch.GraphicsDevice.ScissorRectangle = this.ContentContainer.Transform.ScaledRectangle;
+        spriteBatch.GraphicsDevice.ScissorRectangle = this.ContentContainer.Transform.DestRectangle;
 
         foreach (Component component in this.components)
         {
@@ -396,7 +394,7 @@ public class ListBox : Component
         spriteBatch.End();
         rasterizerState.Dispose();
         spriteBatch.GraphicsDevice.ScissorRectangle = tempRectangle;
-        spriteBatch.Begin();
+        spriteBatch.Begin(blendState: BlendState.NonPremultiplied);
 
         base.Draw(gameTime);
     }
@@ -423,23 +421,23 @@ public class ListBox : Component
 
     private bool IsComponentVisible(Component component)
     {
-        return component.Transform.ScaledRectangle.Bottom > this.Transform.ScaledRectangle.Top
-            && component.Transform.ScaledRectangle.Top < this.Transform.ScaledRectangle.Bottom;
+        return component.Transform.DestRectangle.Bottom > this.Transform.DestRectangle.Top
+            && component.Transform.DestRectangle.Top < this.Transform.DestRectangle.Bottom;
     }
 
     /// <summary>
-    /// Returns the component unscaled length based on list box orientation.
+    /// Returns the component length based on list box orientation.
     /// </summary>
     /// <param name="component">The component to be measured.</param>
     /// <returns>
-    /// The component's unscaled height if the <see cref="Orientation"/>
+    /// The component's height if the <see cref="Orientation"/>
     /// is set to <see cref="Orientation.Vertical"/>. <br/>
-    /// The component's unscaled width if the <see cref="Orientation"/>
+    /// The component's width if the <see cref="Orientation"/>
     /// is set to <see cref="Orientation.Horizontal"/>.
     /// </returns>
     private float GetComponentLength(Component component)
     {
-        Point size = component.Transform.UnscaledSize;
+        Point size = component.Transform.Size;
         return this.orientation switch
         {
             Orientation.Vertical => size.Y,
@@ -454,8 +452,8 @@ public class ListBox : Component
         {
             float remainingSpace = -this.totalLength + this.orientation switch
             {
-                Orientation.Vertical => this.Transform.UnscaledSize.Y,
-                Orientation.Horizontal => this.Transform.UnscaledSize.X,
+                Orientation.Vertical => this.Transform.Size.Y,
+                Orientation.Horizontal => this.Transform.Size.X,
                 _ => throw new NotImplementedException(),
             };
             this.ResizeElements(remainingSpace);
@@ -467,10 +465,10 @@ public class ListBox : Component
             switch (this.orientation)
             {
                 case Orientation.Vertical:
-                    component.Transform.SetRelativeOffsetFromUnscaledAbsolute(y: currentOffset);
+                    component.Transform.SetRelativeOffsetFromAbsolute(y: currentOffset);
                     break;
                 case Orientation.Horizontal:
-                    component.Transform.SetRelativeOffsetFromUnscaledAbsolute(x: currentOffset);
+                    component.Transform.SetRelativeOffsetFromAbsolute(x: currentOffset);
                     break;
             }
 
@@ -490,18 +488,18 @@ public class ListBox : Component
             return;
         }
 
-        Point containerParentSize = this.container.Parent?.Transform.UnscaledSize
+        Point containerParentSize = this.container.Parent?.Transform.Size
             ?? ScreenController.DefaultSize;
-        Point scrollBarSize = this.scrollBar.Transform.UnscaledSize;
+        Point scrollBarSize = this.scrollBar.Transform.Size;
 
         switch (this.orientation)
         {
             case Orientation.Vertical:
-                this.container.Transform.SetRelativeSizeFromUnscaledAbsolute(
+                this.container.Transform.SetRelativeSizeFromAbsolute(
                     x: containerParentSize.X - scrollBarSize.X);
                 break;
             case Orientation.Horizontal:
-                this.container.Transform.SetRelativeSizeFromUnscaledAbsolute(
+                this.container.Transform.SetRelativeSizeFromAbsolute(
                     y: containerParentSize.Y - scrollBarSize.Y);
                 break;
         }
@@ -509,7 +507,7 @@ public class ListBox : Component
 
     private void UpdateScrollBarPresence()
     {
-        Point containerSize = this.container.Transform.UnscaledSize;
+        Point containerSize = this.container.Transform.Size;
         int containerLength = this.orientation switch
         {
             Orientation.Vertical => containerSize.Y,
@@ -543,6 +541,7 @@ public class ListBox : Component
             this.scrollBar.IsEnabled = false;
             this.scrollBar = null;
             this.AdjustContentContainerSize();
+            this.currentOffset = 0;
         }
     }
 
@@ -606,20 +605,5 @@ public class ListBox : Component
 
         _ = this.components.Remove(child);
         this.isRecalculationNeeded = true;
-    }
-
-    private void Transform_SizeChanged(object? sender, TransformElementChangedEventArgs<Point> e)
-    {
-        Vector2 factor = e.Before.ToVector2() / e.After.ToVector2();
-        this.Transform.RelativePadding *= new Vector4(factor, factor.X, factor.Y);
-
-        foreach (var component in this.components)
-        {
-            component.Transform.RelativeSize *= factor;
-        }
-
-        this.RecalculateElements();
-        this.UpdateScrollBarPresence();
-        this.AdjustContentContainerSize();
     }
 }

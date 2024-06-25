@@ -84,13 +84,13 @@ public static class ScreenController
     {
         if (KeyboardController.IsKeyHit(Keys.F11))
         {
-            if (graphicsDeviceManager.IsFullScreen)
+            if (graphicsDeviceManager.PreferredBackBufferWidth != 1366)
             {
                 Change(1366, 768, ScreenType.Windowed);
             }
             else
             {
-                Change(1920, 1080, ScreenType.FullScreen);
+                Change(1920, 1080, ScreenType.Windowed);
             }
 
             ApplyChanges();

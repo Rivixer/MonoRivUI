@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -10,8 +11,7 @@ namespace MonoRivUI;
 public class Text : TextComponent
 {
     private Vector2 destinationLocation;
-    private Vector2 unscaledDimensions;
-    private Vector2 scaledDimensions;
+    private Vector2 dimensions;
 
     private TextFit textFit;
     private float fitScale;
@@ -20,11 +20,12 @@ public class Text : TextComponent
     private bool isRecalculationNeeded = true;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="MonoRivUI.Text"/> class.
+    /// Initializes a new instance of the <see cref="Text"/> class.
     /// </summary>
+    /// <param name="font">The font of the text.</param>
     /// <param name="color">The color of the displayed text.</param>
-    public Text(Color color)
-        : base(color)
+    public Text(ScalableFont font, Color color)
+        : base(font, color)
     {
         this.Transform.Recalculated += (s, e) => this.Recalculate();
     }
@@ -93,7 +94,7 @@ public class Text : TextComponent
     }
 
     /// <inheritdoc/>
-    public override Vector2 UnscaledDimensions
+    public override Vector2 Dimensions
     {
         get
         {
@@ -102,21 +103,7 @@ public class Text : TextComponent
                 this.Recalculate();
             }
 
-            return this.unscaledDimensions;
-        }
-    }
-
-    /// <inheritdoc/>
-    public override Vector2 ScaledDimensions
-    {
-        get
-        {
-            if (this.isRecalculationNeeded)
-            {
-                this.Recalculate();
-            }
-
-            return this.scaledDimensions;
+            return this.dimensions;
         }
     }
 
@@ -152,8 +139,7 @@ public class Text : TextComponent
     /// <inheritdoc/>
     public override void Draw(GameTime gameTime)
     {
-        SpriteBatchController.SpriteBatch.DrawString(
-            spriteFont: this.Font,
+        this.Font.DrawString(
             text: this.Value,
             position: this.destinationLocation,
             color: this.Color,
@@ -167,16 +153,16 @@ public class Text : TextComponent
     }
 
     /// <summary>
-    /// Measures the unscaled dimensions of a portion of the text.
+    /// Measures the dimensions of a portion of the text.
     /// </summary>
     /// <param name="startIndex">The index at which to start measuring the text.</param>
     /// <param name="endIndex">The index at which to stop measuring the text (exclusive).</param>
-    /// <returns>The unscaled dimensions of the specified portion of the text.</returns>
+    /// <returns>The dimensions of the specified portion of the text.</returns>
     /// <remarks>
-    /// The unscaled dimensions represent the minimum size of the rectangle
-    /// that can contain the unscaled text.
+    /// The dimensions represent the minimum size of the rectangle
+    /// that can contain the text.
     /// </remarks>
-    public Vector2 MeasureUnscaledDimensions(int startIndex, int endIndex)
+    public Vector2 MeasureDimensions(int startIndex, int endIndex)
     {
         if (this.isRecalculationNeeded)
         {
@@ -193,24 +179,19 @@ public class Text : TextComponent
     {
         this.UpdateFitScale();
 
-        this.unscaledDimensions = this.Font
+        this.dimensions = this.Font
             .MeasureString(this.Value)
             .Scale(this.fitScale)
             .Scale(this.Scale);
 
-        this.scaledDimensions = this.unscaledDimensions
-            .Scale(ScreenController.Scale);
-
         this.UpdateDestinationLocation();
 
-        this.drawScale = this.fitScale * this.Scale
-            * Math.Min(ScreenController.Scale.X, ScreenController.Scale.Y);
+        this.drawScale = this.fitScale * this.Scale;
 
         if (this.AdjustSizeToText)
         {
-            this.Transform.SetRelativeSizeFromUnscaledAbsolute(
-                this.unscaledDimensions.X,
-                this.unscaledDimensions.Y);
+            this.Transform.SetRelativeSizeFromAbsolute(
+                x: this.dimensions.X, y: this.dimensions.Y);
         }
 
         this.isRecalculationNeeded = false;
@@ -232,8 +213,8 @@ public class Text : TextComponent
             return;
         }
 
-        float scaleWidth = this.Transform.UnscaledSize.X / defaultDimensions.X;
-        float scaleHeight = this.Transform.UnscaledSize.Y / defaultDimensions.Y;
+        float scaleWidth = this.Transform.Size.X / defaultDimensions.X;
+        float scaleHeight = this.Transform.Size.Y / defaultDimensions.Y;
 
         this.fitScale = this.textFit switch
         {
@@ -246,13 +227,13 @@ public class Text : TextComponent
 
     private void UpdateDestinationLocation()
     {
-        Rectangle sourceRect = this.Transform.UnscaledRectangle;
+        Rectangle sourceRect = this.Transform.DestRectangle;
         var currentRect = new Rectangle(
-            this.Transform.UnscaledRectangle.Location,
-            this.unscaledDimensions.ToPoint());
+            this.Transform.DestRectangle.Location,
+            this.dimensions.ToPoint());
 
         this.destinationLocation = RecalculationUtils.AlignRectangle(
             sourceRect, currentRect, this.TextAlignment)
-            .Location.ToVector2().Scale(ScreenController.Scale);
+            .Location.ToVector2();
     }
 }
