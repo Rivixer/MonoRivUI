@@ -43,7 +43,7 @@ public class ScalableFont : IDisposable
 
         FT_FaceRec_* facePtr;
         var error = FT_New_Face(Library.Native, (byte*)Marshal.StringToHGlobalAnsi(path), IntPtr.Zero, &facePtr);
-        ThrowIfFTError(error, path);
+        FTError.ThrowIfError(this, error);
 
         this.face = new FreeTypeFaceFacade(Library, facePtr);
 
@@ -143,7 +143,7 @@ public class ScalableFont : IDisposable
             return Vector2.Zero;
         }
 
-        var result = new Vector2(0, this.height * 16 / 9);
+        var result = new Vector2(0, this.height);
 
         foreach (char c in text)
         {
@@ -183,17 +183,6 @@ public class ScalableFont : IDisposable
             }
 
             this.disposed = true;
-        }
-    }
-
-    private static void ThrowIfFTError(FT_Error error, string? path = null)
-    {
-        if (error != FT_Error.FT_Err_Ok)
-        {
-#if DEBUG
-            string? absPath = path is null ? null : Path.GetFullPath(path);
-#endif
-            throw new FreeTypeException(error);
         }
     }
 
@@ -283,11 +272,11 @@ public class ScalableFont : IDisposable
         uint glyphIndex = this.face.GetCharIndex(c);
 
         var error = FT_Load_Glyph(this.face.FaceRec, glyphIndex, FT_LOAD.FT_LOAD_DEFAULT);
-        ThrowIfFTError(error);
+        FTError.ThrowIfError(this, error);
 
         FT_GlyphSlotRec_* glyph = this.face.FaceRec->glyph;
         error = FT_Render_Glyph(glyph, FT_Render_Mode_.FT_RENDER_MODE_NORMAL);
-        ThrowIfFTError(error);
+        FTError.ThrowIfError(this, error);
 
         return glyph;
     }
@@ -297,4 +286,52 @@ public class ScalableFont : IDisposable
         float HorizontalAdvance,
         Rectangle TextureCoords,
         int? TextureIndex);
+
+    /// <summary>
+    /// Represents an error that occurred in FreeType.
+    /// </summary>
+    public class FTError : Exception
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FTError"/> class.
+        /// </summary>
+        /// <param name="exception">The exception that occurred.</param>
+        /// <param name="relativePath">The relative path to the font.</param>
+        public FTError(FreeTypeException exception, string relativePath)
+        {
+            this.Exception = exception;
+            this.RelativePath = relativePath;
+        }
+
+        /// <summary>
+        /// Gets the exception that occurred.
+        /// </summary>
+        public FreeTypeException Exception { get; }
+
+        /// <summary>
+        /// Gets the relative path to the font.
+        /// </summary>
+        public string RelativePath { get; }
+
+        /// <summary>
+        /// Gets the absolute path to the font.
+        /// </summary>
+        public string AbsolutePath => Path.GetFullPath(this.RelativePath);
+
+        /// <summary>
+        /// Throws an exception if an error occurred.
+        /// </summary>
+        /// <param name="font">The font that the error occurred in.</param>
+        /// <param name="error">The error that occurred.</param>
+        /// <exception cref="FTError">
+        /// The error that occurred enclosed in custom exception.
+        /// </exception>
+        internal static void ThrowIfError(ScalableFont font, FT_Error error)
+        {
+            if (error != FT_Error.FT_Err_Ok)
+            {
+                throw new FTError(new FreeTypeException(error), font.path);
+            }
+        }
+    }
 }
