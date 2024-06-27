@@ -48,11 +48,10 @@ public static class MouseController
             if (component.Transform.DestRectangle.Contains(Position))
             {
                 focusedComponent = component;
-            }
-
-            foreach (IUIReadOnlyComponent child in component.Children)
-            {
-                UpdateFocusedComponent(child);
+                foreach (IUIReadOnlyComponent child in component.Children)
+                {
+                    UpdateFocusedComponent(child);
+                }
             }
         }
 
