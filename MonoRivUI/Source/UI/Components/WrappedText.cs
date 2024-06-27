@@ -1,6 +1,5 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Text;
 using Microsoft.Xna.Framework;
 
@@ -341,11 +340,11 @@ public class WrappedText : TextComponent, IEnumerable<Text>
 
     private Vector2 MeasureText(string text)
     {
-        return this.Font.MeasureString(text);// * this.Scale;
+        return this.Font.MeasureString(text);
     }
 
     private Vector2 MeasureText(StringBuilder text)
     {
-        return this.Font.MeasureString(text);// * this.Scale;
+        return this.Font.MeasureString(text);
     }
 }
