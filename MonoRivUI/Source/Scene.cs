@@ -15,6 +15,7 @@ public abstract class Scene
 {
     private static readonly List<Scene> Scenes = new();
     private readonly Component baseComponent;
+    private bool isInitialized;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Scene"/> class.
@@ -31,8 +32,6 @@ public abstract class Scene
         };
 
         this.baseComponent.Transform.Recalculated += (s, e) => (s as Transform)!.Size = ScreenController.CurrentSize;
-
-        this.Initialize();
     }
 
     /// <summary>
@@ -52,11 +51,14 @@ public abstract class Scene
     public static void InitializeScenes([NotNull] Assembly assembly)
     {
         var sceneTypes = assembly.GetTypes()
-            .Where(t => t.IsSubclassOf(typeof(Scene)) && !t.IsAbstract);
+            .Where(t => t.IsSubclassOf(typeof(Scene))
+            && t.GetCustomAttribute<NoAutoInitialize>() is null
+            && !t.IsAbstract);
 
         foreach (var sceneType in sceneTypes)
         {
             var scene = (Scene)Activator.CreateInstance(sceneType)!;
+            scene.Initialize();
             Scenes.Add(scene);
         }
     }
@@ -72,6 +74,18 @@ public abstract class Scene
     }
 
     /// <summary>
+    /// Adds a scene to the list of scenes.
+    /// </summary>
+    /// <param name="scene">The scene to add.</param>
+    /// <remarks>
+    /// It should be used only when the scene is not auto-initialized.
+    /// </remarks>
+    public static void AddScene(Scene scene)
+    {
+        Scenes.Add(scene);
+    }
+
+    /// <summary>
     /// Changes the current scene to the specified scene.
     /// </summary>
     /// <typeparam name="T">The type of the scene to change to.</typeparam>
@@ -80,6 +94,7 @@ public abstract class Scene
     {
         var scene = Scenes.OfType<T>().Single();
         Current = scene;
+        scene.baseComponent.Transform.ForceRecalulcation();
     }
 
     /// <summary>
@@ -103,5 +118,29 @@ public abstract class Scene
     /// <summary>
     /// Initializes the scene.
     /// </summary>
-    protected abstract void Initialize();
+    public void Initialize()
+    {
+        if (this.isInitialized)
+        {
+            throw new InvalidOperationException("The scene has already been initialized.");
+        }
+
+        this.Initialize(this.baseComponent);
+
+        this.isInitialized = true;
+    }
+
+    /// <summary>
+    /// Initializes the scene.
+    /// </summary>
+    /// <param name="baseComponent">The base component.</param>
+    protected abstract void Initialize(Component baseComponent);
+
+    /// <summary>
+    /// Represents an attribute that indicates that the class should not be auto-initialized.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Class)]
+    public class NoAutoInitialize : Attribute
+    {
+    }
 }
