@@ -9,9 +9,9 @@ namespace MonoRivUI;
 public class ScrollBar : Component
 {
     private readonly Frame frame;
+    private readonly SolidColor background;
     private readonly SolidColor thumb;
-    private readonly Orientation orientation;
-    private readonly IUIReadOnlyComponent contentContainer;
+    private readonly IReadOnlyComponent contentContainer;
 
     private float relativeSize = 0.02f;
     private float total;
@@ -26,11 +26,11 @@ public class ScrollBar : Component
     /// <param name="contentContainer">
     /// The container that contains the content that is scrolled.
     /// </param>
-    public ScrollBar(Orientation orientation, IUIReadOnlyComponent contentContainer)
+    public ScrollBar(IReadOnlyComponent contentContainer)
     {
-        this.orientation = orientation;
-        this.frame = new Frame(Color.Gray, thickness: 2) { Parent = this };
-        this.thumb = new SolidColor(Color.DarkGray) { Parent = this.frame.InnerContainer };
+        this.frame = new Frame(Color.Gray, thickness: 0) { Parent = this };
+        this.background = new SolidColor(Color.Transparent) { Parent = this.frame.InnerContainer };
+        this.thumb = new SolidColor(Color.Transparent) { Parent = this.frame.InnerContainer };
         this.ParentChanged += this.UIScrollBar_ParentChanged;
         this.Transform.Recalculated += this.Transform_Recalculated;
         this.contentContainer = contentContainer;
@@ -48,18 +48,18 @@ public class ScrollBar : Component
     public bool IsThumbDragging { get; private set; }
 
     /// <summary>
-    /// Gets the current scroll position.
+    /// Gets or sets the orientation of the scrollbar.
     /// </summary>
-    /// <remarks>
-    /// The value is between <c>0.0f</c> and <c>1.0f</c>
-    /// where <c>0.0f</c> is the top and <c>1.0f</c> is the bottom.
-    /// </remarks>
-    public float Position => this.current / (this.total - this.orientation switch
+    public Orientation Orientation { get; set; } = Orientation.Vertical;
+
+    /// <summary>
+    /// Gets or sets the thickness of the scrollbar frame.
+    /// </summary>
+    public int FrameThickness
     {
-        Orientation.Vertical => this.contentContainer.Transform.Size.Y,
-        Orientation.Horizontal => this.contentContainer.Transform.Size.X,
-        _ => throw new NotImplementedException(),
-    });
+        get => this.frame.Thickness;
+        set => this.frame.Thickness = value;
+    }
 
     /// <summary>
     /// Gets or sets the color of the scrollbar frame.
@@ -68,6 +68,15 @@ public class ScrollBar : Component
     {
         get => this.frame.Color;
         set => this.frame.Color = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the background color of the scrollbar.
+    /// </summary>
+    public Color BackgroundColor
+    {
+        get => this.background.Color;
+        set => this.background.Color = value;
     }
 
     /// <summary>
@@ -160,7 +169,7 @@ public class ScrollBar : Component
         {
             this.HandleScrollBarClick();
         }
-        else if (this.IsScrollWheelScrolledOnParent())
+        else if (this.IsScrollWheelScrolled())
         {
             this.UpdateThumbPosition(MouseController.ScrollDelta);
         }
@@ -174,10 +183,11 @@ public class ScrollBar : Component
             && MouseController.IsComponentFocused(this);
     }
 
-    private bool IsScrollWheelScrolledOnParent()
+    private bool IsScrollWheelScrolled()
     {
         return MouseController.ScrollDelta != 0
-            && MouseController.IsComponentFocused(this.contentContainer);
+            && (MouseController.IsComponentFocused(this.contentContainer)
+                || MouseController.IsComponentFocused(this));
     }
 
     private void HandleThumbDrag()
@@ -185,7 +195,7 @@ public class ScrollBar : Component
         Point mouseDelta = MouseController.MouseDelta;
         Rectangle frameRect = this.frame.InnerContainer.Transform.DestRectangle;
 
-        float scrollPercentage = this.orientation switch
+        float scrollPercentage = this.Orientation switch
         {
             Orientation.Vertical => mouseDelta.Y / (float)frameRect.Height,
             Orientation.Horizontal => mouseDelta.X / (float)frameRect.Width,
@@ -197,12 +207,12 @@ public class ScrollBar : Component
 
     private void HandleScrollBarClick()
     {
-        bool clickedAbove = (this.orientation == Orientation.Vertical)
+        bool clickedAbove = (this.Orientation == Orientation.Vertical)
             ? MouseController.Position.Y < this.thumb.Transform.DestRectangle.Y
             : MouseController.Position.X < this.thumb.Transform.DestRectangle.X;
 
         Vector2 thumbRelativeSize = this.thumb.Transform.RelativeSize;
-        float shiftValue = this.total * this.orientation switch
+        float shiftValue = this.total * this.Orientation switch
         {
             Orientation.Vertical => thumbRelativeSize.Y,
             Orientation.Horizontal => thumbRelativeSize.X,
@@ -214,7 +224,7 @@ public class ScrollBar : Component
 
     private void UpdateThumbPosition(float scrollDelta)
     {
-        float maxCurrentLength = this.total - this.orientation switch
+        float maxCurrentLength = this.total - this.Orientation switch
         {
             Orientation.Vertical => this.contentContainer.Transform.Size.Y,
             Orientation.Horizontal => this.contentContainer.Transform.Size.X,
@@ -230,7 +240,7 @@ public class ScrollBar : Component
     {
         if (e.Current is null)
         {
-            throw new InvalidOperationException("Cannot remove parent from UIScrollbar.");
+            throw new InvalidOperationException("Cannot remove parent from Scrollbar.");
         }
 
         this.UpdateScrollBarSize();
@@ -238,7 +248,7 @@ public class ScrollBar : Component
 
     private void UpdateScrollBarSize()
     {
-        switch (this.orientation)
+        switch (this.Orientation)
         {
             case Orientation.Vertical:
                 this.Transform.Alignment = Alignment.Right;
@@ -253,7 +263,7 @@ public class ScrollBar : Component
 
     private void UpdateThumbSize()
     {
-        switch (this.orientation)
+        switch (this.Orientation)
         {
             case Orientation.Vertical:
                 int frameHeight = this.contentContainer.Transform.Size.Y;
@@ -271,7 +281,7 @@ public class ScrollBar : Component
     private void UpdateThumbOffset()
     {
         float relativeScrollPosition = this.current / this.total;
-        this.thumb.Transform.RelativeOffset = this.orientation switch
+        this.thumb.Transform.RelativeOffset = this.Orientation switch
         {
             Orientation.Vertical => new Vector2(0.0f, relativeScrollPosition),
             Orientation.Horizontal => new Vector2(relativeScrollPosition, 0.0f),

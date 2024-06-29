@@ -11,13 +11,13 @@ namespace MonoRivUI;
 /// <remarks>
 /// <para>
 /// The <see cref="ListBox"/> component serves as a fundamental building
-/// block for creating scrollable lists of UI components. It provides a
-/// structured layout for arranging various UI components.
+/// block for creating scrollable lists of components. It provides a
+/// structured layout for arranging various components.
 /// </para>
 /// <para>
 /// This component automatically creates a <see cref="ContentContainer"/>
 /// when initialized. The content container is designed to host and organize
-/// nested UI components within the list box and should be used as a parent for them.
+/// nested components within the list box and should be used as a parent for them.
 /// </para>
 /// <para>
 /// After setting the <see cref="ContentContainer"/> as a parent for a component,
@@ -48,14 +48,14 @@ namespace MonoRivUI;
 /// <example>
 /// <code>
 /// // Create a new list box with a vertical orientation:
-/// var listBox = new UIListBox()
+/// var listBox = new ListBox()
 /// {
 ///     Orientation = Orientation.Vertical
 /// };
 /// </code>
 /// <code>
 /// // Add a new text component to the list box:
-/// var text = new UIText(Color.White)
+/// var text = new Text(Color.White)
 /// {
 ///     Parent = listBox.ContentContainer
 /// };
@@ -66,9 +66,14 @@ namespace MonoRivUI;
 /// </code>
 /// <code>
 /// // Custom scrollbar appearance:
-/// listBox.ScrollBarFrameColor = Color.White;
-/// listBox.ScrollBarThumbColor = Color.Gray;
-/// listBox.ScrollBarRelativeSize = 0.1f;
+/// ScrollBar =
+/// {
+///     FrameColor = Color.White;
+///     ThumbColor = Color.Gray;
+///     FrameThickness = 2;
+///     BackgroundColor = Color.Black;
+///     RelativeSize = 0.1f;
+/// }
 /// </code>
 /// <code>
 /// // Automatically resize components to fit the available space:
@@ -80,7 +85,8 @@ public class ListBox : Component
 {
     private readonly List<Component> components = new();
     private readonly Queue<Component> queuedComponents = new();
-    private readonly Container container;
+    private readonly Container innerContainer;
+    private readonly Container contentContainer;
     private Orientation orientation;
 
     private int spacing;
@@ -88,11 +94,6 @@ public class ListBox : Component
     private float currentOffset;
 
     private bool isScrollable;
-    private ScrollBar? scrollBar;
-    private Color scrollBarFrameColor;
-    private Color scrollBarThumbColor;
-    private float scrollBarRelativeSize;
-
     private bool resizeContent;
 
     private bool isRecalculationNeeded;
@@ -102,9 +103,21 @@ public class ListBox : Component
     /// </summary>
     public ListBox()
     {
-        this.container = new Container() { Parent = this };
-        this.container.ChildAdded += this.UIListBox_Container_ChildAdded;
-        this.container.ChildRemoved += this.UIListBox_Container_ChildRemoved;
+        this.innerContainer = new Container() { Parent = this };
+
+        this.contentContainer = new Container() { Parent = this.innerContainer };
+        this.contentContainer.ChildAdded += this.ListBox_Container_ChildAdded;
+        this.contentContainer.ChildRemoved += this.ListBox_Container_ChildRemoved;
+
+        this.ScrollBar = new ScrollBar(this.ContentContainer)
+        {
+            IsEnabled = false,
+            Parent = this,
+            Transform = { IgnoreParentPadding = true },
+        };
+
+        this.ScrollBar.Scrolled += this.ScrollBar_Scrolled;
+        this.AdjustContentContainerSize();
     }
 
     /// <summary>
@@ -134,7 +147,7 @@ public class ListBox : Component
     /// </summary>
     /// <remarks>
     /// <para>
-    /// The content container serves as a designated rectangle where UI
+    /// The content container serves as a designated rectangle where
     /// components can be positioned and organized within the list box.
     /// </para>
     /// <para>
@@ -145,71 +158,34 @@ public class ListBox : Component
     /// This property is read-only to prevent external modification.
     /// </para>
     /// <para>
-    /// Use this inner container as a parent for nesting and
-    /// organizing UI components within the list box.
+    /// Use this container as a parent for nesting and
+    /// organizing components within the list box.
     /// </para>
     /// </remarks>
-    public IUIReadOnlyComponent ContentContainer => this.container;
+    public IReadOnlyComponent ContentContainer => this.contentContainer;
 
+    /// <summary>
+    /// Gets or sets the margin of the content container relative to the list box.
+    /// </summary>
+    public Vector4 ContentContainerRelativeMargin
+    {
+        get => this.innerContainer.Transform.RelativePadding;
+        set => this.innerContainer.Transform.RelativePadding = value;
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the content can be drawn on the margin.
+    /// </summary>
     /// <remarks>
-    /// <inheritdoc cref="ScrollBar.Position"/>
-    /// <para>
-    /// Returns <see langword="null"/> when the scrollbar is not present.
-    /// </para>
+    /// When <see cref="ContentContainerRelativeMargin"/> is set, the content
+    /// will be also drawn on the margin if this property is set to true.
     /// </remarks>
-    /// <inheritdoc cref="ScrollBar.Position"/>
-    public float? ScrollPosition => this.scrollBar?.Position;
+    public bool DrawContentOnMargin { get; set; }
 
     /// <summary>
-    /// Gets or sets the color of the scrollbar's frame.
+    /// Gets the list box scrollbar.
     /// </summary>
-    public Color ScrollBarFrameColor
-    {
-        get => this.scrollBarFrameColor;
-        set
-        {
-            this.scrollBarFrameColor = value;
-
-            if (this.scrollBar is not null)
-            {
-                this.scrollBar.FrameColor = value;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Gets or sets the color of the scrollbar's thumb.
-    /// </summary>
-    public Color ScrollBarThumbColor
-    {
-        get => this.scrollBarThumbColor;
-        set
-        {
-            this.scrollBarThumbColor = value;
-
-            if (this.scrollBar is not null)
-            {
-                this.scrollBar.ThumbColor = value;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Gets or sets the relative size of the scrollbar.
-    /// </summary>
-    public float ScrollBarRelativeSize
-    {
-        get => this.scrollBarRelativeSize;
-        set
-        {
-            this.scrollBarRelativeSize = value;
-
-            if (this.scrollBar is not null)
-            {
-                this.scrollBar.RelativeSize = value;
-            }
-        }
-    }
+    public ScrollBar ScrollBar { get; }
 
     /// <summary>
     /// Gets or sets the spacing of the components.
@@ -228,7 +204,7 @@ public class ListBox : Component
             }
 
             int spacingCount = this.components.Count > 0 ? this.components.Count - 1 : 0;
-            this.totalLength += (this.spacing - value) * spacingCount;
+            this.totalLength += (value - this.spacing) * spacingCount;
             this.spacing = value;
             this.isRecalculationNeeded = true;
         }
@@ -248,6 +224,7 @@ public class ListBox : Component
             }
 
             this.orientation = value;
+            this.ScrollBar.Orientation = value;
             this.isRecalculationNeeded = true;
         }
     }
@@ -309,28 +286,49 @@ public class ListBox : Component
         }
     }
 
-    /// <summary>
-    /// Gets the list box scrollbar, if it exists.
-    /// </summary>
-    public IUIReadOnlyComponent? ScrollBar => this.scrollBar;
-
-    /// <summary>
-    /// Scrolls the list box to the specified position.
-    /// </summary>
-    /// <param name="position">
-    /// <para>The position to scroll to.</para>
-    /// The value is between <c>0.0f</c> and <c>1.0f</c>
-    /// where <c>0.0f</c> is the top and <c>1.0f</c> is the bottom.
-    /// </param>
-    public void ScrollTo(float position)
+    private float ContainerLength
     {
-        this.scrollBar?.ScrollTo(position);
+        get
+        {
+            float length;
+            switch (this.orientation)
+            {
+                case Orientation.Vertical:
+                    length = this.Transform.Size.Y;
+                    length -= (this.contentContainer.Transform.RelativePadding.Y + this.contentContainer.Transform.RelativePadding.W) * this.Transform.Size.Y;
+                    break;
+                case Orientation.Horizontal:
+                    length = this.Transform.Size.X;
+                    length -= (this.contentContainer.Transform.RelativePadding.X + this.contentContainer.Transform.RelativePadding.Z) * this.Transform.Size.X;
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+
+            return length;
+        }
+    }
+
+    public override ListBox Clone()
+    {
+        var listBox = new ListBox()
+        {
+            Parent = this.Parent,
+            Orientation = this.orientation,
+            Spacing = this.spacing,
+            IsScrollable = this.isScrollable,
+            ResizeContent = this.resizeContent,
+        };
+        this.CloneTransformTo(listBox);
+        return listBox;
     }
 
     /// <inheritdoc/>
     public override void Update(GameTime gameTime)
     {
         bool isAnyComponentDequeued = this.queuedComponents.Count > 0;
+
+        this.RecalculateElements();
 
         if (isAnyComponentDequeued)
         {
@@ -381,7 +379,9 @@ public class ListBox : Component
             rasterizerState: rasterizerState);
 
         Rectangle tempRectangle = spriteBatch.GraphicsDevice.ScissorRectangle;
-        spriteBatch.GraphicsDevice.ScissorRectangle = this.ContentContainer.Transform.DestRectangle;
+
+        Rectangle scissorRect = (this.DrawContentOnMargin ? this.innerContainer : this.contentContainer).Transform.DestRectangle;
+        spriteBatch.GraphicsDevice.ScissorRectangle = scissorRect;
 
         foreach (Component component in this.components)
         {
@@ -450,12 +450,7 @@ public class ListBox : Component
     {
         if (this.resizeContent)
         {
-            float remainingSpace = -this.totalLength + this.orientation switch
-            {
-                Orientation.Vertical => this.Transform.Size.Y,
-                Orientation.Horizontal => this.Transform.Size.X,
-                _ => throw new NotImplementedException(),
-            };
+            float remainingSpace = -this.totalLength + this.ContainerLength;
             this.ResizeElements(remainingSpace);
         }
 
@@ -482,24 +477,24 @@ public class ListBox : Component
     /// </summary>
     private void AdjustContentContainerSize()
     {
-        if (this.scrollBar is null)
+        if (!this.isScrollable)
         {
-            this.container.Transform.RelativeSize = Vector2.One;
+            this.contentContainer.Transform.RelativeSize = Vector2.One;
             return;
         }
 
-        Point containerParentSize = this.container.Parent?.Transform.Size
+        Point containerParentSize = this.contentContainer.Parent?.Transform.Size
             ?? ScreenController.DefaultSize;
-        Point scrollBarSize = this.scrollBar.Transform.Size;
+        Point scrollBarSize = this.ScrollBar.Transform.Size;
 
         switch (this.orientation)
         {
             case Orientation.Vertical:
-                this.container.Transform.SetRelativeSizeFromAbsolute(
+                this.contentContainer.Transform.SetRelativeSizeFromAbsolute(
                     x: containerParentSize.X - scrollBarSize.X);
                 break;
             case Orientation.Horizontal:
-                this.container.Transform.SetRelativeSizeFromAbsolute(
+                this.contentContainer.Transform.SetRelativeSizeFromAbsolute(
                     y: containerParentSize.Y - scrollBarSize.Y);
                 break;
         }
@@ -507,39 +502,21 @@ public class ListBox : Component
 
     private void UpdateScrollBarPresence()
     {
-        Point containerSize = this.container.Transform.Size;
-        int containerLength = this.orientation switch
-        {
-            Orientation.Vertical => containerSize.Y,
-            Orientation.Horizontal => containerSize.X,
-            _ => throw new NotImplementedException(),
-        };
-
-        bool isScrollBarNeeded = this.totalLength > containerLength;
+        bool isScrollBarNeeded = this.totalLength > this.ContainerLength;
 
         if (this.isScrollable && isScrollBarNeeded)
         {
-            if (this.scrollBar is null)
+            if (!this.ScrollBar.IsEnabled)
             {
-                this.scrollBar = new ScrollBar(this.orientation, this.ContentContainer)
-                {
-                    Parent = this,
-                    FrameColor = this.scrollBarFrameColor,
-                    ThumbColor = this.scrollBarThumbColor,
-                    RelativeSize = this.scrollBarRelativeSize,
-                    Transform = { IgnoreParentPadding = true },
-                };
-                this.scrollBar.Scrolled += this.ScrollBar_Scrolled;
+                this.ScrollBar.IsEnabled = true;
                 this.AdjustContentContainerSize();
             }
 
-            this.scrollBar.TotalLength = this.totalLength;
+            this.ScrollBar.TotalLength = this.totalLength;
         }
-        else if (this.scrollBar is not null)
+        else
         {
-            this.scrollBar.Scrolled -= this.ScrollBar_Scrolled;
-            this.scrollBar.IsEnabled = false;
-            this.scrollBar = null;
+            this.ScrollBar.IsEnabled = false;
             this.AdjustContentContainerSize();
             this.currentOffset = 0;
         }
@@ -560,7 +537,7 @@ public class ListBox : Component
         }
     }
 
-    private void UIListBox_Container_ChildAdded(object? sender, ChildChangedEventArgs e)
+    private void ListBox_Container_ChildAdded(object? sender, ChildChangedEventArgs e)
     {
         // Improve performance by disabling automatic updating and drawing of the
         // child component. It will only be updated and drawn when it is visible.
@@ -589,7 +566,7 @@ public class ListBox : Component
         this.isRecalculationNeeded = true;
     }
 
-    private void UIListBox_Container_ChildRemoved(object? sender, ChildChangedEventArgs e)
+    private void ListBox_Container_ChildRemoved(object? sender, ChildChangedEventArgs e)
     {
         Component child = e.Child;
         child.Transform.SizeChanged -= this.Component_Transform_SizeChanged;
