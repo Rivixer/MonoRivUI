@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
@@ -14,6 +13,7 @@ namespace MonoRivUI;
 public abstract class Scene
 {
     private static readonly List<Scene> Scenes = new();
+    private static readonly Stack<Scene> SceneStack = new();
     private readonly Component baseComponent;
     private bool isInitialized;
 
@@ -77,9 +77,6 @@ public abstract class Scene
     /// Adds a scene to the list of scenes.
     /// </summary>
     /// <param name="scene">The scene to add.</param>
-    /// <remarks>
-    /// It should be used only when the scene is not auto-initialized.
-    /// </remarks>
     public static void AddScene(Scene scene)
     {
         Scenes.Add(scene);
@@ -89,12 +86,54 @@ public abstract class Scene
     /// Changes the current scene to the specified scene.
     /// </summary>
     /// <typeparam name="T">The type of the scene to change to.</typeparam>
-    public static void Change<T>()
+    /// <param name="addCurrentToStack">Whether to add the current scene to the scene stack.</param>
+    public static void Change<T>(bool addCurrentToStack = true)
         where T : Scene
     {
+        if (Current != null && addCurrentToStack)
+        {
+            SceneStack.Push(Current);
+        }
+
         var scene = Scenes.OfType<T>().Single();
         Current = scene;
         scene.baseComponent.Transform.ForceRecalulcation();
+    }
+
+    /// <summary>
+    /// Changes the current scene to the previous scene.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The current scene does not have a previous scene.</exception>
+    public static void ChangeToPrevious()
+    {
+        if (SceneStack.Count == 0)
+        {
+            throw new InvalidOperationException("The current scene does not have a previous scene.");
+        }
+
+        Current = SceneStack.Pop();
+        Current.baseComponent.Transform.ForceRecalulcation();
+    }
+
+    /// <summary>
+    /// Changes the current scene to the previous scene if it exists,
+    /// otherwise changes to the specified scene.
+    /// </summary>
+    /// <typeparam name="T">The type of the scene to change to if there is no previous scene.</typeparam>
+    /// <param name="addCurrentToStack">
+    /// Whether to add the current scene to the scene stack if there is no previous scene.
+    /// </param>
+    public static void ChangeToPreviousOr<T>(bool addCurrentToStack)
+        where T : Scene
+    {
+        if (SceneStack.Count == 0)
+        {
+            Change<T>(addCurrentToStack);
+        }
+        else
+        {
+            ChangeToPrevious();
+        }
     }
 
     /// <summary>
