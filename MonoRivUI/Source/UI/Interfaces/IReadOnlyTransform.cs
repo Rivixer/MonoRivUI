@@ -5,7 +5,7 @@ namespace MonoRivUI;
 /// <summary>
 /// Represents a read-only transformation of a UI component.
 /// </summary>
-public interface IUIReadOnlyTransform
+public interface IReadOnlyTransform
 {
     /// <summary>
     /// Gets the location of the component.

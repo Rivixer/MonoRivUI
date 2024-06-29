@@ -5,22 +5,22 @@ namespace MonoRivUI;
 /// <summary>
 /// Represents a read-only UI component.
 /// </summary>
-public interface IUIReadOnlyComponent : IUIComponentHierarchy
+public interface IReadOnlyComponent : IComponentHierarchy
 {
     /// <summary>
     /// Gets the read-only transform of the component.
     /// </summary>
-    IUIReadOnlyTransform Transform { get; }
+    IReadOnlyTransform Transform { get; }
 
     /// <summary>
     /// Gets the read-only parent of the component.
     /// </summary>
-    new IUIReadOnlyComponent? Parent { get; }
+    new IReadOnlyComponent? Parent { get; }
 
     /// <summary>
     /// Gets the read-only collection of children of the component.
     /// </summary>
-    new IEnumerable<IUIReadOnlyComponent> Children { get; }
+    new IEnumerable<IReadOnlyComponent> Children { get; }
 
     /// <summary>
     /// Gets a value indicating whether the component

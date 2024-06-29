@@ -6,17 +6,17 @@ namespace MonoRivUI;
 /// <summary>
 /// Represents a UI component hierarchy.
 /// </summary>
-public interface IUIComponentHierarchy
+public interface IComponentHierarchy
 {
     /// <summary>
     /// Gets the parent of the component.
     /// </summary>
-    IUIComponentHierarchy? Parent { get; }
+    IComponentHierarchy? Parent { get; }
 
     /// <summary>
     /// Gets the collection of children of the component.
     /// </summary>
-    IEnumerable<IUIComponentHierarchy> Children { get; }
+    IEnumerable<IComponentHierarchy> Children { get; }
 
     /// <summary>
     /// Checks whether the component is a parent of the specified component.
@@ -26,7 +26,7 @@ public interface IUIComponentHierarchy
     /// <see langword="true"/> if the component is a parent of the specified component;
     /// otherwise, <see langword="false"/>.
     /// </returns>
-    bool IsParent(IUIComponentHierarchy component)
+    bool IsParent(IComponentHierarchy component)
     {
         return this == component.Parent;
     }
@@ -39,7 +39,7 @@ public interface IUIComponentHierarchy
     /// <see langword="true"/> if the component is an ancestor of the specified component;
     /// otherwise, <see langword="false"/>.
     /// </returns>
-    bool IsAncestor(IUIComponentHierarchy component)
+    bool IsAncestor(IComponentHierarchy component)
     {
         return this.IsParent(component)
             || (component.Parent is not null && this.IsAncestor(component.Parent));
@@ -53,7 +53,7 @@ public interface IUIComponentHierarchy
     /// <see langword="true"/> if the component is a child of the specified component;
     /// otherwise, <see langword="false"/>.
     /// </returns>
-    bool IsChild(IUIComponentHierarchy component)
+    bool IsChild(IComponentHierarchy component)
     {
         return component.Children.Contains(this);
     }
@@ -66,7 +66,7 @@ public interface IUIComponentHierarchy
     /// <see langword="true"/> if the component is a descendant of the specified component;
     /// otherwise, <see langword="false"/>.
     /// </returns>
-    bool IsDescendant(IUIComponentHierarchy component)
+    bool IsDescendant(IComponentHierarchy component)
     {
         return this.IsChild(component)
             || (this.Parent?.IsDescendant(component) ?? false);
