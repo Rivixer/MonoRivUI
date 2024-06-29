@@ -203,37 +203,16 @@ public abstract partial class Component : IUIComponentHierarchy, IUIReadOnlyComp
         }
     }
 
-    /// <summary>
-    /// Returns the first child of a component
-    /// that is of type <typeparamref name="T"/>.
-    /// </summary>
-    /// <typeparam name="T">The type of the child to get.</typeparam>
-    /// <param name="predicate">
-    /// An optional predicate used to filter the child components.
-    /// </param>
-    /// <returns>
-    /// The first child of a component that is of type <typeparamref name="T"/>,
-    /// or <see langword="null"/> if no child is found.
-    /// </returns>
+    /// <inheritdoc/>
     public T? GetChild<T>(Predicate<T>? predicate = null)
-        where T : Component
+        where T : class, IComponentHierarchy
     {
         return this.children.FirstOrDefault(c => c is T t && (predicate?.Invoke(t) ?? true)) as T;
     }
 
-    /// <summary>
-    /// Returns the first descendant of a component
-    /// that is of type <typeparamref name="T"/>.
-    /// </summary>
-    /// <typeparam name="T">The type of the descendant to get.</typeparam>
-    /// <param name="predicate">
-    /// An optional predicate used to filter the descendant components.</param>
-    /// <returns>
-    /// The first descendant of a component that is of type <typeparamref name="T"/>,
-    /// or <see langword="null"/> if no descendant is found.
-    /// </returns>
+    /// <inheritdoc/>
     public T? GetDescendant<T>(Predicate<T>? predicate = null)
-        where T : Component
+        where T : class, IComponentHierarchy
     {
         T? descendant = this.GetChild(predicate);
         foreach (Component child in this.children)
@@ -249,38 +228,16 @@ public abstract partial class Component : IUIComponentHierarchy, IUIReadOnlyComp
         return descendant;
     }
 
-    /// <summary>
-    /// Retrieves all children of a component
-    /// that are of type <typeparamref name="T"/>.
-    /// </summary>
-    /// <typeparam name="T">The type of the children to retrieve.</typeparam>
-    /// <param name="predicate">
-    /// An optional predicate used to filter the children components.
-    /// </param>
-    /// <returns>
-    /// An enumerable containing all children of a component
-    /// that are of type <typeparamref name="T"/>.
-    /// </returns>
+    /// <inheritdoc/>
     public IEnumerable<T> GetAllChildren<T>(Predicate<T>? predicate = null)
-        where T : Component
+        where T : class, IComponentHierarchy
     {
         return this.children.OfType<T>().Where(c => predicate?.Invoke(c) ?? true);
     }
 
-    /// <summary>
-    /// Retrieves all descendants of a component
-    /// that are of type <typeparamref name="T"/>.
-    /// </summary>
-    /// <typeparam name="T">The type of the descendants to retrive.</typeparam>
-    /// <param name="predicate">
-    /// An optional predicate to use to filter the descendants components.
-    /// </param>
-    /// <returns>
-    /// An enumerable containing all descendants of a component
-    /// that are of type <typeparamref name="T"/>.
-    /// </returns>
+    /// <inheritdoc/>
     public IEnumerable<T> GetAllDescendants<T>(Predicate<T>? predicate = null)
-        where T : Component
+        where T : class, IComponentHierarchy
     {
         foreach (T child in this.GetAllChildren(predicate))
         {
