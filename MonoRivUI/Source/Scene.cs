@@ -123,7 +123,7 @@ public abstract class Scene
     /// <param name="addCurrentToStack">
     /// Whether to add the current scene to the scene stack if there is no previous scene.
     /// </param>
-    public static void ChangeToPreviousOr<T>(bool addCurrentToStack)
+    public static void ChangeToPreviousOr<T>(bool addCurrentToStack = false)
         where T : Scene
     {
         if (SceneStack.Count == 0)
