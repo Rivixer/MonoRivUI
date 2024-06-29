@@ -10,7 +10,7 @@ namespace MonoRivUI;
 /// <remarks>
 /// It is responsible for positioning and sizing the component.
 /// </remarks>
-public class Transform : IUIReadOnlyTransform
+public class Transform : IReadOnlyTransform
 {
     private Point location;
     private Point size;

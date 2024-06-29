@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
 namespace MonoRivUI;
@@ -11,7 +11,7 @@ public static class MouseController
     private static MouseState previousState;
     private static MouseState currentState;
 
-    private static IUIReadOnlyComponent? focusedComponent;
+    private static IReadOnlyComponent? focusedComponent;
 
     /// <summary>
     /// Gets the current position of the mouse cursor.
@@ -43,12 +43,12 @@ public static class MouseController
     /// </remarks>
     public static void Update()
     {
-        static void UpdateFocusedComponent(IUIReadOnlyComponent component)
+        static void UpdateFocusedComponent(IReadOnlyComponent component)
         {
             if (component.Transform.DestRectangle.Contains(Position))
             {
                 focusedComponent = component;
-                foreach (IUIReadOnlyComponent child in component.Children)
+                foreach (IReadOnlyComponent child in component.Children)
                 {
                     UpdateFocusedComponent(child);
                 }
@@ -77,7 +77,7 @@ public static class MouseController
     /// of the currently focused component and the mouse position
     /// is within the <paramref name="component"/>'s boundaries.
     /// </remarks>
-    public static bool IsComponentFocused(IUIReadOnlyComponent component)
+    public static bool IsComponentFocused(IReadOnlyComponent component)
     {
         return focusedComponent is not null
             && (focusedComponent == component

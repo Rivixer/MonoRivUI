@@ -31,19 +31,19 @@ public abstract partial class Component : IUIComponentHierarchy, IUIReadOnlyComp
     public event EventHandler<ChildChangedEventArgs>? ChildRemoved;
 
     /// <inheritdoc/>
-    IUIReadOnlyTransform IUIReadOnlyComponent.Transform => this.Transform;
+    IReadOnlyTransform IReadOnlyComponent.Transform => this.Transform;
 
     /// <inheritdoc/>
-    IUIReadOnlyComponent? IUIReadOnlyComponent.Parent => this.parent;
+    IReadOnlyComponent? IReadOnlyComponent.Parent => this.parent;
 
     /// <inheritdoc/>
-    IEnumerable<IUIReadOnlyComponent> IUIReadOnlyComponent.Children => this.Children;
+    IEnumerable<IReadOnlyComponent> IReadOnlyComponent.Children => this.Children;
 
     /// <inheritdoc/>
-    IUIComponentHierarchy? IUIComponentHierarchy.Parent => this.Parent;
+    IComponentHierarchy? IComponentHierarchy.Parent => this.Parent;
 
     /// <inheritdoc/>
-    IEnumerable<IUIComponentHierarchy> IUIComponentHierarchy.Children => this.Children;
+    IEnumerable<IComponentHierarchy> IComponentHierarchy.Children => this.Children;
 
     /// <summary>
     /// Gets or sets the parent component.
@@ -71,7 +71,7 @@ public abstract partial class Component : IUIComponentHierarchy, IUIReadOnlyComp
     /// </description></item>
     /// </list>
     /// </remarks>
-    public IUIReadOnlyComponent? Parent
+    public IReadOnlyComponent? Parent
     {
         get => this.parent;
         set

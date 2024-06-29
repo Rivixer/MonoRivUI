@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -42,7 +42,7 @@ public abstract class Scene
     /// <summary>
     /// Gets the base component of the scene.
     /// </summary>
-    public IUIReadOnlyComponent BaseComponent => this.baseComponent;
+    public IReadOnlyComponent BaseComponent => this.baseComponent;
 
     /// <summary>
     /// Initializes all scenes.

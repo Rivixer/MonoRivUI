@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -97,7 +97,7 @@ public class Frame : Component, IButtonContent<Frame>
     /// as a read-only property to avoid external modification.
     /// </para>
     /// </remarks>
-    public IUIReadOnlyComponent InnerContainer => this.innerContainer;
+    public IReadOnlyComponent InnerContainer => this.innerContainer;
 
     /// <inheritdoc/>
     public override void Update(GameTime gameTime)

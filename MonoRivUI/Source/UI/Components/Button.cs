@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.Xna.Framework;
 
 namespace MonoRivUI;
@@ -65,9 +65,9 @@ public class Button<T> : Component
     public bool WasHovered { get; private set; }
 
     /// <summary>
-    /// Gets the read-only component associated with this button.
+    /// Gets the component associated with this button.
     /// </summary>
-    public IUIReadOnlyComponent Component => this.component;
+    public T Component => this.component;
 
     /// <inheritdoc/>
     public override void Update(GameTime gameTime)
