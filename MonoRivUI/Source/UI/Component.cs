@@ -8,7 +8,7 @@ namespace MonoRivUI;
 /// <summary>
 /// Represents a base class for UI components.
 /// </summary>
-public abstract partial class Component : IUIComponentHierarchy, IUIReadOnlyComponent
+public abstract partial class Component : IComponentHierarchy, IReadOnlyComponent
 {
     private static uint idCounter;
     private readonly List<Component> children = new();
@@ -176,7 +176,7 @@ public abstract partial class Component : IUIComponentHierarchy, IUIReadOnlyComp
 
         foreach (Component child in this.children)
         {
-            if (child.AutoUpdate)
+            if (child.AutoUpdate && child.IsEnabled)
             {
                 child.Update(gameTime);
             }
@@ -196,7 +196,7 @@ public abstract partial class Component : IUIComponentHierarchy, IUIReadOnlyComp
 
         foreach (Component child in this.children)
         {
-            if (child.AutoDraw)
+            if (child.AutoDraw && child.IsEnabled)
             {
                 child.Draw(gameTime);
             }

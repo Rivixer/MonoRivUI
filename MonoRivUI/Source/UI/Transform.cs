@@ -26,6 +26,8 @@ public class Transform : IReadOnlyTransform
     private Vector4 padding = Vector4.Zero;
     private Alignment alignment = Alignment.TopLeft;
 
+    private bool isRecalculationNeeded = true;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="Transform"/> class.
     /// </summary>
@@ -39,8 +41,6 @@ public class Transform : IReadOnlyTransform
         {
             ScreenController.ScreenChanged += this.ScreenController_ScreenChanged;
         }
-
-        this.IsRecalculationNeeded = true;
     }
 
     /// <summary>
@@ -84,15 +84,9 @@ public class Transform : IReadOnlyTransform
             }
 
             this.transformType = value;
-            this.IsRecalculationNeeded = true;
+            this.isRecalculationNeeded = true;
         }
     }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether
-    /// the transformation needs to be recalculated.
-    /// </summary>
-    public bool IsRecalculationNeeded { get; set; } = true;
 
     /// <summary>
     /// Gets or sets the relative size of the component.
@@ -118,7 +112,7 @@ public class Transform : IReadOnlyTransform
             }
 
             this.relativeSize = value;
-            this.IsRecalculationNeeded = true;
+            this.isRecalculationNeeded = true;
         }
     }
 
@@ -141,7 +135,7 @@ public class Transform : IReadOnlyTransform
             }
 
             this.relativeOffset = value;
-            this.IsRecalculationNeeded = true;
+            this.isRecalculationNeeded = true;
         }
     }
 
@@ -166,7 +160,7 @@ public class Transform : IReadOnlyTransform
             }
 
             this.minSize = value;
-            this.IsRecalculationNeeded = true;
+            this.isRecalculationNeeded = true;
         }
     }
 
@@ -191,7 +185,7 @@ public class Transform : IReadOnlyTransform
             }
 
             this.maxSize = value;
-            this.IsRecalculationNeeded = true;
+            this.isRecalculationNeeded = true;
         }
     }
 
@@ -214,7 +208,7 @@ public class Transform : IReadOnlyTransform
             }
 
             this.ratio = value;
-            this.IsRecalculationNeeded = true;
+            this.isRecalculationNeeded = true;
         }
     }
 
@@ -236,7 +230,7 @@ public class Transform : IReadOnlyTransform
             }
 
             this.alignment = value;
-            this.IsRecalculationNeeded = true;
+            this.isRecalculationNeeded = true;
         }
     }
 
@@ -275,7 +269,7 @@ public class Transform : IReadOnlyTransform
 
             foreach (Component component in this.Component.Children)
             {
-                component.Transform.IsRecalculationNeeded = true;
+                component.Transform.isRecalculationNeeded = true;
             }
         }
     }
@@ -318,7 +312,7 @@ public class Transform : IReadOnlyTransform
             }
 
             this.location = value;
-            this.IsRecalculationNeeded = true;
+            this.isRecalculationNeeded = true;
         }
     }
 
@@ -360,7 +354,7 @@ public class Transform : IReadOnlyTransform
             }
 
             this.size = value;
-            this.IsRecalculationNeeded = true;
+            this.isRecalculationNeeded = true;
         }
     }
 
@@ -442,18 +436,11 @@ public class Transform : IReadOnlyTransform
     }
 
     /// <summary>
-    /// Recalculates the component's transformation if needed.
+    /// Forces the recalculation of the component's transformation.
     /// </summary>
-    /// <param name="withChildren">
-    /// Indicates whether to include children in the recalculation.
-    /// </param>
-    public void RecalculateIfNeeded(bool withChildren = true)
+    /// <param name="withChildren">Indicates whether to include children in the recalculation.</param>
+    internal void ForceRecalulcation(bool withChildren = true)
     {
-        if (!this.IsRecalculationNeeded)
-        {
-            return;
-        }
-
         if (withChildren)
         {
             this.RecalculateWithChildren();
@@ -462,6 +449,20 @@ public class Transform : IReadOnlyTransform
         {
             this.Recalculate();
         }
+    }
+
+    /// <summary>
+    /// Recalculates the component's transformation if needed.
+    /// </summary>
+    /// <param name="withChildren">Indicates whether to include children in the recalculation.</param>
+    internal void RecalculateIfNeeded(bool withChildren = true)
+    {
+        if (!this.isRecalculationNeeded)
+        {
+            return;
+        }
+
+        this.ForceRecalulcation(withChildren);
     }
 
     private void Recalculate()
@@ -479,7 +480,7 @@ public class Transform : IReadOnlyTransform
                 break;
         }
 
-        this.IsRecalculationNeeded = false;
+        this.isRecalculationNeeded = false;
         this.Recalculated?.Invoke(this, EventArgs.Empty);
 
         if (this.location != locationBefore)
@@ -514,7 +515,7 @@ public class Transform : IReadOnlyTransform
     {
         var reference = (Transform)this.Component.Parent!.Transform;
 
-        if (reference.IsRecalculationNeeded)
+        if (reference.isRecalculationNeeded)
         {
             reference.Recalculate();
         }
@@ -601,11 +602,7 @@ public class Transform : IReadOnlyTransform
             ScreenController.ScreenChanged -= this.ScreenController_ScreenChanged;
         }
 
-        if (e.Current is null)
-        {
-            ScreenController.ScreenChanged += this.ScreenController_ScreenChanged;
-        }
-        else
+        if (e.Current is not null)
         {
             this.RecalculateWithChildren();
         }

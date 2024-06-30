@@ -309,20 +309,6 @@ public class ListBox : Component
         }
     }
 
-    public override ListBox Clone()
-    {
-        var listBox = new ListBox()
-        {
-            Parent = this.Parent,
-            Orientation = this.orientation,
-            Spacing = this.spacing,
-            IsScrollable = this.isScrollable,
-            ResizeContent = this.resizeContent,
-        };
-        this.CloneTransformTo(listBox);
-        return listBox;
-    }
-
     /// <inheritdoc/>
     public override void Update(GameTime gameTime)
     {
