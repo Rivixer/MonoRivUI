@@ -152,6 +152,7 @@ public abstract class Scene
     public virtual void Draw(GameTime gameTime)
     {
         this.baseComponent.Draw(gameTime);
+        Component.DrawPriorityComponents(gameTime);
     }
 
     /// <summary>

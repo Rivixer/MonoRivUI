@@ -10,7 +10,9 @@ namespace MonoRivUI;
 /// </summary>
 public abstract partial class Component : IComponentHierarchy, IReadOnlyComponent
 {
+    private static readonly Queue<Component> PriorityComponents = new();
     private static uint idCounter;
+
     private readonly List<Component> children = new();
     private Component? parent;
     private Transform? transform;
@@ -29,6 +31,11 @@ public abstract partial class Component : IComponentHierarchy, IReadOnlyComponen
     /// An event raised when a child component has been removed.
     /// </summary>
     public event EventHandler<ChildChangedEventArgs>? ChildRemoved;
+
+    /// <summary>
+    /// An event raised when a child component has been removed.
+    /// </summary>
+    public event EventHandler<ChildChangedEventArgs>? ChildCloned;
 
     /// <inheritdoc/>
     IReadOnlyTransform IReadOnlyComponent.Transform => this.Transform;
@@ -113,10 +120,16 @@ public abstract partial class Component : IComponentHierarchy, IReadOnlyComponen
     /// Gets or sets a value indicating whether the component is enabled.
     /// </summary>
     /// <remarks>
-    /// <para>If component is disabled, it will not be updated or drawn.</para>
-    /// <para>The default value is <see langword="true"/>.</para>
+    /// <inheritdoc/>
+    /// Default value is <see langword="true"/>.
     /// </remarks>
     public bool IsEnabled { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the component is priority.
+    /// </summary>
+    /// <inheritdoc/>
+    public bool IsPriority { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the component
@@ -149,7 +162,7 @@ public abstract partial class Component : IComponentHierarchy, IReadOnlyComponen
     public bool AutoDraw { get; set; } = true;
 
     /// <inheritdoc/>
-    public uint Id { get; } = idCounter++;
+    public uint Id { get; private set; } = idCounter++;
 
     public static bool operator ==(Component? a, Component? b)
     {
@@ -159,6 +172,20 @@ public abstract partial class Component : IComponentHierarchy, IReadOnlyComponen
     public static bool operator !=(Component? a, Component? b)
     {
         return !(a == b);
+    }
+
+    /// <summary>
+    /// Draws the priority components.
+    /// </summary>
+    /// <param name="gameTime">The game time information.</param>
+    public static void DrawPriorityComponents(GameTime gameTime)
+    {
+        while (PriorityComponents.Count > 0)
+        {
+            Component component = PriorityComponents.Peek();
+            component.Draw(gameTime);
+            _ = PriorityComponents.Dequeue();
+        }
     }
 
     /// <summary>
@@ -176,10 +203,12 @@ public abstract partial class Component : IComponentHierarchy, IReadOnlyComponen
 
         foreach (Component child in this.children)
         {
-            if (child.AutoUpdate && child.IsEnabled)
+            if (!child.AutoUpdate)
             {
-                child.Update(gameTime);
+                continue;
             }
+
+            child.Update(gameTime);
         }
     }
 
@@ -194,25 +223,33 @@ public abstract partial class Component : IComponentHierarchy, IReadOnlyComponen
             return;
         }
 
+        if (this.IsPriority && !PriorityComponents.Contains(this))
+        {
+            PriorityComponents.Enqueue(this);
+            return;
+        }
+
         foreach (Component child in this.children)
         {
-            if (child.AutoDraw && child.IsEnabled)
+            if (!child.AutoDraw)
             {
-                child.Draw(gameTime);
+                continue;
             }
+
+            child.Draw(gameTime);
         }
     }
 
     /// <inheritdoc/>
     public T? GetChild<T>(Predicate<T>? predicate = null)
-        where T : class, IComponentHierarchy
+        where T : IReadOnlyComponent
     {
-        return this.children.FirstOrDefault(c => c is T t && (predicate?.Invoke(t) ?? true)) as T;
+        return this.Children.OfType<T>().FirstOrDefault(c => predicate?.Invoke(c) ?? true);
     }
 
     /// <inheritdoc/>
     public T? GetDescendant<T>(Predicate<T>? predicate = null)
-        where T : class, IComponentHierarchy
+        where T : IReadOnlyComponent
     {
         T? descendant = this.GetChild(predicate);
         foreach (Component child in this.children)
@@ -230,14 +267,14 @@ public abstract partial class Component : IComponentHierarchy, IReadOnlyComponen
 
     /// <inheritdoc/>
     public IEnumerable<T> GetAllChildren<T>(Predicate<T>? predicate = null)
-        where T : class, IComponentHierarchy
+        where T : IReadOnlyComponent
     {
         return this.children.OfType<T>().Where(c => predicate?.Invoke(c) ?? true);
     }
 
     /// <inheritdoc/>
     public IEnumerable<T> GetAllDescendants<T>(Predicate<T>? predicate = null)
-        where T : class, IComponentHierarchy
+        where T : IReadOnlyComponent
     {
         foreach (T child in this.GetAllChildren(predicate))
         {
