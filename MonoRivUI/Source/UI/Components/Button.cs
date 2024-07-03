@@ -1,5 +1,7 @@
-using System;
+﻿using System;
+using System.Reflection;
 using Microsoft.Xna.Framework;
+using static MonoRivUI.Style;
 
 namespace MonoRivUI;
 
@@ -7,11 +9,9 @@ namespace MonoRivUI;
 /// Represents a button component with a specific component as its content.
 /// </summary>
 /// <typeparam name="T">The type of the contained component.</typeparam>
-public class Button<T> : Component
+public class Button<T> : Component, IButton<T>, IStyleable<Button<T>>
     where T : Component, IButtonContent<Component>
 {
-    private readonly T component;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="Button{T}"/> class.
     /// </summary>
@@ -31,26 +31,39 @@ public class Button<T> : Component
     /// </remarks>
     public Button(T component)
     {
-        this.component = component;
+        this.Component = component;
         component.Parent = this;
 
         this.Transform.Ratio = component.Transform.Ratio;
     }
 
-    /// <summary>
-    /// An event raised when the button is clicked.
-    /// </summary>
+    /// <inheritdoc/>
+    public event EventHandler? Clicking;
+
+    /// <inheritdoc/>
     public event EventHandler? Clicked;
 
-    /// <summary>
-    /// An event raised when the button is hovered over.
-    /// </summary>
-    public event EventHandler<HoverStateChangedEventArgs<T>>? HoverEntered;
+    /// <inheritdoc/>
+    [Stylable]
+    public event EventHandler<T>? HoverEntered;
 
-    /// <summary>
-    /// An event raised when the button is no longer hovered over.
-    /// </summary>
-    public event EventHandler<HoverStateChangedEventArgs<T>>? HoverExited;
+    /// <inheritdoc/>
+    [Stylable]
+    public event EventHandler<T>? HoverExited;
+
+    /// <inheritdoc/>
+    event EventHandler<IButtonContent<Component>>? IButton.HoverEntered
+    {
+        add => this.HoverEntered += (s, e) => value?.Invoke(s, e);
+        remove => this.HoverEntered -= (s, e) => value?.Invoke(s, e);
+    }
+
+    /// <inheritdoc/>
+    event EventHandler<IButtonContent<Component>>? IButton.HoverExited
+    {
+        add => this.HoverExited += (s, e) => value?.Invoke(s, e);
+        remove => this.HoverExited -= (s, e) => value?.Invoke(s, e);
+    }
 
     /// <summary>
     /// Gets a value indicating whether the button
@@ -67,7 +80,31 @@ public class Button<T> : Component
     /// <summary>
     /// Gets the component associated with this button.
     /// </summary>
-    public T Component => this.component;
+    public T Component { get; }
+
+    /// <inheritdoc/>
+    public Button<T> ApplyStyle(Style<Button<T>> style)
+    {
+        style.Apply(this);
+        return this;
+    }
+
+    /// <inheritdoc/>
+    public Style<Button<T>> GetStyle()
+    {
+        var style = new Style()
+        {
+            HoverEntered = this.HoverEntered,
+            HoverExited = this.HoverExited,
+        };
+
+        var componentType = this.Component.GetType();
+        MethodInfo? getStyleMethod = componentType.GetMethod("GetStyle");
+        var componentStyle = (MonoRivUI.Style?)getStyleMethod?.Invoke(this.Component, null);
+        style.ComponentStyle = componentStyle;
+
+        return style;
+    }
 
     /// <inheritdoc/>
     public override void Update(GameTime gameTime)
@@ -76,15 +113,15 @@ public class Button<T> : Component
         bool isFocused = MouseController.IsComponentFocused(this);
 
         this.WasHovered = this.IsHovered;
-        this.IsHovered = isFocused && this.component.IsButtonContentHovered(mousePosition);
+        this.IsHovered = isFocused && this.Component.IsButtonContentHovered(mousePosition);
 
         if (isFocused && !this.WasHovered && this.IsHovered)
         {
-            this.InvokeHoverEvent(this.HoverEntered);
+            this.HoverEntered?.Invoke(this, this.Component);
         }
         else if (this.WasHovered && !this.IsHovered)
         {
-            this.InvokeHoverEvent(this.HoverExited);
+            this.HoverExited?.Invoke(this, this.Component);
         }
 
         if (isFocused && MouseController.IsLeftButtonClicked() && this.IsHovered)
@@ -95,12 +132,25 @@ public class Button<T> : Component
         base.Update(gameTime);
     }
 
-    private void InvokeHoverEvent(EventHandler<HoverStateChangedEventArgs<T>>? hoverEvent)
+    /// <summary>
+    /// Represents the class for styling a <see cref="Button{T}"/>.
+    /// </summary>
+    public class Style : Style<Button<T>>
     {
-        if (hoverEvent is not null)
-        {
-            var eventArgs = new HoverStateChangedEventArgs<T>(this.component);
-            hoverEvent.Invoke(this, eventArgs);
-        }
+        /// <summary>
+        /// Gets or sets the hover entered event handler.
+        /// </summary>
+        public EventHandler<T>? HoverEntered { get; set; }
+
+        /// <summary>
+        /// Gets or sets the hover exited event handler.
+        /// </summary>
+        public EventHandler<T>? HoverExited { get; set; }
+
+        /// <summary>
+        /// Gets or sets the button's component style.
+        /// </summary>
+        [Name("Component")]
+        public MonoRivUI.Style? ComponentStyle { get; set; }
     }
 }
