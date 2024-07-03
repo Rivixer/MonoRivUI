@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.Xna.Framework;
 
 namespace MonoRivUI;
@@ -148,6 +148,11 @@ public class ScrollBar : Component
     /// <inheritdoc/>
     public override void Update(GameTime gameTime)
     {
+        if (!this.IsEnabled)
+        {
+            return;
+        }
+
         if (this.isUpdateThumbSizeNeeded)
         {
             this.UpdateThumbSize();

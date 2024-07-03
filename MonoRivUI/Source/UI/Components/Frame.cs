@@ -150,6 +150,11 @@ public class Frame : Component, IButtonContent<Frame>, IStyleable<Frame>
     /// <inheritdoc/>
     public override void Update(GameTime gameTime)
     {
+        if (!this.IsEnabled)
+        {
+            return;
+        }
+
         if (this.isRecalculationNeeded)
         {
             this.Recalculate();

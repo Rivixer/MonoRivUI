@@ -109,6 +109,11 @@ public class Button<T> : Component, IButton<T>, IStyleable<Button<T>>
     /// <inheritdoc/>
     public override void Update(GameTime gameTime)
     {
+        if (!this.IsEnabled)
+        {
+            return;
+        }
+
         Point mousePosition = MouseController.Position;
         bool isFocused = MouseController.IsComponentFocused(this);
 

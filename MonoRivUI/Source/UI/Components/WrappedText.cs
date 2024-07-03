@@ -168,6 +168,11 @@ public class WrappedText : TextComponent, IEnumerable<Text>
     /// <inheritdoc/>
     public override void Update(GameTime gameTime)
     {
+        if (!this.IsEnabled)
+        {
+            return;
+        }
+
         if (this.isRecalculationNeeded)
         {
             this.Recalculate();

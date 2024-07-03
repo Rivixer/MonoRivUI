@@ -61,6 +61,11 @@ public abstract class TextureComponent : Component
     /// <inheritdoc/>
     public override void Draw(GameTime gameTime)
     {
+        if (!this.IsEnabled)
+        {
+            return;
+        }
+
         SpriteBatchController.SpriteBatch.Draw(
             texture: this.Texture,
             destinationRectangle: this.Transform.DestRectangle,

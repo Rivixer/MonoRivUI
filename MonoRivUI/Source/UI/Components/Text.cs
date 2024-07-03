@@ -131,6 +131,11 @@ public class Text : TextComponent
     /// <inheritdoc/>
     public override void Update(GameTime gameTime)
     {
+        if (!this.IsEnabled)
+        {
+            return;
+        }
+
         if (this.isRecalculationNeeded)
         {
             this.Recalculate();
@@ -142,6 +147,11 @@ public class Text : TextComponent
     /// <inheritdoc/>
     public override void Draw(GameTime gameTime)
     {
+        if (!this.IsEnabled)
+        {
+            return;
+        }
+
         this.Font.DrawString(
             text: this.Value,
             position: this.destinationLocation,

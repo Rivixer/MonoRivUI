@@ -233,6 +233,11 @@ public class TextInput : Component
     /// <inheritdoc/>
     public override void Update(GameTime gameTime)
     {
+        if (!this.IsEnabled)
+        {
+            return;
+        }
+
         if (MouseController.IsLeftButtonClicked())
         {
             this.HandleSelection();
@@ -257,6 +262,11 @@ public class TextInput : Component
     /// <inheritdoc/>
     public override void Draw(GameTime gameTime)
     {
+        if (!this.IsEnabled)
+        {
+            return;
+        }
+
         if (this.text.Value.Length == 0)
         {
             this.placeholder?.Draw(gameTime);

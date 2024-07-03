@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -312,21 +312,18 @@ public class ListBox : Component
     /// <inheritdoc/>
     public override void Update(GameTime gameTime)
     {
-        bool isAnyComponentDequeued = this.queuedComponents.Count > 0;
+        if (!this.IsEnabled)
+        {
+            return;
+        }
 
         this.RecalculateElements();
-
-        if (isAnyComponentDequeued)
-        {
-            this.ComponentsDequeuing?.Invoke(this, EventArgs.Empty);
-            while (this.queuedComponents.Count > 0)
-            {
-                this.DequeueComponent();
-            }
-        }
+        this.DequeueComponents();
 
         // We update all components before recalculating ListBox
         // to act on already calculated components.
+        // It is safe, because we disable AutoUpdate for components,
+        // so base.Update(GameTime) will not update them again.
         foreach (Component component in this.components)
         {
             if (this.IsComponentVisible(component))
@@ -342,17 +339,17 @@ public class ListBox : Component
             this.isRecalculationNeeded = false;
         }
 
-        if (isAnyComponentDequeued)
-        {
-            this.ComponentsDequeued?.Invoke(this, EventArgs.Empty);
-        }
-
         base.Update(gameTime);
     }
 
     /// <inheritdoc/>
     public override void Draw(GameTime gameTime)
     {
+        if (!this.IsEnabled)
+        {
+            return;
+        }
+
         SpriteBatch spriteBatch = SpriteBatchController.SpriteBatch;
         spriteBatch.End();
 
@@ -383,6 +380,25 @@ public class ListBox : Component
         spriteBatch.Begin(blendState: BlendState.NonPremultiplied);
 
         base.Draw(gameTime);
+    }
+
+    /// <summary>
+    /// Dequeues all components that are queued for initialization.
+    /// </summary>
+    public void DequeueComponents()
+    {
+        if (this.queuedComponents.Count > 0)
+        {
+            this.ComponentsDequeuing?.Invoke(this, EventArgs.Empty);
+
+            while (this.queuedComponents.Count > 0)
+            {
+                Component component = this.DequeueComponent();
+                component.Transform.ForceRecalulcation();
+            }
+
+            this.ComponentsDequeued?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     private void ScrollBar_Scrolled(object? sender, ScrolledEventArgs e)
