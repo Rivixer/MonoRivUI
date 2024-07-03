@@ -1,13 +1,14 @@
-using System;
+﻿using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using static MonoRivUI.Style;
 
 namespace MonoRivUI;
 
 /// <summary>
 /// Represents a UI frame component.
 /// </summary>
-public class Frame : Component, IButtonContent<Frame>
+public class Frame : Component, IButtonContent<Frame>, IStyleable<Frame>
 {
     private const int NumberOfLines = 4;
 
@@ -18,6 +19,17 @@ public class Frame : Component, IButtonContent<Frame>
     private Color color;
 
     private bool isRecalculationNeeded = true;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Frame"/> class.
+    /// </summary>
+    /// <remarks>
+    /// The frame is initialized with a black color and a thickness of 2 pixels.
+    /// </remarks>
+    public Frame()
+        : this(Color.Black, 2)
+    {
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Frame"/> class.
@@ -46,6 +58,7 @@ public class Frame : Component, IButtonContent<Frame>
     /// <remarks>
     /// The thickness is measured in pixels.
     /// </remarks>
+    [Stylable]
     public int Thickness
     {
         get => this.thickness;
@@ -64,6 +77,7 @@ public class Frame : Component, IButtonContent<Frame>
     /// <summary>
     /// Gets or sets the color of the frame lines.
     /// </summary>
+    [Stylable]
     public Color Color
     {
         get => this.color;
@@ -100,6 +114,40 @@ public class Frame : Component, IButtonContent<Frame>
     public IReadOnlyComponent InnerContainer => this.innerContainer;
 
     /// <inheritdoc/>
+    /// <remarks>
+    /// The button content is hovered if the mouse
+    /// cursor is within <see cref="InnerContainer"/>.
+    /// </remarks>
+    bool IButtonContent<Frame>.IsButtonContentHovered(Point mousePosition)
+    {
+        if (this.isRecalculationNeeded)
+        {
+            this.Recalculate();
+        }
+
+        return this.Transform
+            .DestRectangle
+            .Contains(mousePosition);
+    }
+
+    /// <inheritdoc/>
+    public Frame ApplyStyle(Style<Frame> style)
+    {
+        style.Apply(this);
+        return this;
+    }
+
+    /// <inheritdoc/>
+    public Style<Frame> GetStyle()
+    {
+        return new Style()
+        {
+            Color = this.Color,
+            Thickness = this.Thickness,
+        };
+    }
+
+    /// <inheritdoc/>
     public override void Update(GameTime gameTime)
     {
         if (this.isRecalculationNeeded)
@@ -133,24 +181,6 @@ public class Frame : Component, IButtonContent<Frame>
         }
 
         base.Draw(gameTime);
-    }
-
-    /// <inheritdoc/>
-    /// <remarks>
-    /// The button content is hovered if the mouse
-    /// cursor is within <see cref="InnerContainer"/>.
-    /// </remarks>
-    bool IButtonContent<Frame>.IsButtonContentHovered(Point mousePosition)
-    {
-        if (this.isRecalculationNeeded)
-        {
-            this.Recalculate();
-        }
-
-        return this.innerContainer
-            .Transform
-            .DestRectangle
-            .Contains(mousePosition);
     }
 
     private void Recalculate()
@@ -207,5 +237,21 @@ public class Frame : Component, IButtonContent<Frame>
         public Vector2 Start;
         public float Angle;
         public Vector2 Scale;
+    }
+
+    /// <summary>
+    /// Represents a style for a <see cref="Frame"/> component.
+    /// </summary>
+    public class Style : Style<Frame>
+    {
+        /// <summary>
+        /// Gets or sets the color of the frame lines.
+        /// </summary>
+        public Color Color { get; set; }
+
+        /// <summary>
+        /// Gets or sets the thickness of the frame lines.
+        /// </summary>
+        public int Thickness { get; set; }
     }
 }
