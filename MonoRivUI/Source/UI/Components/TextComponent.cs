@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Globalization;
 using Microsoft.Xna.Framework;
 
 namespace MonoRivUI;
@@ -8,7 +8,9 @@ namespace MonoRivUI;
 /// </summary>
 public abstract class TextComponent : Component
 {
+    private string rawText = string.Empty;
     private string text = string.Empty;
+    private TextCase textCase = TextCase.None;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TextComponent"/> class.
@@ -27,7 +29,11 @@ public abstract class TextComponent : Component
     public virtual string Value
     {
         get => this.text;
-        set => this.text = value.Replace("\t", "    ", StringComparison.Ordinal);
+        set
+        {
+            this.rawText = this.text = value;
+            this.ApplyTextCase();
+        }
     }
 
     /// <summary>
@@ -51,17 +57,13 @@ public abstract class TextComponent : Component
     public virtual Alignment TextAlignment { get; set; } = Alignment.TopLeft;
 
     /// <summary>
-    /// Gets or sets a value indicating whether the transform size
-    /// should dynamically adapt to the text content.
+    /// Gets or sets the size adjustment behavior.
     /// </summary>
     /// <remarks>
-    /// If this is set to <see langword="true"/>,
-    /// <see cref="Transform.Size"/> will be adjusted
-    /// to match the size of the text content.<br/>
-    /// If this is set to <see langword="false"/>, the sizes
-    /// will remain unchanged, regardless of the text size.
+    /// The size adjustment behavior specifies how the transform size
+    /// is adjusted to fit the text content.
     /// </remarks>
-    public virtual bool AdjustSizeToText { get; set; }
+    public virtual AdjustSizeOption AdjustTransformSizeToText { get; set; }
 
     /// <summary>
     /// Gets the dimensions of the text.
@@ -71,4 +73,67 @@ public abstract class TextComponent : Component
     /// of the rectangle that can contain the text.
     /// </remarks>
     public abstract Vector2 Dimensions { get; }
+
+    /// <summary>
+    /// Gets or sets the case of the text.
+    /// </summary>
+    public TextCase Case
+    {
+        get => this.textCase;
+        set
+        {
+            if (this.textCase == value)
+            {
+                return;
+            }
+
+            this.textCase = value;
+            this.ApplyTextCase();
+        }
+    }
+
+    /// <summary>
+    /// Adjusts the size of the transform to fit the text content.
+    /// </summary>
+    /// <param name="dimensions">The dimensions of the text content.</param>
+    protected virtual void AdjustSizeToText(Vector2 dimensions)
+    {
+        switch (this.AdjustTransformSizeToText)
+        {
+            case AdjustSizeOption.OnlyHeight:
+                this.Transform.SetRelativeSizeFromAbsolute(
+                                     y: dimensions.Y);
+                break;
+            case AdjustSizeOption.OnlyWidth:
+                this.Transform.SetRelativeSizeFromAbsolute(
+                    x: dimensions.X);
+                break;
+            case AdjustSizeOption.HeightAndWidth:
+                this.Transform.SetRelativeSizeFromAbsolute(
+                    x: dimensions.X, y: dimensions.Y);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Applies the text case to the text.
+    /// </summary>
+    protected void ApplyTextCase()
+    {
+        switch (this.Case)
+        {
+            case TextCase.None:
+                this.text = this.rawText;
+                break;
+            case TextCase.Upper:
+                this.text = this.text.ToUpper();
+                break;
+            case TextCase.Lower:
+                this.text = this.text.ToLower();
+                break;
+            case TextCase.Title:
+                this.text = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(this.text.ToLower());
+                break;
+        }
+    }
 }

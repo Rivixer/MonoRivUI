@@ -1,5 +1,4 @@
-﻿using System;
-using System.Diagnostics;
+using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -12,9 +11,7 @@ public class Text : TextComponent
 {
     private Vector2 destinationLocation;
     private Vector2 dimensions;
-
-    private TextFit textFit;
-    private float fitScale;
+    private float heightOffset;
     private float drawScale;
 
     private bool isRecalculationNeeded = true;
@@ -27,7 +24,7 @@ public class Text : TextComponent
     public Text(ScalableFont font, Color color)
         : base(font, color)
     {
-        this.Transform.Recalculated += (s, e) => this.Recalculate();
+        this.Transform.Recalculated += this.Transform_Recalculated;
     }
 
     /// <inheritdoc/>
@@ -75,24 +72,13 @@ public class Text : TextComponent
         }
     }
 
-    /// <summary>
-    /// Gets or sets the text fitting behavior.
-    /// </summary>
-    public TextFit TextFit
-    {
-        get => this.textFit;
-        set
-        {
-            if (this.textFit == value)
-            {
-                return;
-            }
-
-            this.textFit = value;
-            this.isRecalculationNeeded = true;
-        }
-    }
-
+    /// <remarks>
+    /// <inheritdoc/>
+    /// <para>
+    /// If the <see cref="FixedHeight"/> property is set, the dimensions
+    /// contain the current width of the text and this height.
+    /// </para>
+    /// </remarks>
     /// <inheritdoc/>
     public override Vector2 Dimensions
     {
@@ -103,9 +89,26 @@ public class Text : TextComponent
                 this.Recalculate();
             }
 
-            return this.dimensions;
+            return this.FixedHeight.HasValue
+                ? new Vector2(this.dimensions.X, this.FixedHeight.Value)
+                : this.dimensions;
         }
     }
+
+    /// <summary>
+    /// Gets or sets the fixed height of the text.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// If it is set, the <see cref="Dimensions"/> property contains
+    /// the current width of the text and this height.
+    /// </para>
+    /// <para>
+    /// If it is <see langword="null"/>, the <see cref="Dimensions"/>
+    /// property contains the current width and height of the text.
+    /// </para>
+    /// </remarks>
+    public int? FixedHeight { get; set; }
 
     /// <summary>
     /// Gets a character at the specified index within the text.
@@ -164,65 +167,35 @@ public class Text : TextComponent
     /// </remarks>
     public Vector2 MeasureDimensions(int startIndex, int endIndex)
     {
+        return this.MeasureDimensions(startIndex, endIndex, out _);
+    }
+
+    /// <inheritdoc cref="MeasureDimensions(int, int)"/>
+    /// <param name="heightOffset">
+    /// The difference between the height of the text and the height of the base character.
+    /// </param>
+    public Vector2 MeasureDimensions(int startIndex, int endIndex, out float heightOffset)
+    {
         if (this.isRecalculationNeeded)
         {
             this.Recalculate();
         }
 
-        return this.Font
-            .MeasureString(this.Value[startIndex..endIndex])
-            .Scale(this.fitScale)
-            .Scale(this.Scale);
+        return this.Font.MeasureString(this.Value[startIndex..endIndex], out heightOffset);
     }
 
     private void Recalculate()
     {
-        this.UpdateFitScale();
-
         this.dimensions = this.Font
-            .MeasureString(this.Value)
-            .Scale(this.fitScale)
+            .MeasureString(this.Value, out this.heightOffset)
             .Scale(this.Scale);
 
         this.UpdateDestinationLocation();
+        this.AdjustSizeToText(this.dimensions);
 
-        this.drawScale = this.fitScale * this.Scale;
-
-        if (this.AdjustSizeToText)
-        {
-            this.Transform.SetRelativeSizeFromAbsolute(
-                x: this.dimensions.X, y: this.dimensions.Y);
-        }
+        this.drawScale = this.Scale;
 
         this.isRecalculationNeeded = false;
-    }
-
-    private void UpdateFitScale()
-    {
-        if (this.textFit is TextFit.None || this.AdjustSizeToText)
-        {
-            this.fitScale = 1.0f;
-            return;
-        }
-
-        Vector2 defaultDimensions = this.Font.MeasureString(this.Value);
-
-        if (defaultDimensions == Vector2.Zero)
-        {
-            this.fitScale = 1.0f;
-            return;
-        }
-
-        float scaleWidth = this.Transform.Size.X / defaultDimensions.X;
-        float scaleHeight = this.Transform.Size.Y / defaultDimensions.Y;
-
-        this.fitScale = this.textFit switch
-        {
-            TextFit.Width => scaleWidth,
-            TextFit.Height => scaleHeight,
-            TextFit.Both => Math.Min(scaleWidth, scaleHeight),
-            _ => this.fitScale,
-        };
     }
 
     private void UpdateDestinationLocation()
@@ -230,10 +203,15 @@ public class Text : TextComponent
         Rectangle sourceRect = this.Transform.DestRectangle;
         var currentRect = new Rectangle(
             this.Transform.DestRectangle.Location,
-            this.dimensions.ToPoint());
+            (this.dimensions - new Vector2(0, this.heightOffset)).ToPoint());
 
         this.destinationLocation = RecalculationUtils.AlignRectangle(
             sourceRect, currentRect, this.TextAlignment)
             .Location.ToVector2();
+    }
+
+    private void Transform_Recalculated(object? sender, EventArgs e)
+    {
+        this.Recalculate();
     }
 }

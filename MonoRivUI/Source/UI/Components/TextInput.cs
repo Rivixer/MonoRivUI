@@ -34,7 +34,6 @@ public class TextInput : Component
         {
             Parent = this,
             Value = string.Empty,
-            TextFit = TextFit.Both,
         };
 
         this.caret = new SolidColor(caretColor)
@@ -148,7 +147,6 @@ public class TextInput : Component
                     Parent = this,
                     Value = value,
                     TextAlignment = this.TextAlignment,
-                    TextFit = TextFit.Height,
                     Transform =
                     {
                         RelativeOffset = this.text.Transform.RelativeOffset,

@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Microsoft.Xna.Framework;
 
@@ -80,16 +81,16 @@ public class WrappedText : TextComponent, IEnumerable<Text>
     }
 
     /// <inheritdoc/>
-    public override bool AdjustSizeToText
+    public override AdjustSizeOption AdjustTransformSizeToText
     {
         set
         {
-            if (base.AdjustSizeToText == value)
+            if (base.AdjustTransformSizeToText == value)
             {
                 return;
             }
 
-            base.AdjustSizeToText = value;
+            base.AdjustTransformSizeToText = value;
             this.isRecalculationNeeded = true;
         }
     }
@@ -179,13 +180,7 @@ public class WrappedText : TextComponent, IEnumerable<Text>
     {
         this.WrapText();
         this.UpdateDimensions();
-
-        if (this.AdjustSizeToText)
-        {
-            this.Transform.SetRelativeSizeFromAbsolute(
-                y: this.dimensions.Y);
-        }
-
+        this.AdjustSizeToText(this.dimensions);
         this.PositionTextLines();
         this.isRecalculationNeeded = false;
     }
@@ -193,7 +188,7 @@ public class WrappedText : TextComponent, IEnumerable<Text>
     private void UpdateDimensions()
     {
         float totalY = this.lineSpacing * (this.textLines.Count - 1);
-        foreach (Text line in this.textLines)
+        foreach (Text line in this.textLines.ToList())
         {
             Vector2 lineDimensions = line.Dimensions;
             totalY += lineDimensions.Y;
@@ -252,6 +247,15 @@ public class WrappedText : TextComponent, IEnumerable<Text>
                 _ = word.Append(character);
             }
 
+            if (whitespace == '\n')
+            {
+                // Add the current line to the result and reset for the next one
+                result.Add(currentLine.ToString());
+                _ = currentLine.Clear();
+                currentWidth = 0.0f;
+                continue;
+            }
+
             // Measure the width of the current word
             float wordWidth = this.MeasureText(word).X;
 
@@ -307,15 +311,17 @@ public class WrappedText : TextComponent, IEnumerable<Text>
 
     private Text CreateTextLine(string text)
     {
-        return new Text(this.Font, this.Color)
+        var result = new Text(this.Font, this.Color)
         {
             Parent = this,
             Value = text,
             Color = this.Color,
             Scale = this.Scale,
             TextAlignment = this.TextAlignment,
-            AdjustSizeToText = this.AdjustSizeToText,
+            AdjustTransformSizeToText = AdjustSizeOption.OnlyWidth,
+            FixedHeight = (int)this.Font.SafeDimensions.Y,
         };
+        return result;
     }
 
     private void PositionTextLines()
@@ -340,11 +346,13 @@ public class WrappedText : TextComponent, IEnumerable<Text>
 
     private Vector2 MeasureText(string text)
     {
-        return this.Font.MeasureString(text);
+        var result = this.Font.MeasureString(text, out var heightOffset);
+        result.Y += heightOffset;
+        return result;
     }
 
     private Vector2 MeasureText(StringBuilder text)
     {
-        return this.Font.MeasureString(text);
+        return this.MeasureText(text.ToString());
     }
 }

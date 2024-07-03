@@ -15,8 +15,8 @@ namespace MonoRivUI;
 /// </summary>
 public class ScalableFont : IDisposable
 {
-    private const int TextureDims = 1024;
     private const char BaseChar = 'A';
+    private const int TextureDims = 1024;
     private const int DpiX = 150;
     private const int DpiY = 150;
 
@@ -76,6 +76,20 @@ public class ScalableFont : IDisposable
         }
     }
 
+    /// <summary>
+    /// Gets the dimensions of the base character.
+    /// </summary>
+    public Vector2 BaseCharDimensions => this.glyphDatas[BaseChar].TextureCoords.Size.ToVector2();
+
+    /// <summary>
+    /// Gets the safe dimensions of the text.
+    /// </summary>
+    /// <remarks>
+    /// The safe dimensions are the dimensions of the text that are guaranteed to be fitted.
+    /// </remarks>
+    // TODO: This is a temporary solution.
+    public Vector2 SafeDimensions => this.BaseCharDimensions * 16 / 10;
+
     /// <inheritdoc/>
     public void Dispose()
     {
@@ -117,8 +131,7 @@ public class ScalableFont : IDisposable
         {
             char currentChar = text[i];
 
-            GlyphData glyphData = this.glyphDatas[currentChar];
-            if (glyphData.TextureIndex is int index)
+            if (this.glyphDatas.TryGetValue(currentChar, out var glyphData) && glyphData.TextureIndex is int index)
             {
                 Texture2D texture = this.textures[index];
                 Vector2 drawOffset;
@@ -138,18 +151,36 @@ public class ScalableFont : IDisposable
     /// <returns>The size of the text.</returns>
     public Vector2 MeasureString(string text)
     {
+        return this.MeasureString(text, out _);
+    }
+
+    /// <inheritdoc cref="MeasureString(string)"/>
+    /// <param name="heightOffset">
+    /// The difference between the height of the text and the height of the base character.
+    /// </param>
+    public Vector2 MeasureString(string text, out float heightOffset)
+    {
+        heightOffset = 0.0f;
+
         if (string.IsNullOrEmpty(text))
         {
             return Vector2.Zero;
         }
 
-        var result = new Vector2(0, this.height);
+        var result = Vector2.Zero;
 
         foreach (char c in text)
         {
-            GlyphData data = this.glyphDatas[c];
+            if (!this.glyphDatas.TryGetValue(c, out var data))
+            {
+                continue;
+            }
+
             result.X += data.HorizontalAdvance;
+            result.Y = Math.Max(result.Y, this.glyphDatas[c].TextureCoords.Height);
         }
+
+        heightOffset = result.Y - this.glyphDatas[BaseChar].TextureCoords.Height;
 
         return result;
     }
@@ -161,7 +192,16 @@ public class ScalableFont : IDisposable
     /// <returns>The size of the text.</returns>
     public Vector2 MeasureString(StringBuilder sb)
     {
-        return this.MeasureString(sb.ToString());
+        return this.MeasureString(sb.ToString(), out var _);
+    }
+
+    /// <inheritdoc cref="MeasureString(StringBuilder)"/>
+    /// <param name="heightOffset">
+    /// The difference between the height of the text and the height of the base character.
+    /// </param>
+    public Vector2 MeasureString(StringBuilder sb, out float heightOffset)
+    {
+        return this.MeasureString(sb.ToString(), out heightOffset);
     }
 
     /// <summary>
@@ -204,7 +244,7 @@ public class ScalableFont : IDisposable
         FT_GlyphSlotRec_* glyph = this.LoadGlyph(BaseChar);
         this.height = glyph->bitmap.rows;
 
-        for (var c = (char)0x20; c < 0x1FF; c++)
+        for (var c = (char)0x20; c <= 0x1FF; c++)
         {
             glyph = this.LoadGlyph(c);
 
@@ -250,11 +290,12 @@ public class ScalableFont : IDisposable
 
             this.glyphDatas.Add(c, data);
 
+            byte* alphaPtr = bitmapBuf;
             for (int y = 0; y < glyphHeight; y++)
             {
                 for (int x = 0; x < glyphWidth; x++)
                 {
-                    byte alpha = *(bitmapBuf + x + (y * glyphWidth));
+                    byte alpha = *alphaPtr++;
                     pixelBuf[(int)currentCoords.X + x + (((int)currentCoords.Y + y) * TextureDims)] = (uint)(alpha << 24) | 0x00ffffff;
                 }
             }
@@ -296,7 +337,7 @@ public class ScalableFont : IDisposable
         /// Initializes a new instance of the <see cref="FTError"/> class.
         /// </summary>
         /// <param name="exception">The exception that occurred.</param>
-        /// <param name="relativePath">The relative path to the font.</param>
+        /// <param name="relativePath">The relative path to the font</param>
         public FTError(FreeTypeException exception, string relativePath)
         {
             this.Exception = exception;
