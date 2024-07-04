@@ -323,7 +323,7 @@ public class WrappedText : TextComponent, IEnumerable<Text>
             Color = this.Color,
             Scale = this.Scale,
             TextAlignment = this.TextAlignment,
-            AdjustTransformSizeToText = AdjustSizeOption.OnlyWidth,
+            AdjustTransformSizeToText = AdjustSizeOption.OnlyHeight,
             FixedHeight = (int)this.Font.SafeDimensions.Y,
         };
         return result;

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -33,9 +33,8 @@ namespace MonoRivUI;
 /// when scrollability is disabled.
 /// </para>
 /// <para>
-/// The appearance of the scrollbar can be customized using properties like
-/// <see cref="ScrollBarFrameColor"/>, <see cref="ScrollBarThumbColor"/>,
-/// and <see cref="ScrollBarRelativeSize"/>.
+/// The appearance of the scrollbar can be customized
+/// using the <see cref="ScrollBar"/> property.
 /// </para>
 /// <para>
 /// The content components cannot be drawn outside of the list box's boundaries.
@@ -87,6 +86,7 @@ public class ListBox : Component
     private readonly Queue<Component> queuedComponents = new();
     private readonly Container innerContainer;
     private readonly Container contentContainer;
+    private readonly ScrollBar scrollBar;
     private Orientation orientation;
 
     private int spacing;
@@ -97,6 +97,7 @@ public class ListBox : Component
     private bool resizeContent;
 
     private bool isRecalculationNeeded;
+    private bool isContentResized;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ListBox"/> class.
@@ -109,16 +110,28 @@ public class ListBox : Component
         this.contentContainer.ChildAdded += this.ListBox_Container_ChildAdded;
         this.contentContainer.ChildRemoved += this.ListBox_Container_ChildRemoved;
 
-        this.ScrollBar = new ScrollBar(this.ContentContainer)
+        this.scrollBar = new ScrollBar(this.ContentContainer)
         {
             IsEnabled = false,
             Parent = this,
             Transform = { IgnoreParentPadding = true },
         };
 
-        this.ScrollBar.Scrolled += this.ScrollBar_Scrolled;
+        this.scrollBar.Scrolled += this.ScrollBar_Scrolled;
         this.AdjustContentContainerSize();
     }
+
+    /// <summary>
+    /// An event that is raised when a component is being dequeued
+    /// and is being added to the list box content.
+    /// </summary>
+    public event EventHandler<Component>? ComponentDequeuing;
+
+    /// <summary>
+    /// An event that is raised when a component has been dequeued
+    /// and added to the list box content.
+    /// </summary>
+    public event EventHandler<Component>? ComponentDequeued;
 
     /// <summary>
     /// An event that is raised when components are being dequeued
@@ -151,8 +164,8 @@ public class ListBox : Component
     /// components can be positioned and organized within the list box.
     /// </para>
     /// <para>
-    /// It is automatically created and managed by the <see cref="ListBox"/>
-    /// component, providing a structured layout for nested components.
+    /// It is automatically created and managed by <see cref="ListBox"/>,
+    /// providing a structured layout for nested components.
     /// </para>
     /// <para>
     /// This property is read-only to prevent external modification.
@@ -183,9 +196,19 @@ public class ListBox : Component
     public bool DrawContentOnMargin { get; set; }
 
     /// <summary>
-    /// Gets the list box scrollbar.
+    /// Gets the scrollbar.
     /// </summary>
-    public ScrollBar ScrollBar { get; }
+    /// <remarks>
+    /// Cannot be accessed and will throw an exception
+    /// when <see cref="IsScrollable"/> is set to false.
+    /// </remarks>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the <see cref="IsScrollable"/> property is set to false.
+    /// </exception>
+    public ScrollBar? ScrollBar => this.isScrollable
+        ? this.scrollBar
+        : throw new InvalidOperationException(
+            $"Cannot access the scrollbar when {nameof(this.IsScrollable)} is set to false.");
 
     /// <summary>
     /// Gets or sets the spacing of the components.
@@ -203,8 +226,8 @@ public class ListBox : Component
                 return;
             }
 
-            int spacingCount = this.components.Count > 0 ? this.components.Count - 1 : 0;
-            this.totalLength += (value - this.spacing) * spacingCount;
+            int spacingCount = Math.Max(0, this.components.Count - 1);
+            this.TotalLength += (value - this.spacing) * spacingCount;
             this.spacing = value;
             this.isRecalculationNeeded = true;
         }
@@ -224,7 +247,7 @@ public class ListBox : Component
             }
 
             this.orientation = value;
-            this.ScrollBar.Orientation = value;
+            this.scrollBar.Orientation = value;
             this.isRecalculationNeeded = true;
         }
     }
@@ -286,28 +309,36 @@ public class ListBox : Component
         }
     }
 
-    private float ContainerLength
+    /// <summary>
+    /// Gets the total length of the listbox's components.
+    /// </summary>
+    public float TotalLength
     {
         get
         {
-            float length;
-            switch (this.orientation)
+            if (this.isRecalculationNeeded)
             {
-                case Orientation.Vertical:
-                    length = this.Transform.Size.Y;
-                    length -= (this.contentContainer.Transform.RelativePadding.Y + this.contentContainer.Transform.RelativePadding.W) * this.Transform.Size.Y;
-                    break;
-                case Orientation.Horizontal:
-                    length = this.Transform.Size.X;
-                    length -= (this.contentContainer.Transform.RelativePadding.X + this.contentContainer.Transform.RelativePadding.Z) * this.Transform.Size.X;
-                    break;
-                default:
-                    throw new NotImplementedException();
+                this.RecalculateElements();
             }
 
-            return length;
+            return this.totalLength;
+        }
+
+        private set
+        {
+            this.totalLength = value;
+            this.scrollBar.TotalLength = value;
         }
     }
+
+    private bool IsScrollBarNeeded => this.TotalLength > this.ContainerLength;
+
+    private float ContainerLength => this.orientation switch
+    {
+        Orientation.Vertical => this.contentContainer.Transform.Size.Y,
+        Orientation.Horizontal => (float)this.contentContainer.Transform.Size.X,
+        _ => throw new NotImplementedException(),
+    };
 
     /// <inheritdoc/>
     public override void Update(GameTime gameTime)
@@ -387,18 +418,31 @@ public class ListBox : Component
     /// </summary>
     public void DequeueComponents()
     {
-        if (this.queuedComponents.Count > 0)
-        {
-            this.ComponentsDequeuing?.Invoke(this, EventArgs.Empty);
+        this.ComponentsDequeuing?.Invoke(this, EventArgs.Empty);
 
-            while (this.queuedComponents.Count > 0)
+        while (this.queuedComponents.Count > 0)
+        {
+            Component component = this.queuedComponents.Dequeue();
+            this.ComponentDequeuing?.Invoke(this, component);
+
+            component.Transform.ForceRecalulcation();
+            component.Transform.SizeChanged += this.Component_Transform_SizeChanged;
+
+            if (this.components.Count > 0)
             {
-                Component component = this.DequeueComponent();
-                component.Transform.ForceRecalulcation();
+                this.TotalLength += this.spacing;
             }
 
-            this.ComponentsDequeued?.Invoke(this, EventArgs.Empty);
+            float componentLength = this.GetComponentLength(component);
+            this.TotalLength += componentLength;
+
+            this.components.Add(component);
+            this.isRecalculationNeeded = true;
+            this.isContentResized = false;
+            this.ComponentDequeued?.Invoke(this, component);
         }
+
+        this.ComponentsDequeued?.Invoke(this, EventArgs.Empty);
     }
 
     private void ScrollBar_Scrolled(object? sender, ScrolledEventArgs e)
@@ -411,7 +455,7 @@ public class ListBox : Component
         object? sender,
         TransformElementChangedEventArgs<Point> e)
     {
-        this.totalLength += this.orientation switch
+        this.TotalLength += this.orientation switch
         {
             Orientation.Vertical => e.After.Y - e.Before.Y,
             Orientation.Horizontal => e.After.X - e.Before.X,
@@ -450,10 +494,11 @@ public class ListBox : Component
 
     private void RecalculateElements()
     {
-        if (this.resizeContent)
+        if (this.resizeContent && !this.isContentResized)
         {
-            float remainingSpace = -this.totalLength + this.ContainerLength;
+            float remainingSpace = -this.TotalLength + this.ContainerLength;
             this.ResizeElements(remainingSpace);
+            this.isContentResized = true;
         }
 
         float currentOffset = -this.currentOffset;
@@ -479,15 +524,14 @@ public class ListBox : Component
     /// </summary>
     private void AdjustContentContainerSize()
     {
-        if (!this.isScrollable)
+        if (!this.isScrollable || !this.IsScrollBarNeeded)
         {
             this.contentContainer.Transform.RelativeSize = Vector2.One;
             return;
         }
 
-        Point containerParentSize = this.contentContainer.Parent?.Transform.Size
-            ?? ScreenController.DefaultSize;
-        Point scrollBarSize = this.ScrollBar.Transform.Size;
+        Point containerParentSize = this.contentContainer.Parent!.Transform.Size;
+        Point scrollBarSize = this.scrollBar.Transform.Size;
 
         switch (this.orientation)
         {
@@ -504,21 +548,17 @@ public class ListBox : Component
 
     private void UpdateScrollBarPresence()
     {
-        bool isScrollBarNeeded = this.totalLength > this.ContainerLength;
-
-        if (this.isScrollable && isScrollBarNeeded)
+        if (this.isScrollable && this.IsScrollBarNeeded)
         {
-            if (!this.ScrollBar.IsEnabled)
+            if (!this.scrollBar.IsEnabled)
             {
-                this.ScrollBar.IsEnabled = true;
+                this.scrollBar.IsEnabled = true;
                 this.AdjustContentContainerSize();
             }
-
-            this.ScrollBar.TotalLength = this.totalLength;
         }
         else
         {
-            this.ScrollBar.IsEnabled = false;
+            this.scrollBar.IsEnabled = false;
             this.AdjustContentContainerSize();
             this.currentOffset = 0;
         }
@@ -526,7 +566,7 @@ public class ListBox : Component
 
     private void ResizeElements(float remainingSpace)
     {
-        float totalLengthWithoutSpacing = this.totalLength - ((this.components.Count - 1) * this.spacing);
+        float totalLengthWithoutSpacing = this.TotalLength - ((this.components.Count - 1) * this.spacing);
         float resizeFactor = 1 + (remainingSpace / totalLengthWithoutSpacing);
         foreach (Component component in this.components)
         {
@@ -550,24 +590,6 @@ public class ListBox : Component
         this.queuedComponents.Enqueue(e.Child);
     }
 
-    private void DequeueComponent()
-    {
-        Component component = this.queuedComponents.Dequeue();
-
-        component.Transform.SizeChanged += this.Component_Transform_SizeChanged;
-
-        if (this.components.Count > 0)
-        {
-            this.totalLength += this.spacing;
-        }
-
-        float componentLength = this.GetComponentLength(component);
-        this.totalLength += componentLength;
-
-        this.components.Add(component);
-        this.isRecalculationNeeded = true;
-    }
-
     private void ListBox_Container_ChildRemoved(object? sender, ChildChangedEventArgs e)
     {
         Component child = e.Child;
@@ -575,14 +597,15 @@ public class ListBox : Component
 
         if (this.components.Count > 0)
         {
-            this.totalLength -= this.spacing;
+            this.TotalLength -= this.spacing;
         }
 
         float componentLength = this.GetComponentLength(child);
-        this.totalLength -= componentLength;
+        this.TotalLength -= componentLength;
         this.UpdateScrollBarPresence();
 
         _ = this.components.Remove(child);
         this.isRecalculationNeeded = true;
+        this.isContentResized = false;
     }
 }

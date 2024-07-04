@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
 
@@ -61,7 +62,7 @@ public class Transform : IReadOnlyTransform
     /// <summary>
     /// Gets the component associated with this transformation.
     /// </summary>
-    public Component Component { get; }
+    public Component Component { get; private set; }
 
     /// <summary>
     /// Gets or sets the transform type.
@@ -105,10 +106,10 @@ public class Transform : IReadOnlyTransform
                 return;
             }
 
-            if (value.X < 0 || value.Y < 0)
+            if (value.X <= 0 || value.Y <= 0)
             {
                 throw new ArgumentException(
-                    $"{nameof(this.RelativeSize)} cannot have negative components.");
+                    $"{nameof(this.RelativeSize)} cannot have non-positive components.");
             }
 
             this.relativeSize = value;
@@ -153,10 +154,10 @@ public class Transform : IReadOnlyTransform
                 return;
             }
 
-            if (value.X < 0 || value.Y < 0)
+            if (value.X <= 0 || value.Y <= 0)
             {
                 throw new ArgumentException(
-                    $"{nameof(this.MinSize)} cannot have negative components.");
+                    $"{nameof(this.MinSize)} cannot have non-positive components.");
             }
 
             this.minSize = value;
@@ -347,13 +348,13 @@ public class Transform : IReadOnlyTransform
                     $"is not {TransformType.Absolute}.");
             }
 
-            if (value.X < -10 || value.Y < 0)
+            if (value.X <= 0 || value.Y <= 0)
             {
                 throw new ArgumentException(
-                    $"{nameof(this.Size)} cannot have negative components.");
+                    $"{nameof(this.Size)} cannot have non-positive components.");
             }
 
-            this.size = value;
+            this.size = value.Clamp(this.minSize, this.maxSize);
             this.isRecalculationNeeded = true;
         }
     }
@@ -405,10 +406,18 @@ public class Transform : IReadOnlyTransform
     /// </remarks>
     public void SetRelativeOffsetFromAbsolute(float? x = null, float? y = null)
     {
+        this.RecalculateFromRootIfNeeded();
         Point reference = this.Component.Parent!.Transform.Size;
         this.RelativeOffset = new Vector2(
             x / reference.X ?? this.relativeOffset.X,
             y / reference.Y ?? this.relativeOffset.Y);
+    }
+
+    /// <inheritdoc cref="SetRelativeOffsetFromAbsolute(float?, float?)"/>
+    /// <param name="offset">The absolute offset.</param>
+    public void SetRelativeOffsetFromAbsolute(Point offset)
+    {
+        this.SetRelativeOffsetFromAbsolute(offset.X, offset.Y);
     }
 
     /// <summary>
@@ -429,10 +438,19 @@ public class Transform : IReadOnlyTransform
     /// </remarks>
     public void SetRelativeSizeFromAbsolute(float? x = null, float? y = null)
     {
+        this.RecalculateFromRootIfNeeded();
         Point reference = this.Component.Parent!.Transform.Size;
         this.RelativeSize = new Vector2(
             x / reference.X ?? this.RelativeSize.X,
             y / reference.Y ?? this.RelativeSize.Y);
+
+    }
+
+    /// <inheritdoc cref="SetRelativeSizeFromAbsolute(float?, float?)"/>
+    /// <param name="size">The absolute size.</param>
+    public void SetRelativeSizeFromAbsolute(Point size)
+    {
+        this.SetRelativeSizeFromAbsolute(size.X, size.Y);
     }
 
     /// <summary>
@@ -511,6 +529,32 @@ public class Transform : IReadOnlyTransform
         }
     }
 
+    private void RecalculateFromRootIfNeeded()
+    {
+        Stack<Transform> transforms = new();
+
+        Transform current = this;
+        while (current.Component.Parent is not null)
+        {
+            transforms.Push(current);
+            current = (Transform)current.Component.Parent!.Transform;
+        }
+
+        while (transforms.Count > 0)
+        {
+            var transform = transforms.Pop();
+            if (transform.isRecalculationNeeded)
+            {
+                // RecalculateWithChildren will also recalculate the children,
+                // so we can clear the stack (to remove references for GC)
+                // and break the loop.
+                transforms.Clear();
+                transform.RecalculateWithChildren();
+                break;
+            }
+        }
+    }
+
     private void RecalculateRelative()
     {
         var reference = (Transform)this.Component.Parent!.Transform;
@@ -524,6 +568,8 @@ public class Transform : IReadOnlyTransform
         this.size = reference.size.Scale(this.relativeSize);
 
         this.RecalculateRatio();
+
+        this.size = this.size.Clamp(this.minSize, this.maxSize);
 
         Rectangle sourceRect = reference.DestRectangle;
         if (!this.IgnoreParentPadding && reference.padding != Vector4.Zero)
@@ -604,7 +650,7 @@ public class Transform : IReadOnlyTransform
 
         if (e.Current is not null)
         {
-            this.RecalculateWithChildren();
+            this.isRecalculationNeeded = true;
         }
     }
 }
