@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework.Input;
+﻿using System.Collections.Generic;
+using Microsoft.Xna.Framework.Input;
 
 namespace MonoRivUI;
 
@@ -65,5 +66,14 @@ public static class KeyboardController
     {
         return previousState.IsKeyUp(key)
             && currentState.IsKeyDown(key);
+    }
+
+    /// <summary>
+    /// Returns an enumerable collection of all keys that are currently down.
+    /// </summary>
+    /// <returns>An enumerable collection of all keys that are currently down.</returns>
+    public static IEnumerable<Keys> GetPressedKeys()
+    {
+        return currentState.GetPressedKeys();
     }
 }
