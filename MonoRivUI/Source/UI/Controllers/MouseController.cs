@@ -12,6 +12,7 @@ public static class MouseController
     private static MouseState currentState;
 
     private static IReadOnlyComponent? focusedComponent;
+    private static bool isFocusedComponentPriority;
 
     /// <summary>
     /// Gets the current position of the mouse cursor.
@@ -81,8 +82,9 @@ public static class MouseController
     {
         return focusedComponent is not null
             && (focusedComponent == component
-                || (component.Transform.DestRectangle.Contains(Position)
-                    && component.IsAncestor(focusedComponent)));
+                || ((component.Transform.DestRectangle.Contains(Position)
+                        && component.IsAncestor(focusedComponent))
+                    && (!isFocusedComponentPriority || IsParentPriority(component))));
     }
 
     /// <summary>
@@ -213,5 +215,15 @@ public static class MouseController
     public static bool WasRightButtonReleased()
     {
         return previousState.RightButton == ButtonState.Released;
+    }
+
+    private static bool IsParentPriority(IReadOnlyComponent component)
+    {
+        if (component.Parent is null)
+        {
+            return false;
+        }
+
+        return component.Parent.IsPriority || IsParentPriority(component.Parent);
     }
 }
