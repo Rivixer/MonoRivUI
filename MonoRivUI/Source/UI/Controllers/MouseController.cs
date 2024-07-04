@@ -44,9 +44,23 @@ public static class MouseController
     /// </remarks>
     public static void Update()
     {
+        static void UpdateFocusedPriorityComponent(IReadOnlyComponent component, bool parentPriority = false)
+        {
+            if (component.IsEnabled && (parentPriority || component.IsPriority) && component.Transform.DestRectangle.Contains(Position))
+            {
+                focusedComponent = component;
+                parentPriority = true;
+            }
+
+            foreach (IReadOnlyComponent child in component.Children)
+            {
+                UpdateFocusedPriorityComponent(child, parentPriority);
+            }
+        }
+
         static void UpdateFocusedComponent(IReadOnlyComponent component)
         {
-            if (component.Transform.DestRectangle.Contains(Position))
+            if (component.IsEnabled && component.Transform.DestRectangle.Contains(Position))
             {
                 focusedComponent = component;
                 foreach (IReadOnlyComponent child in component.Children)
@@ -56,10 +70,21 @@ public static class MouseController
             }
         }
 
-        UpdateFocusedComponent(Scene.Current.BaseComponent);
-
         previousState = currentState;
         currentState = Mouse.GetState();
+
+        focusedComponent = null;
+        UpdateFocusedPriorityComponent(Scene.Current.BaseComponent);
+
+        if (focusedComponent is not null)
+        {
+            isFocusedComponentPriority = true;
+        }
+        else
+        {
+            UpdateFocusedComponent(Scene.Current.BaseComponent);
+            isFocusedComponentPriority = false;
+        }
     }
 
     /// <summary>
@@ -219,11 +244,7 @@ public static class MouseController
 
     private static bool IsParentPriority(IReadOnlyComponent component)
     {
-        if (component.Parent is null)
-        {
-            return false;
-        }
-
-        return component.Parent.IsPriority || IsParentPriority(component.Parent);
+        return component.Parent is not null
+            && (component.Parent.IsPriority || IsParentPriority(component.Parent));
     }
 }
