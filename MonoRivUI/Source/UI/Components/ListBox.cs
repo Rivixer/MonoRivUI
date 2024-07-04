@@ -285,7 +285,8 @@ public class ListBox : Component
     /// should be resized to fit the list box.
     /// </summary>
     /// <remarks>
-    /// Cannot be set to true when <see cref="IsScrollable"/> is set to true.
+    /// <para>Cannot be set to true when <see cref="IsScrollable"/> is set to true.</para>
+    /// <para>Each component will be have the same size to fit all space.</para>
     /// </remarks>
     public bool ResizeContent
     {
@@ -496,8 +497,7 @@ public class ListBox : Component
     {
         if (this.resizeContent && !this.isContentResized)
         {
-            float remainingSpace = -this.TotalLength + this.ContainerLength;
-            this.ResizeElements(remainingSpace);
+            this.ResizeElements();
             this.isContentResized = true;
         }
 
@@ -564,13 +564,13 @@ public class ListBox : Component
         }
     }
 
-    private void ResizeElements(float remainingSpace)
+    private void ResizeElements()
     {
-        float totalLengthWithoutSpacing = this.TotalLength - ((this.components.Count - 1) * this.spacing);
-        float resizeFactor = 1 + (remainingSpace / totalLengthWithoutSpacing);
+        int spacingLength = this.spacing * (this.components.Count - 1);
+        float resizeFactor = (1f - (spacingLength / this.ContainerLength)) / this.components.Count;
         foreach (Component component in this.components)
         {
-            component.Transform.RelativeSize *= this.orientation switch
+            component.Transform.RelativeSize = this.orientation switch
             {
                 Orientation.Vertical => new Vector2(1, resizeFactor),
                 Orientation.Horizontal => new Vector2(resizeFactor, 1),
