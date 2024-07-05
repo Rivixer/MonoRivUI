@@ -80,6 +80,7 @@ public class Button<T> : Component, IButton<T>, IStyleable<Button<T>>
     /// <summary>
     /// Gets the component associated with this button.
     /// </summary>
+    [SubStylable]
     public T Component { get; }
 
     /// <inheritdoc/>
