@@ -12,7 +12,11 @@ public class Text : TextComponent
     private Vector2 destinationLocation;
     private Vector2 dimensions;
     private float heightOffset;
+
     private float drawScale;
+    private float shrinkScale;
+
+    private TextShrinkMode textShrink;
 
     private bool isRecalculationNeeded = true;
 
@@ -68,6 +72,34 @@ public class Text : TextComponent
             }
 
             base.TextAlignment = value;
+            this.isRecalculationNeeded = true;
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets the text shrink mode.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The text shrink mode determines how the text is scaled
+    /// to fit the transform size if it goes beyond the bounds.
+    /// </para>
+    /// <para>
+    /// If the <see cref="AdjustTransformSizeToText"/> property is not set to
+    /// <see cref="AdjustSizeOption.None"/>, the text shrink mode is ignored.
+    /// </para>
+    /// </remarks>
+    public TextShrinkMode TextShrink
+    {
+        get => this.textShrink;
+        set
+        {
+            if (this.textShrink == value)
+            {
+                return;
+            }
+
+            this.textShrink = value;
             this.isRecalculationNeeded = true;
         }
     }
@@ -196,6 +228,8 @@ public class Text : TextComponent
 
     private void Recalculate()
     {
+        this.UpdateShrinkScale();
+
         this.dimensions = this.Font
             .MeasureString(this.Value, out this.heightOffset)
             .Scale(this.Scale);
@@ -203,7 +237,7 @@ public class Text : TextComponent
         this.UpdateDestinationLocation();
         this.AdjustSizeToText(this.dimensions);
 
-        this.drawScale = this.Scale;
+        this.drawScale = this.Scale * this.shrinkScale;
 
         this.isRecalculationNeeded = false;
     }
@@ -218,6 +252,27 @@ public class Text : TextComponent
         this.destinationLocation = RecalculationUtils.AlignRectangle(
             sourceRect, currentRect, this.TextAlignment)
             .Location.ToVector2();
+    }
+
+    private void UpdateShrinkScale()
+    {
+        if (this.TextShrink is TextShrinkMode.None || this.AdjustTransformSizeToText is not AdjustSizeOption.None)
+        {
+            return;
+        }
+
+        Vector2 nativeDimensions = this.Font.MeasureString(this.Value);
+
+        float scaleX = this.Transform.Size.X / nativeDimensions.X;
+        float scaleY = this.Transform.Size.Y / nativeDimensions.Y;
+
+        this.shrinkScale = this.TextShrink switch
+        {
+            TextShrinkMode.Width => Math.Min(1f, scaleX),
+            TextShrinkMode.Height => Math.Min(1f, scaleY),
+            TextShrinkMode.HeightAndWidth => Math.Min(1f, Math.Min(scaleX, scaleY)),
+            _ => 1.0f,
+        };
     }
 
     private void Transform_Recalculated(object? sender, EventArgs e)

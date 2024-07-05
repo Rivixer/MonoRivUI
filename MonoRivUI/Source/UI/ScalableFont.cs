@@ -135,12 +135,12 @@ public class ScalableFont : IDisposable
             {
                 Texture2D texture = this.textures[index];
                 Vector2 drawOffset;
-                drawOffset.X = (glyphData.Offset.X * advance.X) - (glyphData.Offset.Y * advance.Y);
-                drawOffset.Y = (glyphData.Offset.X * advance.Y) + (glyphData.Offset.Y * advance.X);
-                sb.Draw(texture, currentPosition + currentOffset + drawOffset, glyphData.TextureCoords, color, rotation, origin, 1.0f, effects, layerDepth);
+                drawOffset.X = ((glyphData.Offset.X * advance.X) - (glyphData.Offset.Y * advance.Y)) * scale;
+                drawOffset.Y = ((glyphData.Offset.X * advance.Y) + (glyphData.Offset.Y * advance.X)) * scale;
+                sb.Draw(texture, currentPosition + currentOffset + drawOffset, glyphData.TextureCoords, color, rotation, origin, scale, effects, layerDepth);
             }
 
-            currentPosition += glyphData.HorizontalAdvance * advance;
+            currentPosition += glyphData.HorizontalAdvance * advance * scale;
         }
     }
 
