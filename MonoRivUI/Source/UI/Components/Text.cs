@@ -229,6 +229,7 @@ public class Text : TextComponent
     private void Recalculate()
     {
         this.UpdateShrinkScale();
+        this.drawScale = this.Scale * this.shrinkScale;
 
         this.dimensions = this.Font
             .MeasureString(this.Value, out this.heightOffset)
@@ -236,8 +237,6 @@ public class Text : TextComponent
 
         this.UpdateDestinationLocation();
         this.AdjustSizeToText(this.dimensions);
-
-        this.drawScale = this.Scale * this.shrinkScale;
 
         this.isRecalculationNeeded = false;
     }
@@ -247,7 +246,7 @@ public class Text : TextComponent
         Rectangle sourceRect = this.Transform.DestRectangle;
         var currentRect = new Rectangle(
             this.Transform.DestRectangle.Location,
-            (this.dimensions - new Vector2(0, this.heightOffset)).ToPoint());
+            ((this.dimensions * this.drawScale) - new Vector2(0, this.heightOffset)).ToPoint());
 
         this.destinationLocation = RecalculationUtils.AlignRectangle(
             sourceRect, currentRect, this.TextAlignment)
@@ -258,6 +257,7 @@ public class Text : TextComponent
     {
         if (this.TextShrink is TextShrinkMode.None || this.AdjustTransformSizeToText is not AdjustSizeOption.None)
         {
+            this.shrinkScale = 1.0f;
             return;
         }
 
