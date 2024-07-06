@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
@@ -44,36 +46,51 @@ public static class MouseController
     /// </remarks>
     public static void Update()
     {
-        static void UpdateFocusedPriorityComponent(IReadOnlyComponent component, bool parentPriority = false)
-        {
-            if (component.IsEnabled && (parentPriority || component.IsPriority) && component.Transform.DestRectangle.Contains(Position))
-            {
-                focusedComponent = component;
-                parentPriority = true;
-            }
+        previousState = currentState;
+        currentState = Mouse.GetState();
 
-            foreach (IReadOnlyComponent child in component.Children)
+        /* REFACTOR !!!
+         * Detecting focusing component sucks, but works for now. */
+
+        Queue<IOverlayScene> queue = new();
+        foreach (Scene.OverlayData data in Scene.DisplayedOverlays.Reverse())
+        {
+            queue.Enqueue(data.Scene);
+            if (data.Options.BlockFocusOnUnderlyingScenes)
             {
-                UpdateFocusedPriorityComponent(child, parentPriority);
+                break;
             }
         }
 
-        static void UpdateFocusedComponent(IReadOnlyComponent component)
+        focusedComponent = null;
+        while (focusedComponent is null && queue.Count != 0)
         {
-            if (component.IsEnabled && component.Transform.DestRectangle.Contains(Position))
+            IOverlayScene scene = queue.Dequeue();
+            foreach (IReadOnlyComponent component in scene.OverlayComponents)
             {
-                focusedComponent = component;
-                foreach (IReadOnlyComponent child in component.Children)
+                if (focusedComponent is not null)
                 {
-                    UpdateFocusedComponent(child);
+                    break;
+                }
+
+                UpdateFocusedPriorityComponent(component);
+                if (focusedComponent is not null)
+                {
+                    isFocusedComponentPriority = true;
+                }
+                else
+                {
+                    UpdateFocusedComponent(component);
+                    isFocusedComponentPriority = false;
                 }
             }
         }
 
-        previousState = currentState;
-        currentState = Mouse.GetState();
+        if (focusedComponent is not null)
+        {
+            return;
+        }
 
-        focusedComponent = null;
         UpdateFocusedPriorityComponent(Scene.Current.BaseComponent);
 
         if (focusedComponent is not null)
@@ -246,5 +263,31 @@ public static class MouseController
     {
         return component.Parent is not null
             && (component.Parent.IsPriority || IsParentPriority(component.Parent));
+    }
+
+    private static void UpdateFocusedPriorityComponent(IReadOnlyComponent component, bool parentPriority = false)
+    {
+        if (component.IsEnabled && (parentPriority || component.IsPriority) && component.Transform.DestRectangle.Contains(Position))
+        {
+            focusedComponent = component;
+            parentPriority = true;
+        }
+
+        foreach (IReadOnlyComponent child in component.Children)
+        {
+            UpdateFocusedPriorityComponent(child, parentPriority);
+        }
+    }
+
+    private static void UpdateFocusedComponent(IReadOnlyComponent component)
+    {
+        if (component.IsEnabled && component.Transform.DestRectangle.Contains(Position))
+        {
+            focusedComponent = component;
+            foreach (IReadOnlyComponent child in component.Children)
+            {
+                UpdateFocusedComponent(child);
+            }
+        }
     }
 }
