@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -199,16 +199,12 @@ public class ListBox : Component
     /// Gets the scrollbar.
     /// </summary>
     /// <remarks>
-    /// Cannot be accessed and will throw an exception
+    /// Cannot be accessed and will return <see langword="null"/>
     /// when <see cref="IsScrollable"/> is set to false.
     /// </remarks>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when the <see cref="IsScrollable"/> property is set to false.
-    /// </exception>
     public ScrollBar? ScrollBar => this.isScrollable
         ? this.scrollBar
-        : throw new InvalidOperationException(
-            $"Cannot access the scrollbar when {nameof(this.IsScrollable)} is set to false.");
+        : null;
 
     /// <summary>
     /// Gets or sets the spacing of the components.
@@ -327,6 +323,11 @@ public class ListBox : Component
 
         private set
         {
+            if (this.totalLength == value)
+            {
+                return;
+            }
+
             this.totalLength = value;
             this.scrollBar.TotalLength = value;
         }
@@ -349,7 +350,6 @@ public class ListBox : Component
             return;
         }
 
-        this.RecalculateElements();
         this.DequeueComponents();
 
         // We update all components before recalculating ListBox
@@ -421,12 +421,14 @@ public class ListBox : Component
     {
         this.ComponentsDequeuing?.Invoke(this, EventArgs.Empty);
 
+        Component? component = null;
         while (this.queuedComponents.Count > 0)
         {
-            Component component = this.queuedComponents.Dequeue();
+            component = this.queuedComponents.Dequeue();
             this.ComponentDequeuing?.Invoke(this, component);
 
-            component.Transform.ForceRecalulcation();
+            float componentLength = this.GetComponentLength(component);
+            this.TotalLength += componentLength;
             component.Transform.SizeChanged += this.Component_Transform_SizeChanged;
 
             if (this.components.Count > 0)
@@ -434,13 +436,17 @@ public class ListBox : Component
                 this.TotalLength += this.spacing;
             }
 
-            float componentLength = this.GetComponentLength(component);
-            this.TotalLength += componentLength;
-
             this.components.Add(component);
             this.isRecalculationNeeded = true;
             this.isContentResized = false;
+            component.Transform.ForceRecalulcation();
             this.ComponentDequeued?.Invoke(this, component);
+        }
+
+        // If any component was dequeued, recalculate elements.
+        if (component is not null)
+        {
+            this.RecalculateElements();
         }
 
         this.ComponentsDequeued?.Invoke(this, EventArgs.Empty);
