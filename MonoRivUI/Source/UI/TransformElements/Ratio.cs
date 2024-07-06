@@ -99,4 +99,16 @@ public readonly struct Ratio : IEquatable<Ratio>
     {
         return this.Numerator / (float)this.Denominator;
     }
+
+    /// <summary>
+    /// Converts the current ratio to a string.
+    /// </summary>
+    /// <returns>
+    /// The string representation of the current ratio
+    /// in the format "Numerator:Denominator".
+    /// </returns>
+    public override string ToString()
+    {
+        return $"{this.Numerator}:{this.Denominator}";
+    }
 }
