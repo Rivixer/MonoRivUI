@@ -120,6 +120,26 @@ public class TextInput : Component
     }
 
     /// <summary>
+    /// Gets or sets the text shrink mode.
+    /// </summary>
+    /// <remarks>
+    /// It also affects the placeholder shrink mode.
+    /// <inheritdoc cref="Text.TextShrink"/>
+    /// </remarks>
+    public TextShrinkMode TextShrink
+    {
+        get => this.text.TextShrink;
+        set
+        {
+            this.text.TextShrink = value;
+            if (this.placeholder is not null)
+            {
+                this.placeholder.TextShrink = value;
+            }
+        }
+    }
+
+    /// <summary>
     /// Gets or sets the placeholder text.
     /// </summary>
     public string? Placeholder

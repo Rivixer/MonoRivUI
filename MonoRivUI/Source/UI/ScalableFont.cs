@@ -15,6 +15,15 @@ namespace MonoRivUI;
 /// </summary>
 public class ScalableFont : IDisposable
 {
+    /// <summary>
+    /// The safe factor for the text.
+    /// </summary>
+    /// <remarks>
+    /// The safe factor is the factor by which the base character dimensions
+    /// is scaled to ensure that it fits the bounds.
+    /// </remarks>
+    public const float SafeFactor = 1.6f;
+
     private const char BaseChar = 'A';
     private const int TextureDims = 1024;
     private const int DpiX = 150;
@@ -88,7 +97,7 @@ public class ScalableFont : IDisposable
     /// The safe dimensions are the dimensions of the text that are guaranteed to be fitted.
     /// </remarks>
     // TODO: This is a temporary solution.
-    public Vector2 SafeDimensions => this.BaseCharDimensions * 16 / 10;
+    public Vector2 SafeDimensions => this.BaseCharDimensions * SafeFactor;
 
     /// <inheritdoc/>
     public void Dispose()

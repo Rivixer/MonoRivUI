@@ -333,7 +333,14 @@ public class ListBox : Component
         }
     }
 
-    private bool IsScrollBarNeeded => this.TotalLength > this.ContainerLength;
+    /// <summary>
+    /// Gets a value indicating whether the scrollbar is needed.
+    /// </summary>
+    /// <remarks>
+    /// The scrollbar is needed when the total length of the components
+    /// exceeds the length of the container.
+    /// </remarks>
+    public bool IsScrollBarNeeded => this.TotalLength > this.ContainerLength;
 
     private float ContainerLength => this.orientation switch
     {

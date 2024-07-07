@@ -88,6 +88,11 @@ public class Text : TextComponent
     /// If the <see cref="AdjustTransformSizeToText"/> property is not set to
     /// <see cref="AdjustSizeOption.None"/>, the text shrink mode is ignored.
     /// </para>
+    /// <para>
+    /// If the mode is set to <see cref="TextShrinkMode.SafeCharHeight"/>,
+    /// the text height does not exceed the height, considering safe dimensions.
+    /// The <see cref="FixedHeight"/> will be overridden by the safe height.
+    /// </para>
     /// </remarks>
     public TextShrinkMode TextShrink
     {
@@ -121,9 +126,7 @@ public class Text : TextComponent
                 this.Recalculate();
             }
 
-            return this.FixedHeight.HasValue
-                ? new Vector2(this.dimensions.X, this.FixedHeight.Value)
-                : this.dimensions;
+            return this.dimensions;
         }
     }
 
@@ -138,6 +141,11 @@ public class Text : TextComponent
     /// <para>
     /// If it is <see langword="null"/>, the <see cref="Dimensions"/>
     /// property contains the current width and height of the text.
+    /// </para>
+    /// <para>
+    /// If the <see cref="TextShrink"/> property is set to
+    /// <see cref="TextShrinkMode.SafeCharHeight"/>, the fixed height
+    /// will be overridden by the safe height.
     /// </para>
     /// </remarks>
     public int? FixedHeight { get; set; }
@@ -223,7 +231,7 @@ public class Text : TextComponent
             this.Recalculate();
         }
 
-        return this.Font.MeasureString(this.Value[startIndex..endIndex], out heightOffset);
+        return this.Font.MeasureString(this.Value[startIndex..endIndex], out heightOffset) * this.drawScale;
     }
 
     private void Recalculate()
@@ -233,7 +241,19 @@ public class Text : TextComponent
 
         this.dimensions = this.Font
             .MeasureString(this.Value, out this.heightOffset)
-            .Scale(this.Scale);
+            .Scale(this.drawScale);
+
+        this.dimensions.Y -= this.heightOffset;
+
+        if (this.FixedHeight is { } height)
+        {
+            this.dimensions.Y = height;
+        }
+
+        if (this.TextShrink is TextShrinkMode.SafeCharHeight)
+        {
+            this.dimensions.Y = Math.Min(this.FixedHeight ?? this.dimensions.Y, this.Transform.Size.Y / ScalableFont.SafeFactor);
+        }
 
         this.UpdateDestinationLocation();
         this.AdjustSizeToText(this.dimensions);
@@ -246,7 +266,7 @@ public class Text : TextComponent
         Rectangle sourceRect = this.Transform.DestRectangle;
         var currentRect = new Rectangle(
             this.Transform.DestRectangle.Location,
-            ((this.dimensions * this.drawScale) - new Vector2(0, this.heightOffset)).ToPoint());
+            this.dimensions.ToPoint());
 
         this.destinationLocation = RecalculationUtils.AlignRectangle(
             sourceRect, currentRect, this.TextAlignment)
@@ -261,8 +281,13 @@ public class Text : TextComponent
             return;
         }
 
-        Vector2 nativeDimensions = this.Font.MeasureString(this.Value);
+        if (this.TextShrink is TextShrinkMode.SafeCharHeight)
+        {
+            this.shrinkScale = Math.Min(1f, this.Transform.Size.Y / this.Font.SafeDimensions.Y);
+            return;
+        }
 
+        Vector2 nativeDimensions = this.Font.MeasureString(this.Value);
         float scaleX = this.Transform.Size.X / nativeDimensions.X;
         float scaleY = this.Transform.Size.Y / nativeDimensions.Y;
 
@@ -271,7 +296,7 @@ public class Text : TextComponent
             TextShrinkMode.Width => Math.Min(1f, scaleX),
             TextShrinkMode.Height => Math.Min(1f, scaleY),
             TextShrinkMode.HeightAndWidth => Math.Min(1f, Math.Min(scaleX, scaleY)),
-            _ => 1.0f,
+            _ => this.shrinkScale,
         };
     }
 

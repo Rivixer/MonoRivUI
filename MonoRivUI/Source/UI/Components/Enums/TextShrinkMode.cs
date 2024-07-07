@@ -28,4 +28,16 @@ public enum TextShrinkMode
     /// Shrink the text to fit both the height and width.
     /// </summary>
     HeightAndWidth = Height | Width,
+
+    // TODO
+    // BaseCharHeight = 4,
+
+    /// <summary>
+    /// Shrink the text to fit the height with a safe margin.
+    /// </summary>
+    /// <remarks>
+    /// This mode ensures that the text height does not exceed
+    /// the height, considering safe dimensions.
+    /// </remarks>
+    SafeCharHeight = 8,
 }
