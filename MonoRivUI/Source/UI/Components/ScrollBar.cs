@@ -53,6 +53,20 @@ public class ScrollBar : Component
     public Orientation Orientation { get; set; } = Orientation.Vertical;
 
     /// <summary>
+    /// Gets the position of the scrollbar.
+    /// </summary>
+    /// <remarks>
+    /// The value is between <c>0.0f</c> and <c>1.0f</c>
+    /// where <c>0.0f</c> is the top and <c>1.0f</c> is the bottom.
+    /// </remarks>
+    public float Position => this.current / (this.total - this.Orientation switch
+    {
+        Orientation.Vertical => this.contentContainer.Transform.Size.Y,
+        Orientation.Horizontal => this.contentContainer.Transform.Size.X,
+        _ => throw new NotImplementedException(),
+    });
+
+    /// <summary>
     /// Gets or sets the thickness of the scrollbar frame.
     /// </summary>
     public int FrameThickness
