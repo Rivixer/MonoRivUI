@@ -407,6 +407,13 @@ public class Transform : IReadOnlyTransform
     public void SetRelativeOffsetFromAbsolute(float? x = null, float? y = null)
     {
         this.RecalculateFromRootIfNeeded();
+
+        // While recalucating, the parent may have changed.
+        if (this.Component.Parent is null)
+        {
+            return;
+        }
+
         Point reference = this.Component.Parent!.Transform.Size;
         this.RelativeOffset = new Vector2(
             x / reference.X ?? this.relativeOffset.X,
@@ -439,6 +446,13 @@ public class Transform : IReadOnlyTransform
     public void SetRelativeSizeFromAbsolute(float? x = null, float? y = null)
     {
         this.RecalculateFromRootIfNeeded();
+
+        // While recalucating, the parent may have changed.
+        if (this.Component.Parent is null)
+        {
+            return;
+        }
+
         Point reference = this.Component.Parent!.Transform.Size;
         this.RelativeSize = new Vector2(
             x / reference.X ?? this.RelativeSize.X,
