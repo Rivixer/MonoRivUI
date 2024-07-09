@@ -167,6 +167,7 @@ public class TextInput : Component
                     Parent = this,
                     Value = value,
                     TextAlignment = this.TextAlignment,
+                    TextShrink = this.TextShrink,
                     Transform =
                     {
                         RelativeOffset = this.text.Transform.RelativeOffset,
