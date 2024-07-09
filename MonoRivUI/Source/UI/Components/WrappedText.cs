@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -255,8 +255,9 @@ public class WrappedText : TextComponent, IEnumerable<Text>
             if (whitespace == '\n')
             {
                 // Add the current line to the result and reset for the next one
-                result.Add(currentLine.ToString());
+                result.Add(currentLine.ToString() + word.ToString());
                 _ = currentLine.Clear();
+                _ = word.Clear();
                 currentWidth = 0.0f;
                 continue;
             }
