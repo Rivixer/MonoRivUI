@@ -47,10 +47,16 @@ public abstract partial class Component : IComponentHierarchy, IReadOnlyComponen
     IEnumerable<IReadOnlyComponent> IReadOnlyComponent.Children => this.Children;
 
     /// <inheritdoc/>
+    IReadOnlyComponent IReadOnlyComponent.Root => this.Root;
+
+    /// <inheritdoc/>
     IComponentHierarchy? IComponentHierarchy.Parent => this.Parent;
 
     /// <inheritdoc/>
     IEnumerable<IComponentHierarchy> IComponentHierarchy.Children => this.Children;
+
+    /// <inheritdoc/>
+    IComponentHierarchy IComponentHierarchy.Root => this.Root;
 
     /// <summary>
     /// Gets or sets the parent component.
@@ -115,6 +121,11 @@ public abstract partial class Component : IComponentHierarchy, IReadOnlyComponen
     /// Gets an enumerable collection of child components.
     /// </summary>
     public IEnumerable<Component> Children => this.children;
+
+    /// <summary>
+    /// Gets the root component of the hierarchy.
+    /// </summary>
+    public Component Root => this.parent?.Root ?? this;
 
     /// <summary>
     /// Gets or sets a value indicating whether the component is enabled.

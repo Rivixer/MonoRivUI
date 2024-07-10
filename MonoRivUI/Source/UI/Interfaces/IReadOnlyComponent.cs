@@ -24,6 +24,11 @@ public interface IReadOnlyComponent : IComponentHierarchy
     new IEnumerable<IReadOnlyComponent> Children { get; }
 
     /// <summary>
+    /// Gets the read-only root of the component hierarchy.
+    /// </summary>
+    new IReadOnlyComponent Root { get; }
+
+    /// <summary>
     /// Gets a value indicating whether the component
     /// automatically updates itself and its child
     /// components during the game loop.

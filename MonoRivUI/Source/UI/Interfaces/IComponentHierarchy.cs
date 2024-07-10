@@ -20,6 +20,11 @@ public interface IComponentHierarchy
     IEnumerable<IComponentHierarchy> Children { get; }
 
     /// <summary>
+    /// Gets the root of the component hierarchy.
+    /// </summary>
+    IComponentHierarchy Root { get; }
+
+    /// <summary>
     /// Checks whether the component is a parent of the specified component.
     /// </summary>
     /// <param name="component">The component to be checked.</param>
