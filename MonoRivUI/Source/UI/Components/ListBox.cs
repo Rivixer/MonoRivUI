@@ -422,6 +422,27 @@ public class ListBox : Component
     }
 
     /// <summary>
+    /// Clears all components from the list box.
+    /// </summary>
+    public void Clear()
+    {
+        for (int i = this.components.Count - 1; i >= 0; i--)
+        {
+            Component component = this.components[i];
+            component.Parent = null;
+        }
+
+        while (this.queuedComponents.Count > 0)
+        {
+            Component component = this.queuedComponents.Dequeue();
+            component.Parent = null;
+        }
+
+        this.components.Clear();
+        this.queuedComponents.Clear();
+    }
+
+    /// <summary>
     /// Dequeues all components that are queued for initialization.
     /// </summary>
     public void DequeueComponents()
@@ -508,6 +529,8 @@ public class ListBox : Component
 
     private void RecalculateElements()
     {
+        this.RecalculateTotalLength();
+
         if (this.resizeContent && !this.isContentResized)
         {
             this.ResizeElements();
@@ -608,17 +631,17 @@ public class ListBox : Component
         Component child = e.Child;
         child.Transform.SizeChanged -= this.Component_Transform_SizeChanged;
 
-        if (this.components.Count > 0)
-        {
-            this.TotalLength -= this.spacing;
-        }
-
-        float componentLength = this.GetComponentLength(child);
-        this.TotalLength -= componentLength;
-        this.UpdateScrollBarPresence();
-
         _ = this.components.Remove(child);
         this.isRecalculationNeeded = true;
         this.isContentResized = false;
+    }
+
+    private void RecalculateTotalLength()
+    {
+        this.TotalLength = (this.components.Count - 1) * this.spacing;
+        foreach (Component component in this.components)
+        {
+            this.TotalLength = this.totalLength + this.GetComponentLength(component);
+        }
     }
 }

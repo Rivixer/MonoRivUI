@@ -14,8 +14,8 @@ public class Selector<T> : Component, ISelector
     private readonly HashSet<Item> items = new();
     private readonly Text? selectedItemText;
 
-    private Component background;
-    private Component selectedItemBackground;
+    private Component? background;
+    private Component? selectedItemBackground;
     private Func<T, bool>? currentItemPredicate;
     private bool scrollToSelected;
 
@@ -77,12 +77,12 @@ public class Selector<T> : Component, ISelector
     /// <summary>
     /// Occurs when an item is selecting.
     /// </summary>
-    public event EventHandler<Item>? ItemSelecting;
+    public event EventHandler<Item?>? ItemSelecting;
 
     /// <summary>
     /// Occurs when an item is selected.
     /// </summary>
-    public event EventHandler<Item>? ItemSelected;
+    public event EventHandler<Item?>? ItemSelected;
 
     /// <inheritdoc/>
     public Container ActiveContainer { get; }
@@ -154,7 +154,11 @@ public class Selector<T> : Component, ISelector
         {
             if (value is null)
             {
-                this.background.Parent = null;
+                if (this.background is not null)
+                {
+                    this.background.Parent = null;
+                }
+
                 this.ListBox.Parent = this.ActiveContainer;
             }
             else
@@ -175,7 +179,11 @@ public class Selector<T> : Component, ISelector
         {
             if (value is null)
             {
-                this.selectedItemBackground.Parent = null;
+                if (this.selectedItemBackground is not null)
+                {
+                    this.selectedItemBackground.Parent = null;
+                }
+
                 if (this.selectedItemText is not null)
                 {
                     this.selectedItemText.Parent = this.InactiveContainer;
@@ -208,7 +216,7 @@ public class Selector<T> : Component, ISelector
     public void AddItem(Item item)
     {
         _ = this.items.Add(item);
-        (item.Button as Component).Parent = this.ListBox.ContentContainer;
+        (item.Button as Component)!.Parent = this.ListBox.ContentContainer;
     }
 
     /// <summary>
@@ -234,14 +242,14 @@ public class Selector<T> : Component, ISelector
         this.ActiveContainer.IsEnabled = true;
         this.InactiveContainer.IsEnabled = false;
 
-        if (this.scrollToSelected)
+        if (this.scrollToSelected && this.SelectedItem is not null)
         {
             // Be sure that all components are dequeued before scrolling
             this.ListBox.DequeueComponents();
             int index = this.items.ToList().IndexOf(this.SelectedItem);
             float percentage = (index / (float)this.items.Count)
                 + (this.ListBox.Spacing / this.ListBox.TotalLength / 2);
-            this.ListBox.ScrollBar.ScrollTo(percentage);
+            this.ListBox.ScrollBar?.ScrollTo(Math.Clamp(percentage, 0f, 1f));
         }
 
         this.Opened?.Invoke(this, EventArgs.Empty);
@@ -299,7 +307,7 @@ public class Selector<T> : Component, ISelector
     /// <exception cref="InvalidOperationException">The item is not in the list of items.</exception>
     public void SelectItem(Item? item)
     {
-        if (!this.items.Contains(item))
+        if (item is not null && !this.items.Contains(item))
         {
             throw new InvalidOperationException("The item is not in the list of items");
         }
@@ -315,13 +323,13 @@ public class Selector<T> : Component, ISelector
     /// <param name="predicate">The predicate to select an item.</param>
     public void SelectItem(Predicate<Item> predicate)
     {
-        this.SelectItem(this.Items.First(x => predicate(x)));
+        this.SelectItem(this.Items.FirstOrDefault(x => predicate(x)));
     }
 
     /// <inheritdoc/>
     /// <remarks>
-    /// <para>Current item is selected based on the <see cref="CurrentItemPredicate"/>.</para>
-    /// <para>If the <see cref="CurrentItemPredicate"/> is not set, the current ite
+    /// If the <see cref="CurrentItemPredicate"/> is not set,
+    /// the current item is set to <see langword="null"/>.
     /// </remarks>
     public void SelectCurrentItem()
     {
@@ -333,6 +341,15 @@ public class Selector<T> : Component, ISelector
         {
             this.SelectItem((Item?)null);
         }
+    }
+
+    /// <summary>
+    /// Clears the items.
+    /// </summary>
+    public void ClearItems()
+    {
+        this.ListBox.Clear();
+        this.items.Clear();
     }
 
     /// <summary>
