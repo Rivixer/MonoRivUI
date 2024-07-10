@@ -126,7 +126,7 @@ public static class MouseController
             && (focusedComponent == component
                 || ((component.Transform.DestRectangle.Contains(Position)
                         && component.IsAncestor(focusedComponent))
-                    && (!isFocusedComponentPriority || IsParentPriority(component))));
+                    && (!isFocusedComponentPriority || component.IsPriority || IsParentPriority(component))));
     }
 
     /// <summary>
