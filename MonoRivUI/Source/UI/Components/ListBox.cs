@@ -110,7 +110,7 @@ public class ListBox : Component
         this.contentContainer.ChildAdded += this.ListBox_Container_ChildAdded;
         this.contentContainer.ChildRemoved += this.ListBox_Container_ChildRemoved;
 
-        this.scrollBar = new ScrollBar(this.ContentContainer)
+        this.scrollBar = new ScrollBar(this.innerContainer)
         {
             IsEnabled = false,
             Parent = this,

@@ -17,6 +17,8 @@ public class ScrollBar : Component
     private float total;
     private float current;
 
+    private float thumbDragOffset;
+
     private bool isUpdateThumbSizeNeeded;
 
     /// <summary>
@@ -211,17 +213,37 @@ public class ScrollBar : Component
 
     private void HandleThumbDrag()
     {
-        Point mouseDelta = MouseController.MouseDelta;
-        Rectangle frameRect = this.frame.InnerContainer.Transform.DestRectangle;
-
-        float scrollPercentage = this.Orientation switch
+        int mouseDelta = this.Orientation switch
         {
-            Orientation.Vertical => mouseDelta.Y / (float)frameRect.Height,
-            Orientation.Horizontal => mouseDelta.X / (float)frameRect.Width,
+            Orientation.Vertical => MouseController.MouseDelta.Y,
+            Orientation.Horizontal => MouseController.MouseDelta.X,
             _ => throw new NotImplementedException(),
         };
 
-        this.UpdateThumbPosition(-scrollPercentage * this.total);
+        Rectangle frameRect = this.frame.InnerContainer.Transform.DestRectangle;
+        float scrollPercentage = (float)mouseDelta / this.Orientation switch
+        {
+            Orientation.Vertical => frameRect.Height,
+            Orientation.Horizontal => frameRect.Width,
+            _ => throw new NotImplementedException(),
+        };
+
+        int dragOffsetSign = Math.Sign(this.thumbDragOffset);
+
+        if (this.thumbDragOffset != 0f)
+        {
+            this.thumbDragOffset -= mouseDelta;
+        }
+
+        if (this.thumbDragOffset == 0 || dragOffsetSign != Math.Sign(this.thumbDragOffset))
+        {
+            this.thumbDragOffset = 0;
+            this.UpdateThumbPosition(-scrollPercentage * this.total, out float clampedValue);
+            if (clampedValue != 0f)
+            {
+                this.thumbDragOffset -= (int)(clampedValue / (scrollPercentage * this.total) * mouseDelta);
+            }
+        }
     }
 
     private void HandleScrollBarClick()
@@ -243,12 +265,20 @@ public class ScrollBar : Component
 
     private void UpdateThumbPosition(float scrollDelta)
     {
+        this.UpdateThumbPosition(scrollDelta, out _);
+    }
+
+    private void UpdateThumbPosition(float scrollDelta, out float clampedValue)
+    {
         float maxCurrentLength = this.total - this.Orientation switch
         {
             Orientation.Vertical => this.contentContainer.Transform.Size.Y,
             Orientation.Horizontal => this.contentContainer.Transform.Size.X,
             _ => throw new NotImplementedException(),
         };
+
+        float value = this.current - scrollDelta;
+        clampedValue = value < 0 ? value : value > maxCurrentLength ? value - maxCurrentLength : 0;
 
         this.current = Math.Clamp(this.current - scrollDelta, 0.0f, maxCurrentLength);
         this.UpdateThumbOffset();
@@ -310,6 +340,11 @@ public class ScrollBar : Component
 
     private void Transform_Recalculated(object? sender, EventArgs e)
     {
+        if (!this.IsEnabled)
+        {
+            return;
+        }
+
         this.UpdateScrollBarSize();
         this.UpdateThumbSize();
         this.UpdateThumbOffset();
