@@ -19,4 +19,9 @@ public interface IScene
     /// </summary>
     /// <param name="gameTime">The game time.</param>
     void Draw(GameTime gameTime);
+
+    /// <summary>
+    /// Initializes the scene.
+    /// </summary>
+    void Initialize();
 }

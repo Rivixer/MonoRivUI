@@ -14,6 +14,8 @@ public static class MouseController
     private static MouseState currentState;
 
     private static IReadOnlyComponent? focusedComponent;
+    private static IReadOnlyComponent? draggedComponent;
+    private static IReadOnlyComponent? previousDraggedComponent;
     private static bool isFocusedComponentPriority;
 
     /// <summary>
@@ -38,6 +40,16 @@ public static class MouseController
     public static int ScrollDelta => currentState.ScrollWheelValue - previousState.ScrollWheelValue;
 
     /// <summary>
+    /// Gets the component that is currently dragged by the mouse.
+    /// </summary>
+    public static IReadOnlyComponent? DraggedComponent => draggedComponent;
+
+    /// <summary>
+    /// Gets a value indicating whether the drag state has changed.
+    /// </summary>
+    public static bool WasDragStateChanged => previousDraggedComponent != draggedComponent;
+
+    /// <summary>
     /// Updates the mouse state.
     /// </summary>
     /// <remarks>
@@ -49,59 +61,10 @@ public static class MouseController
         previousState = currentState;
         currentState = Mouse.GetState();
 
-        /* REFACTOR !!!
-         * Detecting focusing component sucks, but works for now. */
+        DetectFocusedComponent();
 
-        Queue<IOverlayScene> queue = new();
-        foreach (Scene.OverlayData data in Scene.DisplayedOverlays.Reverse())
-        {
-            queue.Enqueue(data.Scene);
-            if (data.Options.BlockFocusOnUnderlyingScenes)
-            {
-                break;
-            }
-        }
-
-        focusedComponent = null;
-        while (focusedComponent is null && queue.Count != 0)
-        {
-            IOverlayScene scene = queue.Dequeue();
-            foreach (IReadOnlyComponent component in scene.OverlayComponents)
-            {
-                if (focusedComponent is not null)
-                {
-                    break;
-                }
-
-                UpdateFocusedPriorityComponent(component);
-                if (focusedComponent is not null)
-                {
-                    isFocusedComponentPriority = true;
-                }
-                else
-                {
-                    UpdateFocusedComponent(component);
-                    isFocusedComponentPriority = false;
-                }
-            }
-        }
-
-        if (focusedComponent is not null)
-        {
-            return;
-        }
-
-        UpdateFocusedPriorityComponent(Scene.Current.BaseComponent);
-
-        if (focusedComponent is not null)
-        {
-            isFocusedComponentPriority = true;
-        }
-        else
-        {
-            UpdateFocusedComponent(Scene.Current.BaseComponent);
-            isFocusedComponentPriority = false;
-        }
+        previousDraggedComponent = draggedComponent;
+        DetectDraggedComponent();
     }
 
     /// <summary>
@@ -259,6 +222,91 @@ public static class MouseController
         return previousState.RightButton == ButtonState.Released;
     }
 
+    private static void DetectFocusedComponent()
+    {
+        /* REFACTOR !!!
+         * Detecting focusing component sucks, but works for now. */
+
+        Queue<IOverlayScene> queue = new();
+        foreach (Scene.OverlayData data in Scene.DisplayedOverlays.Reverse())
+        {
+            queue.Enqueue(data.Scene);
+            if (data.Options.BlockFocusOnUnderlyingScenes)
+            {
+                break;
+            }
+        }
+
+        focusedComponent = null;
+        while (focusedComponent is null && queue.Count != 0)
+        {
+            IOverlayScene scene = queue.Dequeue();
+            foreach (IReadOnlyComponent component in scene.OverlayComponents)
+            {
+                if (focusedComponent is not null)
+                {
+                    break;
+                }
+
+                UpdateFocusedPriorityComponent(component);
+                if (focusedComponent is not null)
+                {
+                    isFocusedComponentPriority = true;
+                }
+                else
+                {
+                    UpdateFocusedComponent(component);
+                    isFocusedComponentPriority = false;
+                }
+            }
+        }
+
+        if (focusedComponent is not null)
+        {
+            return;
+        }
+
+        UpdateFocusedPriorityComponent(Scene.Current.BaseComponent);
+
+        if (focusedComponent is not null)
+        {
+            isFocusedComponentPriority = true;
+        }
+        else
+        {
+            UpdateFocusedComponent(Scene.Current.BaseComponent);
+            isFocusedComponentPriority = false;
+        }
+    }
+
+    private static void DetectDraggedComponent()
+    {
+        draggedComponent = null;
+
+        foreach (Scene.OverlayData data in Scene.DisplayedOverlays.Reverse())
+        {
+            foreach (IReadOnlyComponent component in data.Scene.OverlayComponents)
+            {
+                UpdateDraggedComponent(component);
+
+                if (draggedComponent is not null)
+                {
+                    return;
+                }
+            }
+        }
+
+        foreach (IReadOnlyComponent component in Scene.Current.BaseComponent.Children)
+        {
+            UpdateDraggedComponent(component);
+
+            if (draggedComponent is not null)
+            {
+                return;
+            }
+        }
+    }
+
     private static bool IsParentPriority(IReadOnlyComponent component)
     {
         return component.Parent is not null
@@ -288,6 +336,25 @@ public static class MouseController
             {
                 UpdateFocusedComponent(child);
             }
+        }
+    }
+
+    private static void UpdateDraggedComponent(IReadOnlyComponent component)
+    {
+        if (component is IDragable dragable)
+        {
+            dragable.UpdateDragState();
+
+            if (dragable.IsDragging)
+            {
+                draggedComponent = component;
+                return;
+            }
+        }
+
+        foreach (IReadOnlyComponent child in component.Children)
+        {
+            UpdateDraggedComponent(child);
         }
     }
 }

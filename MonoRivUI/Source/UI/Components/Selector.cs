@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 
 namespace MonoRivUI;
 
@@ -197,6 +198,8 @@ public class Selector<T> : Component, ISelector
                     this.selectedItemText.Parent = value;
                 }
             }
+
+            this.selectedItemBackground = value;
         }
     }
 
@@ -278,23 +281,23 @@ public class Selector<T> : Component, ISelector
             return;
         }
 
-        if (MouseController.IsLeftButtonClicked())
+        if (!this.IsOpened
+            && !MouseController.WasDragStateChanged
+            && MouseController.IsLeftButtonClicked()
+            && MouseController.IsComponentFocused(this))
         {
-            if (!this.IsOpened && MouseController.IsComponentFocused(this))
-            {
-                this.Open();
-            }
-            else if (this.IsOpened && !MouseController.IsComponentFocused(this.ActiveContainer))
-            {
-                // We have to update children components before closing the selector
-                // to avoid the case where the selected item is not updated
-                // (e.g. the selected item is a button and the button is clicked)
-                base.Update(gameTime);
-                this.Close();
+            this.Open();
+        }
+        else if (this.IsOpened && (this.ClickedApartFromSelector() || this.ClickedEscape()))
+        {
+            // We have to update children components before closing the selector
+            // to avoid the case where the selected item is not updated
+            // (e.g. the selected item is a button and the button is clicked)
+            base.Update(gameTime);
+            this.Close();
 
-                // Avoid updating the children components twice
-                return;
-            }
+            // Avoid updating the children components twice
+            return;
         }
 
         base.Update(gameTime);
@@ -350,6 +353,21 @@ public class Selector<T> : Component, ISelector
     {
         this.ListBox.Clear();
         this.items.Clear();
+    }
+
+    private bool ClickedApartFromSelector()
+    {
+        return MouseController.IsLeftButtonClicked()
+            && !MouseController.WasDragStateChanged
+            && (!this.ListBox.ScrollBar?.IsThumbDragging ?? true)
+            && !MouseController.IsComponentFocused(this.ActiveContainer)
+            && MouseController.IsComponentFocused(this.Root);
+    }
+
+    private bool ClickedEscape()
+    {
+        return !Scene.DisplayedOverlays.Any()
+            && KeyboardController.IsKeyHit(Keys.Escape);
     }
 
     /// <summary>

@@ -6,7 +6,7 @@ namespace MonoRivUI;
 /// <summary>
 /// Represents a scrollbar component.
 /// </summary>
-public class ScrollBar : Component
+public class ScrollBar : Component, IDragable
 {
     private readonly Frame frame;
     private readonly SolidColor background;
@@ -48,6 +48,18 @@ public class ScrollBar : Component
     /// the scrollbar thumb is being dragged.
     /// </summary>
     public bool IsThumbDragging { get; private set; }
+
+    /// <summary>
+    /// Gets a value indicating whether
+    /// the scrollbar thumb was being dragged.
+    /// </summary>
+    public bool WasThumbDragging { get; private set; }
+
+    /// <inheritdoc/>
+    bool IDragable.IsDragging => this.IsThumbDragging;
+
+    /// <inheritdoc/>
+    bool IDragable.WasDragging => this.WasThumbDragging;
 
     /// <summary>
     /// Gets or sets the orientation of the scrollbar.
@@ -162,6 +174,16 @@ public class ScrollBar : Component
     }
 
     /// <inheritdoc/>
+    public void UpdateDragState()
+    {
+        this.WasThumbDragging = this.IsThumbDragging;
+        this.IsThumbDragging = MouseController.IsLeftButtonPressed()
+            && ((MouseController.WasLeftButtonReleased()
+                    && MouseController.IsComponentFocused(this.thumb))
+                || this.IsThumbDragging);
+    }
+
+    /// <inheritdoc/>
     public override void Update(GameTime gameTime)
     {
         if (!this.IsEnabled)
@@ -176,10 +198,10 @@ public class ScrollBar : Component
             this.isUpdateThumbSizeNeeded = false;
         }
 
-        this.IsThumbDragging = MouseController.IsLeftButtonPressed()
-            && ((MouseController.WasLeftButtonReleased()
-                    && MouseController.IsComponentFocused(this.thumb))
-                || this.IsThumbDragging);
+        if (!this.WasThumbDragging && this.IsThumbDragging)
+        {
+            this.thumbDragOffset = 0.0f;
+        }
 
         if (this.IsThumbDragging)
         {

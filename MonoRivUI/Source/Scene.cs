@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using Microsoft.Xna.Framework;
 
 namespace MonoRivUI;
@@ -49,10 +48,34 @@ public abstract class Scene : IScene
         };
     }
 
-    /// <inheritdoc cref="IScene.Showed"/>
+    /// <summary>
+    /// Occurs when the scene is about to change.
+    /// </summary>
+    public event EventHandler? Changing;
+
+    /// <summary>
+    /// Occurs when the scene has changed.
+    /// </summary>
+    public event EventHandler? Changed;
+
+    /// <summary>
+    /// Occurs when the scene is about to be shown.
+    /// </summary>
+    protected event EventHandler? Showing;
+
+    /// <summary>
+    /// Occurs when the scene has been shown.
+    /// </summary>
     protected event EventHandler? Showed;
 
-    /// <inheritdoc cref="IScene.Hid"/>
+    /// <summary>
+    /// Occurs when the scene is about to be hidden.
+    /// </summary>
+    protected event EventHandler? Hiding;
+
+    /// <summary>
+    /// Occurs when the scene has been hidden.
+    /// </summary>
     protected event EventHandler? Hid;
 
     /// <summary>
@@ -92,7 +115,7 @@ public abstract class Scene : IScene
     {
         var sceneTypes = assembly.GetTypes()
             .Where(t => t.IsSubclassOf(typeof(Scene))
-            && t.GetCustomAttribute<NoAutoInitialize>() is null
+            && t.GetCustomAttribute<NoAutoInitializeAttribute>() is null
             && !t.IsAbstract);
 
         foreach (var sceneType in sceneTypes)
@@ -154,9 +177,16 @@ public abstract class Scene : IScene
             SceneStack.Push(Current);
         }
 
-        Current?.Hid?.Invoke(null, EventArgs.Empty);
+        Scene? previous = Current;
+
+        previous?.Hiding?.Invoke(null, EventArgs.Empty);
+        scene.Showing?.Invoke(null, EventArgs.Empty);
+
         Current = scene;
+
+        previous?.Hid?.Invoke(null, EventArgs.Empty);
         Current.Showed?.Invoke(null, EventArgs.Empty);
+
         Current.baseComponent.Transform.ForceRecalulcation();
     }
 
@@ -230,6 +260,14 @@ public abstract class Scene : IScene
     }
 
     /// <summary>
+    /// Resets the scene stack.
+    /// </summary>
+    public static void ResetSceneStack()
+    {
+        SceneStack.Clear();
+    }
+
+    /// <summary>
     /// Changes the current scene to the previous scene if it exists,
     /// otherwise changes to the specified scene.
     /// </summary>
@@ -284,7 +322,7 @@ public abstract class Scene : IScene
     /// <param name="gameTime">The game time.</param>
     public static void DrawOverlays(GameTime gameTime)
     {
-        if (!DisplayedOverlaysData.Any())
+        if (DisplayedOverlaysData.Count == 0)
         {
             return;
         }
@@ -414,7 +452,7 @@ public abstract class Scene : IScene
     /// Represents an attribute that indicates that the class should not be auto-initialized.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
-    public class NoAutoInitialize : Attribute
+    public class NoAutoInitializeAttribute : Attribute
     {
     }
 }

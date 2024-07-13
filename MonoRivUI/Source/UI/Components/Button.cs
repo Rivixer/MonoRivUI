@@ -119,7 +119,10 @@ public class Button<T> : Component, IButton<T>, IStyleable<Button<T>>
         bool isFocused = MouseController.IsComponentFocused(this);
 
         this.WasHovered = this.IsHovered;
-        this.IsHovered = isFocused && this.Component.IsButtonContentHovered(mousePosition);
+        this.IsHovered = isFocused
+            && MouseController.DraggedComponent is null
+            && !MouseController.WasDragStateChanged
+            && this.Component.IsButtonContentHovered(mousePosition);
 
         if (isFocused && !this.WasHovered && this.IsHovered)
         {
