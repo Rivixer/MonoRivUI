@@ -366,7 +366,7 @@ public class Selector<T> : Component, ISelector
 
     private bool ClickedEscape()
     {
-        return !Scene.DisplayedOverlays.Any()
+        return (!Scene.DisplayedOverlays.Any() || (Scene.DisplayedOverlays.Last().Scene as Scene)!.BaseComponent.IsAncestor(this))
             && KeyboardController.IsKeyHit(Keys.Escape);
     }
 
