@@ -296,7 +296,7 @@ public static class MouseController
             }
         }
 
-        foreach (IReadOnlyComponent component in Scene.Current.BaseComponent.Children)
+        foreach (IReadOnlyComponent component in Scene.Current.BaseComponent.Children.ToList())
         {
             UpdateDraggedComponent(component);
 
@@ -321,7 +321,7 @@ public static class MouseController
             parentPriority = true;
         }
 
-        foreach (IReadOnlyComponent child in component.Children)
+        foreach (IReadOnlyComponent child in component.Children.ToList())
         {
             UpdateFocusedPriorityComponent(child, parentPriority);
         }
@@ -332,7 +332,7 @@ public static class MouseController
         if (component.IsEnabled && component.Transform.DestRectangle.Contains(Position))
         {
             focusedComponent = component;
-            foreach (IReadOnlyComponent child in component.Children)
+            foreach (IReadOnlyComponent child in component.Children.ToList())
             {
                 UpdateFocusedComponent(child);
             }
@@ -352,7 +352,7 @@ public static class MouseController
             }
         }
 
-        foreach (IReadOnlyComponent child in component.Children)
+        foreach (IReadOnlyComponent child in component.Children.ToList())
         {
             UpdateDraggedComponent(child);
         }
