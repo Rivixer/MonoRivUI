@@ -240,7 +240,7 @@ public abstract partial class Component : IComponentHierarchy, IReadOnlyComponen
             return;
         }
 
-        foreach (Component child in this.children)
+        foreach (Component child in this.children.ToList())
         {
             if (!child.AutoDraw)
             {
