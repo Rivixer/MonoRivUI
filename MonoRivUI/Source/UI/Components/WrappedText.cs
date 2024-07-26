@@ -181,6 +181,17 @@ public class WrappedText : TextComponent, IEnumerable<Text>
         base.Update(gameTime);
     }
 
+    /// <inheritdoc/>
+    public override void Draw(GameTime gameTime)
+    {
+        if (this.isRecalculationNeeded)
+        {
+            this.Recalculate();
+        }
+
+        base.Draw(gameTime);
+    }
+
     private void Recalculate()
     {
         this.WrapText();

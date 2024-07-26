@@ -192,6 +192,11 @@ public class Text : TextComponent
             return;
         }
 
+        if (this.isRecalculationNeeded)
+        {
+            this.Recalculate();
+        }
+
         this.Font.DrawString(
             text: this.Value,
             position: this.destinationLocation,
