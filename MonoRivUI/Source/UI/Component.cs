@@ -212,7 +212,7 @@ public abstract partial class Component : IComponentHierarchy, IReadOnlyComponen
 
         this.Transform.RecalculateIfNeeded();
 
-        foreach (Component child in this.children)
+        foreach (Component child in this.children.ToList())
         {
             if (!child.AutoUpdate)
             {
