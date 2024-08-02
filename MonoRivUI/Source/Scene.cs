@@ -13,7 +13,7 @@ namespace MonoRivUI;
 public abstract class Scene : IScene
 {
     private static readonly HashSet<Scene> Scenes = new();
-    private static readonly Stack<Scene> SceneStack = new();
+    private static readonly Stack<(Scene, ChangeEventArgs)> SceneStack = new();
     private static readonly List<OverlayData> DisplayedOverlaysData = new();
 
     private readonly SolidColor baseComponent;
@@ -49,24 +49,14 @@ public abstract class Scene : IScene
     }
 
     /// <summary>
-    /// Occurs when the scene is about to change.
-    /// </summary>
-    public event EventHandler? Changing;
-
-    /// <summary>
-    /// Occurs when the scene has changed.
-    /// </summary>
-    public event EventHandler? Changed;
-
-    /// <summary>
     /// Occurs when the scene is about to be shown.
     /// </summary>
-    protected event EventHandler? Showing;
+    protected event EventHandler<ChangeEventArgs?>? Showing;
 
     /// <summary>
     /// Occurs when the scene has been shown.
     /// </summary>
-    protected event EventHandler? Showed;
+    protected event EventHandler<ChangeEventArgs?>? Showed;
 
     /// <summary>
     /// Occurs when the scene is about to be hidden.
@@ -82,6 +72,11 @@ public abstract class Scene : IScene
     /// Gets the current scene.
     /// </summary>
     public static Scene Current { get; private set; } = default!;
+
+    /// <summary>
+    /// Gets the current change event arguments.
+    /// </summary>
+    public static ChangeEventArgs CurrentChangeEventArgs { get; private set; } = default!;
 
     /// <summary>
     /// Gets the currently displayed overlays.
@@ -109,7 +104,7 @@ public abstract class Scene : IScene
     /// <param name="assembly">The assembly.</param>
     /// <remarks>
     /// Scenes are initialized if they are subclasses of <see cref="Scene"/>
-    /// and do not have the <see cref="NoAutoInitialize"/> attribute.
+    /// and do not have the <see cref="NoAutoInitializeAttribute"/> attribute.
     /// </remarks>
     public static void InitializeScenes([NotNull] Assembly assembly)
     {
@@ -132,7 +127,7 @@ public abstract class Scene : IScene
     /// <param name="assemblyPath">The assembly path.</param>
     /// /// <remarks>
     /// Scenes are initialized if they are subclasses of <see cref="Scene"/>
-    /// and do not have the <see cref="NoAutoInitialize"/> attribute.
+    /// and do not have the <see cref="NoAutoInitializeAttribute"/> attribute.
     /// </remarks>
     public static void InitializeScenes(string assemblyPath)
     {
@@ -157,35 +152,112 @@ public abstract class Scene : IScene
     /// Changes the current scene to the specified scene.
     /// </summary>
     /// <typeparam name="T">The type of the scene to change to.</typeparam>
-    /// <param name="addCurrentToStack">Whether to add the current scene to the scene stack.</param>
-    public static void Change<T>(bool addCurrentToStack = true)
+    /// <remarks>
+    /// This method adds the current scene to the scene stack.
+    /// </remarks>
+    public static void Change<T>()
+         where T : Scene
+    {
+        Change<T>(ChangeEventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Changes the current scene to the specified scene.
+    /// </summary>
+    /// <typeparam name="T">The type of the scene to change to.</typeparam>
+    /// <param name="args">The arguments for the change event.</param>
+    /// <remarks>
+    /// This method adds the current scene to the scene stack.
+    /// </remarks>
+    public static void Change<T>(ChangeEventArgs args)
         where T : Scene
     {
         var scene = Scenes.OfType<T>().Single();
-        Change(scene, addCurrentToStack);
+        Change(scene, args);
     }
 
     /// <summary>
     /// Changes the current scene to the specified scene.
     /// </summary>
     /// <param name="scene">The scene to change to.</param>
-    /// <param name="addCurrentToStack">Whether to add the current scene to the scene stack.</param>
-    public static void Change(Scene scene, bool addCurrentToStack = true)
+    /// <remarks>
+    /// This method adds the current scene to the scene stack.
+    /// </remarks>
+    public static void Change(Scene scene)
     {
-        if (Current != null && addCurrentToStack)
+        Change(scene, ChangeEventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Changes the current scene to the specified scene.
+    /// </summary>
+    /// <param name="scene">The scene to change to.</param>
+    /// <param name="args">The arguments for the change event.</param>
+    /// <remarks>
+    /// This method adds the current scene to the scene stack.
+    /// </remarks>
+    public static void Change(Scene scene, ChangeEventArgs args)
+    {
+        if (Current != null)
         {
-            SceneStack.Push(Current);
+            SceneStack.Push((Current, CurrentChangeEventArgs));
         }
 
+        ChangeWithoutStack(scene, args);
+    }
+
+    /// <summary>
+    /// Changes the current scene to the specified scene
+    /// without adding it to the scene stack.
+    /// </summary>
+    /// <typeparam name="T">The type of the scene to change to.</typeparam>
+    public static void ChangeWithoutStack<T>()
+        where T : Scene
+    {
+        ChangeWithoutStack<T>(ChangeEventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Changes the current scene to the specified scene
+    /// without adding it to the scene stack.
+    /// </summary>
+    /// <typeparam name="T">The type of the scene to change to.</typeparam>
+    /// <param name="args">The arguments for the change event.</param>
+    public static void ChangeWithoutStack<T>(ChangeEventArgs args)
+        where T : Scene
+    {
+        var scene = Scenes.OfType<T>().Single();
+        ChangeWithoutStack(scene, args);
+    }
+
+    /// <summary>
+    /// Changes the current scene to the specified scene
+    /// without adding it to the scene stack.
+    /// </summary>
+    /// <param name="scene">The scene to change to.</param>
+    public static void ChangeWithoutStack(Scene scene)
+    {
+        ChangeWithoutStack(scene, ChangeEventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Changes the current scene to the specified scene
+    /// without adding it to the scene stack.
+    /// </summary>
+    /// <param name="scene">The scene to change to.</param>
+    /// <param name="args">The arguments for the change event.</param>
+    public static void ChangeWithoutStack(Scene scene, ChangeEventArgs args)
+    {
         Scene? previous = Current;
 
         previous?.Hiding?.Invoke(null, EventArgs.Empty);
-        scene.Showing?.Invoke(null, EventArgs.Empty);
+        scene.Showing?.Invoke(null, args);
 
         Current = scene;
+        CurrentChangeEventArgs = args;
 
         previous?.Hid?.Invoke(null, EventArgs.Empty);
-        Current.Showed?.Invoke(null, EventArgs.Empty);
+        Current.Showed?.Invoke(null, args);
 
         Current.baseComponent.Transform.ForceRecalulcation();
     }
@@ -195,11 +267,23 @@ public abstract class Scene : IScene
     /// </summary>
     /// <typeparam name="T">The type of the overlay scene to show.</typeparam>
     /// <param name="options">The options for showing the overlay scene.</param>
-    public static void ShowOverlay<T>(OverlayShowOptions options)
+    public static void ShowOverlay<T>(OverlayShowOptions options = default)
+        where T : Scene, IOverlayScene
+    {
+        ShowOverlay<T>(options, ChangeEventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Shows an overlay scene.
+    /// </summary>
+    /// <typeparam name="T">The type of the overlay scene to show.</typeparam>
+    /// <param name="options">The options for showing the overlay scene.</param>
+    /// <param name="args">The arguments for the change event.</param>
+    public static void ShowOverlay<T>(OverlayShowOptions options, ChangeEventArgs args)
         where T : Scene, IOverlayScene
     {
         T scene = Scenes.OfType<T>().Single();
-        ShowOverlay(scene, options);
+        ShowOverlay(scene, options, args);
     }
 
     /// <summary>
@@ -208,7 +292,20 @@ public abstract class Scene : IScene
     /// <typeparam name="T">The type of the overlay scene to show.</typeparam>
     /// <param name="scene">The overlay scene to show.</param>
     /// <param name="options">The options for showing the overlay scene.</param>
-    public static void ShowOverlay<T>(T scene, OverlayShowOptions options)
+    public static void ShowOverlay<T>(T scene, OverlayShowOptions options = default)
+        where T : Scene, IOverlayScene
+    {
+        ShowOverlay(scene, options, ChangeEventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Shows an overlay scene.
+    /// </summary>
+    /// <typeparam name="T">The type of the overlay scene to show.</typeparam>
+    /// <param name="scene">The overlay scene to show.</param>
+    /// <param name="options">The options for showing the overlay scene.</param>
+    /// <param name="args">The arguments for the change event.</param>
+    public static void ShowOverlay<T>(T scene, OverlayShowOptions options, ChangeEventArgs args)
         where T : Scene, IOverlayScene
     {
         if (DisplayedOverlaysData.Any(x => x.Scene == scene))
@@ -218,7 +315,7 @@ public abstract class Scene : IScene
 
         DisplayedOverlaysData.Add(new OverlayData(scene, options));
         SortOverlayPriorities();
-        scene.Showed?.Invoke(null, EventArgs.Empty);
+        scene.Showed?.Invoke(null, args);
     }
 
     /// <summary>
@@ -247,16 +344,27 @@ public abstract class Scene : IScene
     /// <summary>
     /// Changes the current scene to the previous scene.
     /// </summary>
-    /// <exception cref="InvalidOperationException">The current scene does not have a previous scene.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// The current scene does not have a previous scene.
+    /// </exception>
     public static void ChangeToPrevious()
     {
         if (SceneStack.Count == 0)
         {
-            throw new InvalidOperationException("The current scene does not have a previous scene.");
+            throw new InvalidOperationException(
+                "The current scene does not have a previous scene.");
         }
 
-        Current = SceneStack.Pop();
+        var (previous, args) = SceneStack.Pop();
+        Current.Hiding?.Invoke(null, EventArgs.Empty);
+        previous.Showing?.Invoke(null, args);
+
+        Current = previous;
+        CurrentChangeEventArgs = args;
         Current.baseComponent.Transform.ForceRecalulcation();
+
+        Current.Hid?.Invoke(null, EventArgs.Empty);
+        Current.Showed?.Invoke(null, args);
     }
 
     /// <summary>
@@ -272,19 +380,86 @@ public abstract class Scene : IScene
     /// otherwise changes to the specified scene.
     /// </summary>
     /// <typeparam name="T">The type of the scene to change to if there is no previous scene.</typeparam>
-    /// <param name="addCurrentToStack">
-    /// Whether to add the current scene to the scene stack if there is no previous scene.
-    /// </param>
-    public static void ChangeToPreviousOr<T>(bool addCurrentToStack = false)
+    /// <param name="defaultArgs">The arguments for the change event if there is no previous scene.</param>
+    /// <remarks>
+    /// This method adds the current scene to the scene stack if there is no previous scene.
+    /// </remarks>
+    public static void ChangeToPreviousOrDefault<T>(ChangeEventArgs? defaultArgs = null)
         where T : Scene
     {
-        if (SceneStack.Count == 0)
+        var scene = Scenes.OfType<T>().Single();
+        ChangeToPreviousOrDefault(scene, defaultArgs);
+    }
+
+    /// <summary>
+    /// Changes the current scene to the previous scene if it exists.
+    /// </summary>
+    /// <param name="scene">The scene to change to if there is no previous scene.</param>
+    /// <param name="defaultArgs">The arguments for the change event if there is no previous scene.</param>
+    /// <remarks>
+    /// This method adds the current scene to the scene stack if there is no previous scene.
+    /// </remarks>
+    public static void ChangeToPreviousOrDefault(Scene scene, ChangeEventArgs? defaultArgs = null)
+    {
+        defaultArgs ??= ChangeEventArgs.Empty;
+
+        if (SceneStack.Count > 0)
         {
-            Change<T>(addCurrentToStack);
+            ChangeToPrevious();
         }
         else
         {
+            Change(scene, defaultArgs);
+        }
+    }
+
+    /// <summary>
+    /// Changes the current scene to the previous scene.
+    /// </summary>
+    /// <typeparam name="T">
+    /// The type of the scene to change to if there is no previous scene.
+    /// </typeparam>
+    /// <param name="defaultArgs">
+    /// The arguments for the change event if there is no previous scene.
+    /// </param>
+    /// <remarks>
+    /// This method does not add the current scene
+    /// to the scene stack if there is no previous scene.
+    /// </remarks>
+    public static void ChangeToPreviousOrDefaultWithoutStack<T>(
+        ChangeEventArgs? defaultArgs = null)
+        where T : Scene
+    {
+        var scene = Scenes.OfType<T>().Single();
+        ChangeToPreviousOrDefaultWithoutStack(scene, defaultArgs);
+    }
+
+    /// <summary>
+    /// Changes the current scene to the previous scene.
+    /// </summary>
+    /// <param name="scene">
+    /// The scene to change to if there is no previous scene.
+    /// </param>
+    /// <param name="defaultArgs">
+    /// The arguments for the change event if there is no previous scene.
+    /// </param>
+    /// <remarks>
+    /// This method does not add the current scene
+    /// to the scene stack if there is no previous scene.
+    /// </remarks>
+    public static void ChangeToPreviousOrDefaultWithoutStack(
+        Scene scene,
+        ChangeEventArgs? defaultArgs = null)
+    {
+        defaultArgs ??= ChangeEventArgs.Empty;
+
+        if (SceneStack.Count > 0)
+        {
             ChangeToPrevious();
+        }
+        else
+        {
+            ChangeWithoutStack(scene, defaultArgs);
         }
     }
 
@@ -294,7 +469,7 @@ public abstract class Scene : IScene
     /// <param name="gameTime">The game time.</param>
     public static void UpdateOverlays(GameTime gameTime)
     {
-        if (!DisplayedOverlaysData.Any())
+        if (DisplayedOverlaysData.Count == 0)
         {
             return;
         }
@@ -446,6 +621,21 @@ public abstract class Scene : IScene
         /// Gets the options for showing the overlay scene.
         /// </summary>
         public OverlayShowOptions Options { get; }
+    }
+
+    /// <summary>
+    /// Represents a change scene event arguments.
+    /// </summary>
+    public abstract class ChangeEventArgs : EventArgs
+    {
+        /// <summary>
+        /// Gets an empty instance of the <see cref="ChangeEventArgs"/> class.
+        /// </summary>
+        public static new ChangeEventArgs Empty { get; } = new EmptyChangeEventArgs();
+
+        private class EmptyChangeEventArgs : ChangeEventArgs
+        {
+        }
     }
 
     /// <summary>
