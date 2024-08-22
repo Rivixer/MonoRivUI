@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Reflection;
 using Microsoft.Xna.Framework;
 using static MonoRivUI.Style;
@@ -65,16 +65,24 @@ public class Button<T> : Component, IButton<T>, IStyleable<Button<T>>
         remove => this.HoverExited -= (s, e) => value?.Invoke(s, e);
     }
 
-    /// <summary>
-    /// Gets a value indicating whether the button
-    /// is currently being hovered over.
-    /// </summary>
+    /// <inheritdoc/>
+    event EventHandler? IHoverable.HoverEntered
+    {
+        add => this.HoverEntered += (s, e) => value?.Invoke(s, EventArgs.Empty);
+        remove => this.HoverEntered -= (s, e) => value?.Invoke(s, EventArgs.Empty);
+    }
+
+    /// <inheritdoc/>
+    event EventHandler? IHoverable.HoverExited
+    {
+        add => this.HoverExited += (s, e) => value?.Invoke(s, EventArgs.Empty);
+        remove => this.HoverExited -= (s, e) => value?.Invoke(s, EventArgs.Empty);
+    }
+
+    /// <inheritdoc/>
     public bool IsHovered { get; private set; }
 
-    /// <summary>
-    /// Gets a value indicating whether the button
-    /// was hovered over in the previous frame.
-    /// </summary>
+    /// <inheritdoc/>
     public bool WasHovered { get; private set; }
 
     /// <summary>
@@ -108,6 +116,16 @@ public class Button<T> : Component, IButton<T>, IStyleable<Button<T>>
     }
 
     /// <inheritdoc/>
+    public void ResetHover()
+    {
+        if (this.IsHovered)
+        {
+            this.IsHovered = this.WasHovered = false;
+            this.OnHoverExited();
+        }
+    }
+
+    /// <inheritdoc/>
     public override void Update(GameTime gameTime)
     {
         if (!this.IsEnabled)
@@ -126,11 +144,11 @@ public class Button<T> : Component, IButton<T>, IStyleable<Button<T>>
 
         if (isFocused && !this.WasHovered && this.IsHovered)
         {
-            this.HoverEntered?.Invoke(this, this.Component);
+            this.OnHoverEntered();
         }
         else if (this.WasHovered && !this.IsHovered)
         {
-            this.HoverExited?.Invoke(this, this.Component);
+            this.OnHoverExited();
         }
 
         if (isFocused && MouseController.IsLeftButtonClicked() && this.IsHovered)
@@ -139,6 +157,16 @@ public class Button<T> : Component, IButton<T>, IStyleable<Button<T>>
         }
 
         base.Update(gameTime);
+    }
+
+    private void OnHoverEntered()
+    {
+        this.HoverEntered?.Invoke(this, this.Component);
+    }
+
+    private void OnHoverExited()
+    {
+        this.HoverExited?.Invoke(this, this.Component);
     }
 
     /// <summary>
