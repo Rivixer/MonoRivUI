@@ -12,10 +12,12 @@ public class ScrolledEventArgs : EventArgs
     /// </summary>
     /// <param name="current">The current position of the scrolled content.</param>
     /// <param name="total">The total range of the scrollable content.</param>
-    public ScrolledEventArgs(float current, float total)
+    /// <param name="clampedDelta">The clamped delta of the scroll event.</param>
+    public ScrolledEventArgs(float current, float total, float clampedDelta)
     {
         this.Current = current;
         this.Total = total;
+        this.ClampedDelta = clampedDelta;
     }
 
     /// <summary>
@@ -27,4 +29,9 @@ public class ScrolledEventArgs : EventArgs
     /// Gets the total range of the scrollable content.
     /// </summary>
     public float Total { get; }
+
+    /// <summary>
+    /// Gets the clamped delta of the scroll event.
+    /// </summary>
+    public float ClampedDelta { get; }
 }

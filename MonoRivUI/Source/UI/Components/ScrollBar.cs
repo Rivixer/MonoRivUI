@@ -8,10 +8,8 @@ namespace MonoRivUI;
 /// </summary>
 public class ScrollBar : Component, IDragable
 {
-    private readonly Frame frame;
-    private readonly SolidColor background;
-    private readonly SolidColor thumb;
-    private readonly IReadOnlyComponent contentContainer;
+    private readonly Component thumb;
+    private IReadOnlyComponent? contentContainer;
 
     private float relativeSize = 0.02f;
     private float total;
@@ -24,17 +22,29 @@ public class ScrollBar : Component, IDragable
     /// <summary>
     /// Initializes a new instance of the <see cref="ScrollBar"/> class.
     /// </summary>
-    /// <param name="orientation">The oritentation of the scrollbar.</param>
+    /// <param name="thumb">The thumb component of the scrollbar.</param>
+    /// <remarks>
+    /// Using this constructor, remember to set the content container
+    /// using the <see cref="ContentContainer"/> property.
+    /// </remarks>
+    public ScrollBar(Component thumb)
+    {
+        this.thumb = thumb;
+        this.thumb.Parent = this;
+        this.ParentChanged += this.UIScrollBar_ParentChanged;
+        this.Transform.Recalculated += this.Transform_Recalculated;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ScrollBar"/> class.
+    /// </summary>
     /// <param name="contentContainer">
     /// The container that contains the content that is scrolled.
     /// </param>
-    public ScrollBar(IReadOnlyComponent contentContainer)
+    /// <param name="thumb">The thumb component of the scrollbar.</param>
+    public ScrollBar(IReadOnlyComponent contentContainer, Component thumb)
+        : this(thumb)
     {
-        this.frame = new Frame(Color.Gray, thickness: 0) { Parent = this };
-        this.background = new SolidColor(Color.Transparent) { Parent = this.frame.InnerContainer };
-        this.thumb = new SolidColor(Color.Transparent) { Parent = this.frame.InnerContainer };
-        this.ParentChanged += this.UIScrollBar_ParentChanged;
-        this.Transform.Recalculated += this.Transform_Recalculated;
         this.contentContainer = contentContainer;
     }
 
@@ -55,16 +65,33 @@ public class ScrollBar : Component, IDragable
     /// </summary>
     public bool WasThumbDragging { get; private set; }
 
-    /// <inheritdoc/>
-    bool IDragable.IsDragging => this.IsThumbDragging;
-
-    /// <inheritdoc/>
-    bool IDragable.WasDragging => this.WasThumbDragging;
+    /// <summary>
+    /// Gets or sets the content container that contains the content that is scrolled.
+    /// </summary>
+    public IReadOnlyComponent ContentContainer
+    {
+        get
+        {
+            return this.contentContainer
+                ?? throw new InvalidOperationException(
+                    "The content container is not set. " +
+                    $"Use the {nameof(this.ContentContainer)} property " +
+                    $"or the constructor with the {nameof(this.contentContainer)} parameter " +
+                    "to set the content container.");
+        }
+        set => this.contentContainer = value;
+    }
 
     /// <summary>
     /// Gets or sets the orientation of the scrollbar.
     /// </summary>
     public Orientation Orientation { get; set; } = Orientation.Vertical;
+
+    /// <inheritdoc/>
+    bool IDragable.IsDragging => this.IsThumbDragging;
+
+    /// <inheritdoc/>
+    bool IDragable.WasDragging => this.WasThumbDragging;
 
     /// <summary>
     /// Gets the position of the scrollbar.
@@ -75,46 +102,10 @@ public class ScrollBar : Component, IDragable
     /// </remarks>
     public float Position => this.current / (this.total - this.Orientation switch
     {
-        Orientation.Vertical => this.contentContainer.Transform.Size.Y,
-        Orientation.Horizontal => this.contentContainer.Transform.Size.X,
+        Orientation.Vertical => this.ContentContainer.Transform.Size.Y,
+        Orientation.Horizontal => this.ContentContainer.Transform.Size.X,
         _ => throw new NotImplementedException(),
     });
-
-    /// <summary>
-    /// Gets or sets the thickness of the scrollbar frame.
-    /// </summary>
-    public int FrameThickness
-    {
-        get => this.frame.Thickness;
-        set => this.frame.Thickness = value;
-    }
-
-    /// <summary>
-    /// Gets or sets the color of the scrollbar frame.
-    /// </summary>
-    public Color FrameColor
-    {
-        get => this.frame.Color;
-        set => this.frame.Color = value;
-    }
-
-    /// <summary>
-    /// Gets or sets the background color of the scrollbar.
-    /// </summary>
-    public Color BackgroundColor
-    {
-        get => this.background.Color;
-        set => this.background.Color = value;
-    }
-
-    /// <summary>
-    /// Gets or sets the color of the scrollbar thumb.
-    /// </summary>
-    public Color ThumbColor
-    {
-        get => this.thumb.Color;
-        set => this.thumb.Color = value;
-    }
 
     /// <summary>
     /// Gets or sets the relative size of the scrollbar.
@@ -191,6 +182,8 @@ public class ScrollBar : Component, IDragable
             return;
         }
 
+        Debug.WriteLine(MouseController.IsComponentFocused(this.thumb));
+
         if (this.isUpdateThumbSizeNeeded)
         {
             this.UpdateThumbSize();
@@ -229,7 +222,7 @@ public class ScrollBar : Component, IDragable
     private bool IsScrollWheelScrolled()
     {
         return MouseController.ScrollDelta != 0
-            && (MouseController.IsComponentFocused(this.contentContainer)
+            && (MouseController.IsComponentFocused(this.ContentContainer)
                 || MouseController.IsComponentFocused(this));
     }
 
@@ -242,11 +235,10 @@ public class ScrollBar : Component, IDragable
             _ => throw new NotImplementedException(),
         };
 
-        Rectangle frameRect = this.frame.InnerContainer.Transform.DestRectangle;
         float scrollPercentage = (float)mouseDelta / this.Orientation switch
         {
-            Orientation.Vertical => frameRect.Height,
-            Orientation.Horizontal => frameRect.Width,
+            Orientation.Vertical => this.Transform.Size.Y,
+            Orientation.Horizontal => this.Transform.Size.X,
             _ => throw new NotImplementedException(),
         };
 
@@ -294,17 +286,27 @@ public class ScrollBar : Component, IDragable
     {
         float maxCurrentLength = this.total - this.Orientation switch
         {
-            Orientation.Vertical => this.contentContainer.Transform.Size.Y,
-            Orientation.Horizontal => this.contentContainer.Transform.Size.X,
+            Orientation.Vertical => this.ContentContainer.Transform.Size.Y,
+            Orientation.Horizontal => this.ContentContainer.Transform.Size.X,
             _ => throw new NotImplementedException(),
         };
 
         float value = this.current - scrollDelta;
         clampedValue = value < 0 ? value : value > maxCurrentLength ? value - maxCurrentLength : 0;
 
+        if (maxCurrentLength < 0)
+        {
+            return;
+        }
+
+        var previousCurrent = this.current;
         this.current = Math.Clamp(this.current - scrollDelta, 0.0f, maxCurrentLength);
+        var clampedDelta = this.current - previousCurrent;
+
         this.UpdateThumbOffset();
-        this.Scrolled?.Invoke(this, new ScrolledEventArgs(this.current, this.total));
+
+        var scrolledArgs = new ScrolledEventArgs(this.current, this.total, clampedDelta);
+        this.Scrolled?.Invoke(this, scrolledArgs);
     }
 
     private void UIScrollBar_ParentChanged(object? sender, ParentChangedEventArgs e)
@@ -334,15 +336,22 @@ public class ScrollBar : Component, IDragable
 
     private void UpdateThumbSize()
     {
+        // Due to the transform recalculation,
+        // the content container is sometimes null
+        if (this.ContentContainer is null)
+        {
+            return;
+        }
+
         switch (this.Orientation)
         {
             case Orientation.Vertical:
-                int frameHeight = this.contentContainer.Transform.Size.Y;
+                int frameHeight = this.ContentContainer.Transform.Size.Y;
                 float newRelativeThumbHeight = Math.Clamp(frameHeight / this.total, 0.0f, 1.0f);
                 this.thumb.Transform.RelativeSize = new Vector2(1.0f, newRelativeThumbHeight);
                 break;
             case Orientation.Horizontal:
-                int frameWidth = this.contentContainer.Transform.Size.X;
+                int frameWidth = this.ContentContainer.Transform.Size.X;
                 float newRelativeThumbWidth = Math.Clamp(frameWidth / this.total, 0.0f, 1.0f);
                 this.thumb.Transform.RelativeSize = new Vector2(newRelativeThumbWidth, 1.0f);
                 break;
