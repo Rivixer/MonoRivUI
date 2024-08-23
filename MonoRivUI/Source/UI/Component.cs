@@ -16,6 +16,7 @@ public abstract partial class Component : IComponentHierarchy, IReadOnlyComponen
     private readonly List<Component> children = new();
     private Component? parent;
     private Transform? transform;
+    private bool isEnabled = true;
 
     /// <summary>
     /// An event raised when a parent of the component has been changed.
@@ -32,10 +33,9 @@ public abstract partial class Component : IComponentHierarchy, IReadOnlyComponen
     /// </summary>
     public event EventHandler<ChildChangedEventArgs>? ChildRemoved;
 
-    /// <summary>
-    /// An event raised when a child component has been removed.
-    /// </summary>
-    public event EventHandler<ChildChangedEventArgs>? ChildCloned;
+    public event EventHandler? Enabled;
+
+    public event EventHandler? Disabled;
 
     /// <inheritdoc/>
     IReadOnlyTransform IReadOnlyComponent.Transform => this.Transform;
@@ -127,14 +127,21 @@ public abstract partial class Component : IComponentHierarchy, IReadOnlyComponen
     /// </summary>
     public Component Root => this.parent?.Root ?? this;
 
-    /// <summary>
-    /// Gets or sets a value indicating whether the component is enabled.
-    /// </summary>
-    /// <remarks>
     /// <inheritdoc/>
-    /// Default value is <see langword="true"/>.
-    /// </remarks>
-    public bool IsEnabled { get; set; } = true;
+    public bool IsEnabled
+    {
+        get => this.isEnabled;
+        set
+        {
+            if (this.isEnabled == value)
+            {
+                return;
+            }
+
+            this.isEnabled = value;
+            (this.isEnabled ? this.Enabled : this.Disabled)?.Invoke(this, EventArgs.Empty);
+        }
+    }
 
     /// <summary>
     /// Gets or sets a value indicating whether the component is priority.
@@ -220,6 +227,28 @@ public abstract partial class Component : IComponentHierarchy, IReadOnlyComponen
             }
 
             child.Update(gameTime);
+        }
+    }
+
+    public virtual void ForceUpdate(bool? withTransform = null)
+    {
+        if (!this.IsEnabled)
+        {
+            return;
+        }
+
+        if (withTransform == true)
+        {
+            this.Transform.ForceRecalulcation();
+        }
+        else if (withTransform == null)
+        {
+            this.Transform.RecalculateIfNeeded();
+        }
+
+        foreach (Component child in this.children.ToList())
+        {
+            child.ForceUpdate();
         }
     }
 
