@@ -147,10 +147,6 @@ public abstract class Scene : IScene
     public static void AddScene(Scene scene)
     {
         _ = Scenes.Add(scene);
-        if (scene is IOverlayScene priorityScene)
-        {
-            priorityScene.PriorityChanged += (s, e) => SortOverlayPriorities();
-        }
     }
 
     /// <summary>

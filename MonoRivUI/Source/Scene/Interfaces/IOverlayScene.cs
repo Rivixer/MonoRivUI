@@ -9,11 +9,6 @@ namespace MonoRivUI;
 public interface IOverlayScene : IScene
 {
     /// <summary>
-    /// Occurs when the priority of the overlay scene changes.
-    /// </summary>
-    event EventHandler<(int Before, int After)> PriorityChanged;
-
-    /// <summary>
     /// Gets the priority of the overlay scene.
     /// </summary>
     int Priority { get; }

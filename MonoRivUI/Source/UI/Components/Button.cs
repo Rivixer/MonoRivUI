@@ -38,9 +38,6 @@ public class Button<T> : Component, IButton<T>
     }
 
     /// <inheritdoc/>
-    public event EventHandler? Clicking;
-
-    /// <inheritdoc/>
     public event EventHandler? Clicked;
 
     /// <inheritdoc/>
