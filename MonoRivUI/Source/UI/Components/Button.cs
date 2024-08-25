@@ -1,5 +1,5 @@
-using System;
-using System.Reflection;
+﻿using System;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using static MonoRivUI.Style;
 
@@ -12,6 +12,22 @@ namespace MonoRivUI;
 public class Button<T> : Component, IButton<T>
     where T : Component, IButtonContent<IComponent>
 {
+    static Button()
+    {
+        Scene.SceneChanged += (s, e) =>
+        {
+            // Reset all hovered buttons when the scene changes.
+            e.Previous?.BaseComponent
+                .GetAllDescendants<Button<T>>(x => x.IsEnabled)
+                .ToList()
+                .ForEach(btn =>
+                {
+                    btn.IsHovered = btn.WasHovered = false;
+                    btn.OnHoverExited();
+                });
+        };
+    }
+
     /// <summary>
     /// Initializes a new instance of the <see cref="Button{T}"/> class.
     /// </summary>
