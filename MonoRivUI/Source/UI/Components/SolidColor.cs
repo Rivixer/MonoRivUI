@@ -37,7 +37,7 @@ public class SolidColor : TextureComponent, IButtonContent<SolidColor>, IStyleab
     /// Gets or sets the color to be drawn.
     /// </summary>
     [Stylable]
-    public Color Color
+    public new Color Color
     {
         get => this.color;
         set
@@ -63,22 +63,9 @@ public class SolidColor : TextureComponent, IButtonContent<SolidColor>, IStyleab
     }
 
     /// <inheritdoc/>
-    public SolidColor ApplyStyle(Style<SolidColor> style)
+    public void ApplyStyle(Style<SolidColor> style)
     {
         style.Apply(this);
-        return this;
-    }
-
-    /// <inheritdoc/>
-    public Style<SolidColor> GetStyle()
-    {
-        return new Style<SolidColor>()
-        {
-            CustomProperties = new List<Property>()
-            {
-                new("Color", this.Color),
-            },
-        };
     }
 
     /// <inheritdoc/>

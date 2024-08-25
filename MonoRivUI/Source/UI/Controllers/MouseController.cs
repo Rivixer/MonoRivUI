@@ -13,9 +13,9 @@ public static class MouseController
     private static MouseState previousState;
     private static MouseState currentState;
 
-    private static IReadOnlyComponent? focusedComponent;
-    private static IReadOnlyComponent? draggedComponent;
-    private static IReadOnlyComponent? previousDraggedComponent;
+    private static IComponent? focusedComponent;
+    private static IComponent? draggedComponent;
+    private static IComponent? previousDraggedComponent;
     private static bool isFocusedComponentPriority;
 
     /// <summary>
@@ -42,7 +42,7 @@ public static class MouseController
     /// <summary>
     /// Gets the component that is currently dragged by the mouse.
     /// </summary>
-    public static IReadOnlyComponent? DraggedComponent => draggedComponent;
+    public static IComponent? DraggedComponent => draggedComponent;
 
     /// <summary>
     /// Gets a value indicating whether the drag state has changed.
@@ -83,12 +83,12 @@ public static class MouseController
     /// of the currently focused component and the mouse position
     /// is within the <paramref name="component"/>'s boundaries.
     /// </remarks>
-    public static bool IsComponentFocused(IReadOnlyComponent component)
+    public static bool IsComponentFocused(IComponent component)
     {
         return focusedComponent is not null
             && (focusedComponent == component
-                || ((component.Transform.DestRectangle.Contains(Position)
-                        && component.IsAncestor(focusedComponent))
+                || (component.Transform.DestRectangle.Contains(Position)
+                        && component.IsAncestorOf(focusedComponent)
                     && (!isFocusedComponentPriority || component.IsPriority || IsParentPriority(component))));
     }
 
@@ -228,7 +228,7 @@ public static class MouseController
          * Detecting focusing component sucks, but works for now. */
 
         Queue<IOverlayScene> queue = new();
-        foreach (Scene.OverlayData data in Scene.DisplayedOverlays.Reverse())
+        foreach (OverlaySceneData data in Scene.DisplayedOverlays.Reverse())
         {
             queue.Enqueue(data.Scene);
             if (data.Options.BlockFocusOnUnderlyingScenes)
@@ -238,10 +238,10 @@ public static class MouseController
         }
 
         focusedComponent = null;
-        while (focusedComponent is null && queue.Count != 0)
+        while (queue.Count != 0)
         {
             IOverlayScene scene = queue.Dequeue();
-            foreach (IReadOnlyComponent component in scene.OverlayComponents)
+            foreach (IComponent component in scene.OverlayComponents)
             {
                 if (focusedComponent is not null)
                 {
@@ -258,6 +258,11 @@ public static class MouseController
                     UpdateFocusedComponent(component);
                     isFocusedComponentPriority = false;
                 }
+            }
+
+            if (focusedComponent is not null)
+            {
+                break;
             }
         }
 
@@ -283,9 +288,9 @@ public static class MouseController
     {
         draggedComponent = null;
 
-        foreach (Scene.OverlayData data in Scene.DisplayedOverlays.Reverse())
+        foreach (OverlaySceneData data in Scene.DisplayedOverlays.Reverse())
         {
-            foreach (IReadOnlyComponent component in data.Scene.OverlayComponents)
+            foreach (IComponent component in data.Scene.OverlayComponents)
             {
                 UpdateDraggedComponent(component);
 
@@ -296,7 +301,7 @@ public static class MouseController
             }
         }
 
-        foreach (IReadOnlyComponent component in Scene.Current.BaseComponent.Children.ToList())
+        foreach (IComponent component in Scene.Current.BaseComponent.Children.ToList())
         {
             UpdateDraggedComponent(component);
 
@@ -307,13 +312,13 @@ public static class MouseController
         }
     }
 
-    private static bool IsParentPriority(IReadOnlyComponent component)
+    private static bool IsParentPriority(IComponent component)
     {
         return component.Parent is not null
             && (component.Parent.IsPriority || IsParentPriority(component.Parent));
     }
 
-    private static void UpdateFocusedPriorityComponent(IReadOnlyComponent component, bool parentPriority = false)
+    private static void UpdateFocusedPriorityComponent(IComponent component, bool parentPriority = false)
     {
         if (component.IsEnabled && (parentPriority || component.IsPriority) && component.Transform.DestRectangle.Contains(Position))
         {
@@ -321,25 +326,25 @@ public static class MouseController
             parentPriority = true;
         }
 
-        foreach (IReadOnlyComponent child in component.Children.ToList())
+        foreach (IComponent child in component.Children.ToList())
         {
             UpdateFocusedPriorityComponent(child, parentPriority);
         }
     }
 
-    private static void UpdateFocusedComponent(IReadOnlyComponent component)
+    private static void UpdateFocusedComponent(IComponent component)
     {
         if (component.IsEnabled && component.Transform.DestRectangle.Contains(Position))
         {
             focusedComponent = component;
-            foreach (IReadOnlyComponent child in component.Children.ToList())
+            foreach (IComponent child in component.Children.ToList())
             {
                 UpdateFocusedComponent(child);
             }
         }
     }
 
-    private static void UpdateDraggedComponent(IReadOnlyComponent component)
+    private static void UpdateDraggedComponent(IComponent component)
     {
         if (component is IDragable dragable)
         {
@@ -352,7 +357,7 @@ public static class MouseController
             }
         }
 
-        foreach (IReadOnlyComponent child in component.Children.ToList())
+        foreach (IComponent child in component.Children.ToList())
         {
             UpdateDraggedComponent(child);
         }

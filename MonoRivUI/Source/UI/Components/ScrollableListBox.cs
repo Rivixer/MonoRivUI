@@ -21,14 +21,32 @@ public class ScrollableListBox : ListBox
     /// <summary>
     /// Initializes a new instance of the <see cref="ScrollableListBox"/> class.
     /// </summary>
-    /// <param name="thumb">The thumb component of the scroll bar.</param>
-    /// <param name="relativeSize">The relative size of the scroll bar.</param>
     /// <remarks>
-    /// This constructor creates a basic scroll bar with a thumb component
-    /// and a relative size. Use <see cref="ScrollableListBox(ScrollBar)"/>
-    /// to create a list box with a custom scroll bar.
+    /// This constructor creates a scroll bar without a thumb texture.
+    /// Use the <see cref="ScrollBar.Thumb"/> property to set the thumb texture.
     /// </remarks>
-    public ScrollableListBox(Component thumb, float relativeSize)
+    public ScrollableListBox()
+        : base()
+    {
+        this.ScrollBar = new ScrollBar(this.ContentContainer)
+        {
+            Parent = this,
+            IsEnabled = false,
+            Orientation = this.Orientation,
+            Transform = { IgnoreParentPadding = true },
+        };
+
+        this.ScrollBar.Scrolled += this.ScrollBar_Scrolled;
+        this.ScrollBarNeededChanged += this.ScrollableListBox_ScrollBarNeededChanged;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ScrollableListBox"/> class.
+    /// </summary>
+    /// <param name="thumb">
+    /// The texture component to be used as the thumb of the scroll bar.
+    /// </param>
+    public ScrollableListBox(TextureComponent thumb)
         : base()
     {
         this.ScrollBar = new ScrollBar(this.ContentContainer, thumb)
@@ -37,10 +55,10 @@ public class ScrollableListBox : ListBox
             IsEnabled = false,
             Orientation = this.Orientation,
             Transform = { IgnoreParentPadding = true },
-            RelativeSize = relativeSize,
         };
 
         this.ScrollBar.Scrolled += this.ScrollBar_Scrolled;
+        this.ScrollBarNeededChanged += this.ScrollableListBox_ScrollBarNeededChanged;
     }
 
     /// <summary>
@@ -54,6 +72,7 @@ public class ScrollableListBox : ListBox
         this.ScrollBar.Parent = this;
         this.ScrollBar.ContentContainer = this.ContentContainer;
         this.ScrollBar.Scrolled += this.ScrollBar_Scrolled;
+        this.ScrollBarNeededChanged += this.ScrollableListBox_ScrollBarNeededChanged;
     }
 
     /// <summary>
@@ -170,7 +189,9 @@ public class ScrollableListBox : ListBox
 
         Rectangle tempRectangle = spriteBatch.GraphicsDevice.ScissorRectangle;
 
-        Rectangle scissorRect = (this.DrawContentOnParentPadding ? this : this.ContentContainer).Transform.DestRectangle;
+        IComponent sourceContainer = this.DrawContentOnParentPadding ? this : this.ContentContainer;
+
+        Rectangle scissorRect = sourceContainer.Transform.DestRectangle;
         spriteBatch.GraphicsDevice.ScissorRectangle = scissorRect;
 
         foreach (Component component in this.Components)
@@ -206,7 +227,7 @@ public class ScrollableListBox : ListBox
         base.ContentContainer_ChildAdded(sender, e);
     }
 
-    private bool IsComponentVisible(IReadOnlyComponent component)
+    private bool IsComponentVisible(IComponent component)
     {
         return component.Transform.DestRectangle.Bottom > this.Transform.DestRectangle.Top
             && component.Transform.DestRectangle.Top < this.Transform.DestRectangle.Bottom;
@@ -243,6 +264,14 @@ public class ScrollableListBox : ListBox
         }
 
         this.ScrollBar.IsEnabled = this.isScrollBarNeeded || this.ShowScrollBarIfNotNeeded;
+    }
+
+    private void ScrollableListBox_ScrollBarNeededChanged(object? sender, EventArgs e)
+    {
+        if (!this.isScrollBarNeeded)
+        {
+            this.currentScrollOffset = 0;
+        }
     }
 
     private void ScrollBar_Scrolled(object? sender, ScrolledEventArgs e)

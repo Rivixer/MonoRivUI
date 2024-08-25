@@ -10,7 +10,7 @@ namespace MonoRivUI;
 /// </summary>
 /// <typeparam name="T">The type of the component to which the style is applied.</typeparam>
 public class Style<T> : Style
-    where T : Component, IStyleable<T>
+    where T : IComponent, IStyleable<T>
 {
     /// <summary>
     /// Gets or sets the action to be performed when the style is applied.
@@ -24,44 +24,6 @@ public class Style<T> : Style
     /// Gets or sets the custom properties of the style.
     /// </summary>
     public List<Property> CustomProperties { get; set; } = new();
-
-    /// <summary>
-    /// Gets the style of a component.
-    /// </summary>
-    /// <param name="component">The component to get the style of.</param>
-    /// <returns>
-    /// The style of the component.
-    /// </returns>
-    [Obsolete("Event handling is not supported yet.", true)] // TODO
-    public static Style<T> Get(T component)
-    {
-#pragma warning disable CS8604, CS8602
-        var style = new Style<T>();
-
-        var properties = component
-                .GetType()
-                .GetProperties()
-                .Where(prop => Attribute.IsDefined(prop, typeof(Stylable)) || Attribute.IsDefined(prop, typeof(SubStylable)))
-                .ToList();
-
-        foreach (var prop in properties)
-        {
-            if (prop.GetCustomAttribute<Stylable>() is not null)
-            {
-                style.CustomProperties.Add(new Property(prop.Name, prop.GetValue(component)));
-            }
-            else if (prop.GetCustomAttribute<SubStylable>() is not null)
-            {
-                Type innerType = prop.GetValue(component).GetType();
-                MethodInfo getStyleMethod = typeof(IStyleable<>).MakeGenericType(innerType).GetMethod("GetStyle")!;
-                var s = getStyleMethod.Invoke(prop.GetValue(component), null);
-                style.CustomProperties.Add(new Property(prop.Name, s));
-            }
-        }
-
-        return style;
-#pragma warning restore CS8604, CS8602
-    }
 
     /// <summary>
     /// Gets a property of the style.
@@ -107,24 +69,11 @@ public class Style<T> : Style
             }
 
             PropertyInfo? componentProperty = component.GetType().GetProperty(propertyName);
-            if (componentProperty is not null)
+            if (componentProperty is { } p)
             {
-                if (Attribute.IsDefined(componentProperty, typeof(Stylable)))
+                if (Attribute.IsDefined(p, typeof(Stylable)))
                 {
-                    componentProperty.SetValue(component, property.GetValue(this));
-                }
-                else if (Attribute.IsDefined(componentProperty, typeof(SubStylable)))
-                {
-                    object? componentSubPropertyValue = componentProperty.GetValue(component);
-                    if (componentSubPropertyValue is not null)
-                    {
-                        Type innerType = componentSubPropertyValue.GetType();
-                        MethodInfo applyStyleMethod = typeof(IStyleable<>).MakeGenericType(innerType).GetMethod("ApplyStyle")!;
-                        if (property.GetValue(this) is { } s)
-                        {
-                            _ = applyStyleMethod.Invoke(componentSubPropertyValue, new object[] { s });
-                        }
-                    }
+                    p.SetValue(component, property.GetValue(this));
                 }
 
                 continue;
@@ -142,22 +91,9 @@ public class Style<T> : Style
             string propertyName = property.Name;
 
             PropertyInfo? componentProperty = component.GetType().GetProperty(propertyName);
-            if (componentProperty is not null)
+            if (componentProperty is { } p && Attribute.IsDefined(p, typeof(Stylable)))
             {
-                if (Attribute.IsDefined(componentProperty, typeof(Stylable)))
-                {
-                    componentProperty.SetValue(component, property.Value);
-                }
-                else if (Attribute.IsDefined(componentProperty, typeof(SubStylable)))
-                {
-                    object? componentSubPropertyValue = componentProperty.GetValue(component);
-                    if (componentSubPropertyValue is not null)
-                    {
-                        Type innerType = componentSubPropertyValue.GetType();
-                        MethodInfo applyStyleMethod = typeof(IStyleable<>).MakeGenericType(innerType).GetMethod("ApplyStyle")!;
-                        _ = applyStyleMethod.Invoke(componentSubPropertyValue, new object[] { property.Value });
-                    }
-                }
+                p.SetValue(component, property.Value);
             }
         }
 

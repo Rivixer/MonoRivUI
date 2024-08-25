@@ -43,14 +43,6 @@ public class Style
     }
 
     /// <summary>
-    /// Represents a sub-stylable property.
-    /// </summary>
-    [AttributeUsage(AttributeTargets.Property)]
-    public class SubStylable : Attribute
-    {
-    }
-
-    /// <summary>
     /// Represents a name attribute.
     /// </summary>
     /// <remarks>

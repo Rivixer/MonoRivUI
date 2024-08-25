@@ -21,5 +21,5 @@ public interface IOverlayScene : IScene
     /// <summary>
     /// Gets the overlay components of the scene.
     /// </summary>
-    IEnumerable<IReadOnlyComponent> OverlayComponents { get; }
+    IEnumerable<IComponent> OverlayComponents { get; }
 }

@@ -20,6 +20,11 @@ public abstract class TextureComponent : Component
     }
 
     /// <summary>
+    /// Gets or sets the color of the image.
+    /// </summary>
+    public Color Color { get; set; } = Color.White;
+
+    /// <summary>
     /// Gets or sets the opacity of the image.
     /// </summary>
     /// <remarks>
@@ -70,7 +75,7 @@ public abstract class TextureComponent : Component
             texture: this.Texture,
             destinationRectangle: this.Transform.DestRectangle,
             sourceRectangle: null,
-            color: Color.White * this.Opacity,
+            color: this.Color * this.Opacity,
             rotation: this.Rotation,
             origin: this.Origin,
             effects: this.SpriteEffects,

@@ -5,13 +5,8 @@ namespace MonoRivUI;
 /// <summary>
 /// An interface for a button component.
 /// </summary>
-public interface IButton : IReadOnlyComponent, IHoverable
+public interface IButton : IComponent, IHoverable, IStyleable<IButton>
 {
-    /// <summary>
-    /// An event raised when the button is clicking.
-    /// </summary>
-    public event EventHandler? Clicking;
-
     /// <summary>
     /// An event raised when the button is clicked.
     /// </summary>
@@ -20,10 +15,33 @@ public interface IButton : IReadOnlyComponent, IHoverable
     /// <summary>
     /// An event raised when the button is hovered over.
     /// </summary>
-    public new event EventHandler<IButtonContent<Component>>? HoverEntered;
+    [Style.Stylable]
+    public new event EventHandler<IButtonContent<IComponent>>? HoverEntered;
 
     /// <summary>
     /// An event raised when the button is no longer hovered over.
     /// </summary>
-    public new event EventHandler<IButtonContent<Component>>? HoverExited;
+    [Style.Stylable]
+    public new event EventHandler<IButtonContent<IComponent>>? HoverExited;
+
+    /// <summary>
+    /// Gets the component associated with this button.
+    /// </summary>
+    public IComponent Component { get; }
+
+    /// <summary>
+    /// Represents the style of a button component.
+    /// </summary>
+    public class Style : Style<IButton>
+    {
+        /// <summary>
+        /// Gets or sets the hover entered event handler.
+        /// </summary>
+        public EventHandler<IComponent>? HoverEntered { get; set; }
+
+        /// <summary>
+        /// Gets or sets the hover exited event handler.
+        /// </summary>
+        public EventHandler<IComponent>? HoverExited { get; set; }
+    }
 }

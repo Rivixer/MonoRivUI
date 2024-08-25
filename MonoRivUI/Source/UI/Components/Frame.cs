@@ -93,7 +93,7 @@ public class Frame : Component, IButtonContent<Frame>, IStyleable<Frame>
     }
 
     /// <summary>
-    /// Gets the read-only inner container of the frame.
+    /// Gets the inner container of the frame.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -106,12 +106,11 @@ public class Frame : Component, IButtonContent<Frame>, IStyleable<Frame>
     /// layout for nested components.
     /// </para>
     /// <para>
-    /// Since it is automatically generated and managed by the
-    /// <see cref="Frame"/> component, it is provided
-    /// as a read-only property to avoid external modification.
+    /// This container is managed by the frame and should not be
+    /// modified directly by the user.
     /// </para>
     /// </remarks>
-    public IReadOnlyComponent InnerContainer => this.innerContainer;
+    public Container InnerContainer => this.innerContainer;
 
     /// <inheritdoc/>
     /// <remarks>
@@ -131,20 +130,9 @@ public class Frame : Component, IButtonContent<Frame>, IStyleable<Frame>
     }
 
     /// <inheritdoc/>
-    public Frame ApplyStyle(Style<Frame> style)
+    public void ApplyStyle(Style<Frame> style)
     {
         style.Apply(this);
-        return this;
-    }
-
-    /// <inheritdoc/>
-    public Style<Frame> GetStyle()
-    {
-        return new Style()
-        {
-            Color = this.Color,
-            Thickness = this.Thickness,
-        };
     }
 
     /// <inheritdoc/>

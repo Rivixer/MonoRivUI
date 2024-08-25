@@ -9,7 +9,7 @@ namespace MonoRivUI;
 /// The type of the component that can be used as a button content.
 /// </typeparam>
 public interface IButtonContent<out T>
-    where T : Component
+    where T : IComponent
 {
     /// <summary>
     /// Determines whether the button content is currently

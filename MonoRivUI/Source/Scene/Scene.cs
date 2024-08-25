@@ -91,7 +91,7 @@ public abstract class Scene : IScene
     /// <summary>
     /// Gets the base component of the scene.
     /// </summary>
-    public IReadOnlyComponent BaseComponent => this.baseComponent;
+    public IComponent BaseComponent => this.baseComponent;
 
     /// <summary>
     /// Gets a value indicating whether the scene is displayed.

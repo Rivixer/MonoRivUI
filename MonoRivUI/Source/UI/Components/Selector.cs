@@ -7,29 +7,38 @@ using Microsoft.Xna.Framework.Input;
 namespace MonoRivUI;
 
 /// <summary>
-/// Represents a selector component that allows the user to select an item from a list of items.
+/// Represents a selector component that allows the user
+/// to select an item from a list of items.
 /// </summary>
 /// <typeparam name="T">The type of the value associated with each item.</typeparam>
-public class Selector<T> : Component, ISelector
+public class Selector<T> : Component, ISelector, IStyleable<Selector<T>>
+    where T : notnull
 {
     private readonly HashSet<Item> items = new();
-    private readonly Text? selectedItemText;
-
-    private Component? background;
-    private Component? selectedItemBackground;
-    private Func<T, bool>? currentItemPredicate;
+    private readonly Button<Container> button;
     private bool scrollToSelected;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Selector{T}"/> class.
     /// </summary>
+    /// <param name="listBox">The list box that contains the items.</param>
     /// <remarks>
     /// Use this constructor to create a selector without a text component
     /// that display the selected item's name.
     /// </remarks>
-    public Selector()
+    public Selector(ListBox listBox)
         : base()
     {
+        this.InactiveContainer = new Container() { Parent = this };
+
+        this.button = new Button<Container>(new Container())
+        {
+            Parent = this,
+            IsEnabled = true,
+        };
+
+        this.button.Clicked += (s, e) => this.Open();
+
         this.ActiveContainer = new Container()
         {
             Parent = this,
@@ -37,30 +46,10 @@ public class Selector<T> : Component, ISelector
             IsPriority = true,
         };
 
-        this.InactiveContainer = new Container() { Parent = this };
+        this.ActiveContainer.ChildAdded += this.ActiveContainer_ChildAdded;
 
-        this.ListBox = new ListBox() { Parent = this.ActiveContainer };
-        this.ListBox.ComponentDequeued += (s, e) =>
-        {
-            if (this.ElementFixedHeight is { } fixedSizeY)
-            {
-                e.Transform.SetRelativeSizeFromAbsolute(y: fixedSizeY);
-            }
-        };
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Selector{T}"/> class.
-    /// </summary>
-    /// <param name="font">The font of the text component that displays the selected item's name.</param>
-    public Selector(ScalableFont font)
-        : this()
-    {
-        this.selectedItemText = new Text(font, Color.White)
-        {
-            Parent = this,
-            TextAlignment = Alignment.Center,
-        };
+        this.ListBox = listBox;
+        this.ListBox.Parent = this.ActiveContainer;
     }
 
     /// <inheritdoc/>
@@ -86,6 +75,20 @@ public class Selector<T> : Component, ISelector
     public event EventHandler<Item?>? ItemSelected;
 
     /// <inheritdoc/>
+    event EventHandler<ISelector.Item?>? ISelector.ItemSelecting
+    {
+        add => this.ItemSelecting += (s, e) => value?.Invoke(s, e);
+        remove => this.ItemSelecting -= (s, e) => value?.Invoke(s, e);
+    }
+
+    /// <inheritdoc/>
+    event EventHandler<ISelector.Item?>? ISelector.ItemSelected
+    {
+        add => this.ItemSelected += (s, e) => value?.Invoke(s, e);
+        remove => this.ItemSelected -= (s, e) => value?.Invoke(s, e);
+    }
+
+    /// <inheritdoc/>
     public Container ActiveContainer { get; }
 
     /// <inheritdoc/>
@@ -97,28 +100,34 @@ public class Selector<T> : Component, ISelector
     public IEnumerable<Item> Items => this.items;
 
     /// <inheritdoc/>
+    IEnumerable<ISelector.Item> ISelector.Items => this.Items;
+
+    /// <inheritdoc/>
     public ListBox ListBox { get; private set; }
 
     /// <inheritdoc/>
     public bool IsOpened { get; private set; }
+
+    /// <inheritdoc/>
+    public bool CloseAfterSelect { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the selector
     /// should scroll to the selected item after opening.
     /// </summary>
     /// <remarks>
-    /// The list box must be scrollable, otherwise throws an exception.
+    /// The list box must be a <see cref="ScrollableListBox"/>.
+    /// Otherwise, an <see cref="InvalidOperationException"/> is thrown
+    /// when setting the value to <see langword="true"/>.
     /// </remarks>
     public bool ScrollToSelected
     {
         get => this.scrollToSelected;
         set
         {
-            if (!this.ListBox.IsScrollable)
+            if (value && this.ListBox is not ScrollableListBox)
             {
-                throw new InvalidOperationException(
-                    $"The {nameof(this.ListBox)} must have the " +
-                    $"{nameof(this.ListBox.IsScrollable)} property set to true");
+                throw new InvalidOperationException("The list box must be a ScrollableListBox");
             }
 
             this.scrollToSelected = value;
@@ -129,11 +138,17 @@ public class Selector<T> : Component, ISelector
     public float RelativeHeight
     {
         get => this.ActiveContainer.Transform.RelativeSize.Y;
-        set => this.ActiveContainer.Transform.RelativeSize = new Vector2(this.ActiveContainer.Transform.RelativeSize.X, value);
+        set => this.ActiveContainer.Transform.RelativeSize
+            = new Vector2(this.ActiveContainer.Transform.RelativeSize.X, value);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Gets or sets the fixed height of the elements.
+    /// </summary>
     public int? ElementFixedHeight { get; set; }
+
+    /// <inheritdoc/>
+    ISelector.Item? ISelector.SelectedItem => this.SelectedItem;
 
     /// <summary>
     /// Gets the selected item.
@@ -147,70 +162,10 @@ public class Selector<T> : Component, ISelector
         set => this.ActiveContainer.Transform.Alignment = value;
     }
 
-    /// <inheritdoc/>
-    public Component? ActiveBackground
-    {
-        get => this.background;
-        set
-        {
-            if (value is null)
-            {
-                if (this.background is not null)
-                {
-                    this.background.Parent = null;
-                }
-
-                this.ListBox.Parent = this.ActiveContainer;
-            }
-            else
-            {
-                value.Parent = this.ActiveContainer;
-                this.ListBox.Parent = value;
-            }
-
-            this.background = value;
-        }
-    }
-
-    /// <inheritdoc/>
-    public Component? InactiveBackground
-    {
-        get => this.selectedItemBackground;
-        set
-        {
-            if (value is null)
-            {
-                if (this.selectedItemBackground is not null)
-                {
-                    this.selectedItemBackground.Parent = null;
-                }
-
-                if (this.selectedItemText is not null)
-                {
-                    this.selectedItemText.Parent = this.InactiveContainer;
-                }
-            }
-            else
-            {
-                value.Parent = this.InactiveContainer;
-                if (this.selectedItemText is not null)
-                {
-                    this.selectedItemText.Parent = value;
-                }
-            }
-
-            this.selectedItemBackground = value;
-        }
-    }
-
     /// <summary>
     /// Gets or sets the predicate used to select the current item.
     /// </summary>
-    public Func<T, bool>? CurrentItemPredicate
-    {
-        get => this.currentItemPredicate;
-        set => this.currentItemPredicate = value;
-    }
+    public Func<T, bool>? CurrentItemPredicate { get; set; }
 
     /// <summary>
     /// Adds an item to the selector.
@@ -219,7 +174,16 @@ public class Selector<T> : Component, ISelector
     public void AddItem(Item item)
     {
         _ = this.items.Add(item);
-        (item.Button as Component)!.Parent = this.ListBox.ContentContainer;
+        var button = (Component)item.Button;
+
+        button.Parent = this.ListBox.ContentContainer;
+        button.Transform.SizeChanged += (s, e) =>
+        {
+            if (this.ElementFixedHeight is not null)
+            {
+                button.Transform.SetRelativeSizeFromAbsolute(y: this.ElementFixedHeight);
+            }
+        };
     }
 
     /// <summary>
@@ -247,12 +211,11 @@ public class Selector<T> : Component, ISelector
 
         if (this.scrollToSelected && this.SelectedItem is not null)
         {
-            // Be sure that all components are dequeued before scrolling
-            this.ListBox.DequeueComponents();
+            var listBox = (ScrollableListBox)this.ListBox;
             int index = this.items.ToList().IndexOf(this.SelectedItem);
             float percentage = (index / (float)this.items.Count)
-                + (this.ListBox.Spacing / this.ListBox.TotalLength / 2);
-            this.ListBox.ScrollBar?.ScrollTo(Math.Clamp(percentage, 0f, 1f));
+                + (listBox.Spacing / listBox.TotalLength / 2);
+            listBox.ScrollBar.ScrollTo(Math.Clamp(percentage, 0f, 1f));
         }
 
         this.Opened?.Invoke(this, EventArgs.Empty);
@@ -281,14 +244,7 @@ public class Selector<T> : Component, ISelector
             return;
         }
 
-        if (!this.IsOpened
-            && !MouseController.WasDragStateChanged
-            && MouseController.IsLeftButtonClicked()
-            && MouseController.IsComponentFocused(this))
-        {
-            this.Open();
-        }
-        else if (this.IsOpened && (this.ClickedApartFromSelector() || this.ClickedEscape()))
+        if (this.IsOpened && (this.ClickedApartFromSelector() || this.ClickedEscape()))
         {
             // We have to update children components before closing the selector
             // to avoid the case where the selected item is not updated
@@ -316,7 +272,14 @@ public class Selector<T> : Component, ISelector
         }
 
         this.ItemSelecting?.Invoke(this, item);
+
         this.SelectedItem = item;
+
+        if (this.CloseAfterSelect)
+        {
+            this.Close();
+        }
+
         this.ItemSelected?.Invoke(this, item);
     }
 
@@ -338,7 +301,7 @@ public class Selector<T> : Component, ISelector
     {
         if (this.CurrentItemPredicate is not null)
         {
-            this.SelectItem(x => this.CurrentItemPredicate(x.Value));
+            this.SelectItem(x => this.CurrentItemPredicate(x.TValue));
         }
         else
         {
@@ -355,26 +318,48 @@ public class Selector<T> : Component, ISelector
         this.items.Clear();
     }
 
+    /// <inheritdoc/>
+    public void ApplyStyle(Style<ISelector> style)
+    {
+        style.Apply(this);
+    }
+
+    /// <inheritdoc/>
+    public void ApplyStyle(Style<Selector<T>> style)
+    {
+        style.Apply(this);
+    }
+
     private bool ClickedApartFromSelector()
     {
         return MouseController.IsLeftButtonClicked()
             && !MouseController.WasDragStateChanged
-            && (!this.ListBox.ScrollBar?.IsThumbDragging ?? true)
             && !MouseController.IsComponentFocused(this.ActiveContainer)
             && MouseController.IsComponentFocused(this.Root);
     }
 
     private bool ClickedEscape()
     {
-        return (!Scene.DisplayedOverlays.Any() || (Scene.DisplayedOverlays.Last().Scene as Scene)!.BaseComponent.IsAncestor(this))
+        return (!Scene.DisplayedOverlays.Any() || (Scene.DisplayedOverlays.Last().Scene as Scene)!.BaseComponent.IsAncestorOf(this))
             && KeyboardController.IsKeyHit(Keys.Escape);
+    }
+
+    private void ActiveContainer_ChildAdded(object? sender, ChildChangedEventArgs e)
+    {
+        // Be sure that list box is on top of the active container
+        if (e.Child != this.ListBox)
+        {
+            this.ListBox.Parent = null;
+            this.ListBox.Parent = this.ActiveContainer;
+        }
     }
 
     /// <summary>
     /// Represents an item in the selector.
     /// </summary>
     /// <param name="Button">The button that represents the item.</param>
-    /// <param name="Value">The value associated with the item.</param>
+    /// <param name="TValue">The generic value associated with the item.</param>
     /// <param name="Name">The name of the item.</param>
-    public record class Item(IButton Button, T Value, string? Name = null);
+    public record class Item(IButton Button, T TValue, string? Name = null)
+        : ISelector.Item(Button, TValue, Name);
 }

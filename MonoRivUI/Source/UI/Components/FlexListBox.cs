@@ -22,7 +22,7 @@ namespace MonoRivUI;
 /// </remarks>
 public class FlexListBox : ListBox
 {
-    private readonly Dictionary<IReadOnlyComponent, float> resizeFactors = new();
+    private readonly Dictionary<IComponent, float> resizeFactors = new();
 
     /// <summary>
     /// Sets the resize factor for the specified component.
@@ -32,7 +32,7 @@ public class FlexListBox : ListBox
     /// <exception cref="InvalidOperationException">
     /// Thrown if the component is not in the list box.
     /// </exception>
-    public void SetResizeFactor(IReadOnlyComponent component, float factor)
+    public void SetResizeFactor(IComponent component, float factor)
     {
         if (!this.Components.Contains(component))
         {

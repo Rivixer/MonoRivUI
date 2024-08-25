@@ -4,29 +4,29 @@ using System.Collections.Generic;
 namespace MonoRivUI;
 
 /// <summary>
-/// Represents a read-only UI component.
+/// Represents a component.
 /// </summary>
-public interface IReadOnlyComponent : IComponentHierarchy
+public interface IComponent
 {
     /// <summary>
-    /// Gets the read-only transform of the component.
+    /// Gets the transform of the component.
     /// </summary>
-    IReadOnlyTransform Transform { get; }
+    Transform Transform { get; }
 
     /// <summary>
-    /// Gets the read-only parent of the component.
+    /// Gets the parent of the component.
     /// </summary>
-    new IReadOnlyComponent? Parent { get; }
+    IComponent? Parent { get; }
 
     /// <summary>
-    /// Gets the read-only collection of children of the component.
+    /// Gets the children of the component.
     /// </summary>
-    new IEnumerable<IReadOnlyComponent> Children { get; }
+    IEnumerable<IComponent> Children { get; }
 
     /// <summary>
-    /// Gets the read-only root of the component hierarchy.
+    /// Gets the root component of the component.
     /// </summary>
-    new IReadOnlyComponent Root { get; }
+    IComponent Root { get; }
 
     /// <summary>
     /// Gets a value indicating whether the component
@@ -75,8 +75,8 @@ public interface IReadOnlyComponent : IComponentHierarchy
     /// The first child of a component that is of type <typeparamref name="T"/>,
     /// or <see langword="null"/> if no child is found.
     /// </returns>
-    public T? GetChild<T>(Predicate<T>? predicate = null)
-        where T : IReadOnlyComponent;
+    T? GetChild<T>(Predicate<T>? predicate = null)
+        where T : IComponent;
 
     /// <summary>
     /// Returns the first descendant of a component
@@ -89,8 +89,8 @@ public interface IReadOnlyComponent : IComponentHierarchy
     /// The first descendant of a component that is of type <typeparamref name="T"/>,
     /// or <see langword="null"/> if no descendant is found.
     /// </returns>
-    public T? GetDescendant<T>(Predicate<T>? predicate = null)
-        where T : IReadOnlyComponent;
+    T? GetDescendant<T>(Predicate<T>? predicate = null)
+        where T : IComponent;
 
     /// <summary>
     /// Retrieves all children of a component
@@ -104,8 +104,8 @@ public interface IReadOnlyComponent : IComponentHierarchy
     /// An enumerable containing all children of a component
     /// that are of type <typeparamref name="T"/>.
     /// </returns>
-    public IEnumerable<T> GetAllChildren<T>(Predicate<T>? predicate = null)
-        where T : IReadOnlyComponent;
+    IEnumerable<T> GetAllChildren<T>(Predicate<T>? predicate = null)
+        where T : IComponent;
 
     /// <summary>
     /// Retrieves all descendants of a component
@@ -119,6 +119,46 @@ public interface IReadOnlyComponent : IComponentHierarchy
     /// An enumerable containing all descendants of a component
     /// that are of type <typeparamref name="T"/>.
     /// </returns>
-    public IEnumerable<T> GetAllDescendants<T>(Predicate<T>? predicate = null)
-        where T : IReadOnlyComponent;
+    IEnumerable<T> GetAllDescendants<T>(Predicate<T>? predicate = null)
+        where T : IComponent;
+
+    /// <summary>
+    /// Checks whether the component is a parent of the specified component.
+    /// </summary>
+    /// <param name="component">The component to be checked.</param>
+    /// <returns>
+    /// <see langword="true"/> if the component is a parent of the specified component;
+    /// otherwise, <see langword="false"/>.
+    /// </returns>
+    bool IsParentOf(IComponent component);
+
+    /// <summary>
+    /// Checks whether the component is an ancestor of the specified component.
+    /// </summary>
+    /// <param name="component">The component to be checked.</param>
+    /// <returns>
+    /// <see langword="true"/> if the component is an ancestor of the specified component;
+    /// otherwise, <see langword="false"/>.
+    /// </returns>
+    bool IsAncestorOf(IComponent component);
+
+    /// <summary>
+    /// Checks whether the component is a child of the specified component.
+    /// </summary>
+    /// <param name="component">The component to be checked.</param>
+    /// <returns>
+    /// <see langword="true"/> if the component is a child of the specified component;
+    /// otherwise, <see langword="false"/>.
+    /// </returns>
+    bool IsChildOf(IComponent component);
+
+    /// <summary>
+    /// Checks whether the component is a descendant of the specified component.
+    /// </summary>
+    /// <param name="component">The component to be checked.</param>
+    /// <returns>
+    /// <see langword="true"/> if the component is a descendant of the specified component;
+    /// otherwise, <see langword="false"/>.
+    /// </returns>
+    bool IsDescendantOf(IComponent component);
 }

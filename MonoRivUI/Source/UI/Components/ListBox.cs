@@ -26,9 +26,9 @@ public class ListBox : Component
     /// </summary>
     public ListBox()
     {
-        this.ContentContainerComponent = new Container() { Parent = this };
-        this.ContentContainerComponent.ChildAdded += this.ContentContainer_ChildAdded;
-        this.ContentContainerComponent.ChildRemoved += this.ContentContainer_ChildRemoved;
+        this.ContentContainer = new Container() { Parent = this };
+        this.ContentContainer.ChildAdded += this.ContentContainer_ChildAdded;
+        this.ContentContainer.ChildRemoved += this.ContentContainer_ChildRemoved;
 
         this.ChildAdded += this.ListBox_ChildAdded;
         this.Transform.Recalculated += this.ListBox_Transform_Recalculated;
@@ -60,9 +60,9 @@ public class ListBox : Component
     public IEnumerable<Component> Components => this.components;
 
     /// <summary>
-    /// Gets the content container of the list box.
+    /// Gets or sets the content container of the list box.
     /// </summary>
-    public IReadOnlyComponent ContentContainer => this.ContentContainerComponent;
+    public Container ContentContainer { get; protected set; }
 
     /// <summary>
     /// Gets or sets the spacing between the content elements.
@@ -107,16 +107,6 @@ public class ListBox : Component
     protected bool IsRecalulcationNeeded { get; set; }
 
     /// <summary>
-    /// Gets the content container of the list box.
-    /// </summary>
-    /// <remarks>
-    /// As opposed to the <see cref="ContentContainer"/> property,
-    /// this property returns the content container as a <see cref="Container"/>
-    /// to allow access to its specific properties.
-    /// </remarks>
-    protected Container ContentContainerComponent { get; }
-
-    /// <summary>
     /// Gets the length of the content container in the current orientation.
     /// </summary>
     /// <value>
@@ -125,8 +115,8 @@ public class ListBox : Component
     /// </value>
     protected float ContentContainerLength => this.orientation switch
     {
-        Orientation.Vertical => this.ContentContainerComponent.Transform.Size.Y,
-        Orientation.Horizontal => (float)this.ContentContainerComponent.Transform.Size.X,
+        Orientation.Vertical => this.ContentContainer.Transform.Size.Y,
+        Orientation.Horizontal => this.ContentContainer.Transform.Size.X,
         _ => throw new NotSupportedException(),
     };
 
@@ -264,10 +254,10 @@ public class ListBox : Component
     {
         // Be sure, that the content container is on top
         // Just set the contentContainer parent again
-        if (e.Child != this.ContentContainerComponent)
+        if (e.Child != this.ContentContainer)
         {
-            this.ContentContainerComponent.Parent = null;
-            this.ContentContainerComponent.Parent = this;
+            this.ContentContainer.Parent = null;
+            this.ContentContainer.Parent = this;
         }
     }
 

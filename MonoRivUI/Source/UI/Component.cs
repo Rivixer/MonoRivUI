@@ -8,7 +8,7 @@ namespace MonoRivUI;
 /// <summary>
 /// Represents a base class for UI components.
 /// </summary>
-public abstract partial class Component : IComponentHierarchy, IReadOnlyComponent
+public abstract partial class Component : IComponent
 {
     private static readonly Queue<Component> PriorityComponents = new();
     private static uint idCounter;
@@ -33,30 +33,24 @@ public abstract partial class Component : IComponentHierarchy, IReadOnlyComponen
     /// </summary>
     public event EventHandler<ChildChangedEventArgs>? ChildRemoved;
 
+    /// <summary>
+    /// An event raised when the component has been enabled.
+    /// </summary>
     public event EventHandler? Enabled;
 
+    /// <summary>
+    /// An event raised when the component has been disabled.
+    /// </summary>
     public event EventHandler? Disabled;
 
     /// <inheritdoc/>
-    IReadOnlyTransform IReadOnlyComponent.Transform => this.Transform;
+    IComponent? IComponent.Parent => this.Parent;
 
     /// <inheritdoc/>
-    IReadOnlyComponent? IReadOnlyComponent.Parent => this.parent;
+    IEnumerable<IComponent> IComponent.Children => this.Children;
 
     /// <inheritdoc/>
-    IEnumerable<IReadOnlyComponent> IReadOnlyComponent.Children => this.Children;
-
-    /// <inheritdoc/>
-    IReadOnlyComponent IReadOnlyComponent.Root => this.Root;
-
-    /// <inheritdoc/>
-    IComponentHierarchy? IComponentHierarchy.Parent => this.Parent;
-
-    /// <inheritdoc/>
-    IEnumerable<IComponentHierarchy> IComponentHierarchy.Children => this.Children;
-
-    /// <inheritdoc/>
-    IComponentHierarchy IComponentHierarchy.Root => this.Root;
+    IComponent IComponent.Root => this.Root;
 
     /// <summary>
     /// Gets or sets the parent component.
@@ -84,7 +78,7 @@ public abstract partial class Component : IComponentHierarchy, IReadOnlyComponen
     /// </description></item>
     /// </list>
     /// </remarks>
-    public IReadOnlyComponent? Parent
+    public IComponent? Parent
     {
         get => this.parent;
         set
@@ -115,7 +109,7 @@ public abstract partial class Component : IComponentHierarchy, IReadOnlyComponen
     /// <summary>
     /// Gets the transform of the component.
     /// </summary>
-    public Transform Transform => this.transform ??= MonoRivUI.Transform.Default(this);
+    public Transform Transform => this.transform ??= Transform.Default(this);
 
     /// <summary>
     /// Gets an enumerable collection of child components.
@@ -182,11 +176,29 @@ public abstract partial class Component : IComponentHierarchy, IReadOnlyComponen
     /// <inheritdoc/>
     public uint Id { get; private set; } = idCounter++;
 
+    /// <summary>
+    /// Determines whether two components are equal.
+    /// </summary>
+    /// <param name="a">The first component to compare.</param>
+    /// <param name="b">The second component to compare.</param>
+    /// <returns>
+    /// <see langword="true"/> if the components are equal;
+    /// otherwise, <see langword="false"/>.
+    /// </returns>
     public static bool operator ==(Component? a, Component? b)
     {
         return a?.Equals(b) ?? false;
     }
 
+    /// <summary>
+    /// Determines whether two components are not equal.
+    /// </summary>
+    /// <param name="a">The first component to compare.</param>
+    /// <param name="b">The second component to compare.</param>
+    /// <returns>
+    /// <see langword="true"/> if the components are not equal;
+    /// otherwise, <see langword="false"/>.
+    /// </returns>
     public static bool operator !=(Component? a, Component? b)
     {
         return !(a == b);
@@ -210,6 +222,20 @@ public abstract partial class Component : IComponentHierarchy, IReadOnlyComponen
     /// Updates the component and its child components.
     /// </summary>
     /// <param name="gameTime">The game time information.</param>
+    /// <remarks>
+    /// <para>
+    /// If the component is not enabled,
+    /// this method will exit without performing any updates.
+    /// </para>
+    /// <para>
+    /// The method ensures that the component's transform is recalculated
+    /// if necessary by calling <see cref="Transform.RecalculateIfNeeded"/>.
+    /// </para>
+    /// <para>
+    /// If the child component has <see cref="AutoUpdate"/>
+    /// set to <see langword="false"/>, the child will not be updated.
+    /// </para>
+    /// </remarks>
     public virtual void Update(GameTime gameTime)
     {
         if (!this.IsEnabled)
@@ -230,6 +256,38 @@ public abstract partial class Component : IComponentHierarchy, IReadOnlyComponen
         }
     }
 
+    /// <summary>
+    /// Forces the component to update their state immediately,
+    /// outside the normal update cycle.
+    /// </summary>
+    /// <param name="withTransform">
+    /// Optional parameter that determines whether the component's
+    /// <see cref="Transform"/> should be recalculated:
+    /// <list type="bullet">
+    /// <item><description>
+    /// <c>true</c>: Forces recalculation of the component's transform.
+    /// </description></item>
+    /// <item><description>
+    /// <c>false</c>: Skips the transform recalculation.
+    /// </description></item>
+    /// <item><description>
+    /// <c>null</c>: Recalculates the transform only if needed.
+    /// </description></item>
+    /// </list>
+    /// </param>
+    /// <remarks>
+    /// This method does not rely on <see cref="GameTime"/> and should be used cautiously.
+    /// It is intended for scenarios where a component's state must be updated immediately,
+    /// such as after a property change that affects the component's behavior,
+    /// but <see cref="Update(GameTime)"/> method in normal cycle has been already called.
+    /// <para>
+    /// If the component is not enabled,
+    /// this method will exit without performing any updates.
+    /// </para>
+    /// <para>
+    /// The method will also propagate the forced update to all child components.
+    /// </para>
+    /// </remarks>
     public virtual void ForceUpdate(bool? withTransform = null)
     {
         if (!this.IsEnabled)
@@ -256,6 +314,20 @@ public abstract partial class Component : IComponentHierarchy, IReadOnlyComponen
     /// Draws the component and its child components.
     /// </summary>
     /// <param name="gameTime">The game time information.</param>
+    /// <remarks>
+    /// <para>
+    /// If the component is not enabled,
+    /// this method will exit without performing any drawing operations.
+    /// </para>
+    /// <para>
+    /// If the component is marked as priority, it will be added to the priority queue.
+    /// To draw priority components, call <see cref="DrawPriorityComponents(GameTime)"/>.
+    /// </para>
+    /// <para>
+    /// If the child component has <see cref="AutoDraw"/>
+    /// set to <see langword="false"/>, the child will not be drawn.
+    /// </para>
+    /// </remarks>
     public virtual void Draw(GameTime gameTime)
     {
         if (!this.IsEnabled)
@@ -282,14 +354,14 @@ public abstract partial class Component : IComponentHierarchy, IReadOnlyComponen
 
     /// <inheritdoc/>
     public T? GetChild<T>(Predicate<T>? predicate = null)
-        where T : IReadOnlyComponent
+        where T : IComponent
     {
         return this.Children.OfType<T>().FirstOrDefault(c => predicate?.Invoke(c) ?? true);
     }
 
     /// <inheritdoc/>
     public T? GetDescendant<T>(Predicate<T>? predicate = null)
-        where T : IReadOnlyComponent
+        where T : IComponent
     {
         T? descendant = this.GetChild(predicate);
         foreach (Component child in this.children)
@@ -307,14 +379,14 @@ public abstract partial class Component : IComponentHierarchy, IReadOnlyComponen
 
     /// <inheritdoc/>
     public IEnumerable<T> GetAllChildren<T>(Predicate<T>? predicate = null)
-        where T : IReadOnlyComponent
+        where T : IComponent
     {
         return this.children.OfType<T>().Where(c => predicate?.Invoke(c) ?? true);
     }
 
     /// <inheritdoc/>
     public IEnumerable<T> GetAllDescendants<T>(Predicate<T>? predicate = null)
-        where T : IReadOnlyComponent
+        where T : IComponent
     {
         foreach (T child in this.GetAllChildren(predicate))
         {
@@ -328,6 +400,32 @@ public abstract partial class Component : IComponentHierarchy, IReadOnlyComponen
                 yield return descendant;
             }
         }
+    }
+
+    /// <inheritdoc/>
+    public bool IsParentOf(IComponent component)
+    {
+        return (IComponent)this == component.Parent;
+    }
+
+    /// <inheritdoc/>
+    public bool IsAncestorOf(IComponent component)
+    {
+        return this.IsParentOf(component)
+            || (component.Parent is not null && this.IsAncestorOf(component.Parent));
+    }
+
+    /// <inheritdoc/>
+    public bool IsChildOf(IComponent component)
+    {
+        return component.Children.Contains(this);
+    }
+
+    /// <inheritdoc/>
+    public bool IsDescendantOf(IComponent component)
+    {
+        return this.IsChildOf(component)
+            || (this.Parent?.IsDescendantOf(component) ?? false);
     }
 
     /// <summary>
@@ -352,27 +450,5 @@ public abstract partial class Component : IComponentHierarchy, IReadOnlyComponen
     public override int GetHashCode()
     {
         return HashCode.Combine(this.Id);
-    }
-
-    /// <summary>
-    /// Changes the parent of a child component.
-    /// </summary>
-    /// <param name="child">The component to be reparented.</param>
-    /// <param name="newParent">
-    /// The new parent component to which the child will be reparented.
-    /// </param>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when the specified <paramref name="child"/>
-    /// is not a direct child of this component.
-    /// </exception>
-    protected virtual void ReparentChild(Component child, Component newParent)
-    {
-        if (!this.children.Contains(child))
-        {
-            throw new InvalidOperationException(
-                "The specified child is not a direct child of this component.");
-        }
-
-        child.Parent = newParent;
     }
 }

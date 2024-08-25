@@ -9,8 +9,8 @@ namespace MonoRivUI;
 /// Represents a button component with a specific component as its content.
 /// </summary>
 /// <typeparam name="T">The type of the contained component.</typeparam>
-public class Button<T> : Component, IButton<T>, IStyleable<Button<T>>
-    where T : Component, IButtonContent<Component>
+public class Button<T> : Component, IButton<T>
+    where T : Component, IButtonContent<IComponent>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="Button{T}"/> class.
@@ -52,14 +52,14 @@ public class Button<T> : Component, IButton<T>, IStyleable<Button<T>>
     public event EventHandler<T>? HoverExited;
 
     /// <inheritdoc/>
-    event EventHandler<IButtonContent<Component>>? IButton.HoverEntered
+    event EventHandler<IButtonContent<IComponent>>? IButton.HoverEntered
     {
         add => this.HoverEntered += (s, e) => value?.Invoke(s, e);
         remove => this.HoverEntered -= (s, e) => value?.Invoke(s, e);
     }
 
     /// <inheritdoc/>
-    event EventHandler<IButtonContent<Component>>? IButton.HoverExited
+    event EventHandler<IButtonContent<IComponent>>? IButton.HoverExited
     {
         add => this.HoverExited += (s, e) => value?.Invoke(s, e);
         remove => this.HoverExited -= (s, e) => value?.Invoke(s, e);
@@ -80,39 +80,27 @@ public class Button<T> : Component, IButton<T>, IStyleable<Button<T>>
     }
 
     /// <inheritdoc/>
+    IComponent IButton.Component => this.Component;
+
+    /// <inheritdoc/>
+    public T Component { get; }
+
+    /// <inheritdoc/>
     public bool IsHovered { get; private set; }
 
     /// <inheritdoc/>
     public bool WasHovered { get; private set; }
 
-    /// <summary>
-    /// Gets the component associated with this button.
-    /// </summary>
-    [SubStylable]
-    public T Component { get; }
-
     /// <inheritdoc/>
-    public Button<T> ApplyStyle(Style<Button<T>> style)
+    public void ApplyStyle(Style<IButton> style)
     {
         style.Apply(this);
-        return this;
     }
 
     /// <inheritdoc/>
-    public Style<Button<T>> GetStyle()
+    public void ApplyStyle(Style<IButton<T>> style)
     {
-        var style = new Style()
-        {
-            HoverEntered = this.HoverEntered,
-            HoverExited = this.HoverExited,
-        };
-
-        var componentType = this.Component.GetType();
-        MethodInfo? getStyleMethod = componentType.GetMethod("GetStyle");
-        var componentStyle = (MonoRivUI.Style?)getStyleMethod?.Invoke(this.Component, null);
-        style.ComponentStyle = componentStyle;
-
-        return style;
+        style.Apply(this);
     }
 
     /// <inheritdoc/>
@@ -167,27 +155,5 @@ public class Button<T> : Component, IButton<T>, IStyleable<Button<T>>
     private void OnHoverExited()
     {
         this.HoverExited?.Invoke(this, this.Component);
-    }
-
-    /// <summary>
-    /// Represents the class for styling a <see cref="Button{T}"/>.
-    /// </summary>
-    public class Style : Style<Button<T>>
-    {
-        /// <summary>
-        /// Gets or sets the hover entered event handler.
-        /// </summary>
-        public EventHandler<T>? HoverEntered { get; set; }
-
-        /// <summary>
-        /// Gets or sets the hover exited event handler.
-        /// </summary>
-        public EventHandler<T>? HoverExited { get; set; }
-
-        /// <summary>
-        /// Gets or sets the button's component style.
-        /// </summary>
-        [Name("Component")]
-        public MonoRivUI.Style? ComponentStyle { get; set; }
     }
 }

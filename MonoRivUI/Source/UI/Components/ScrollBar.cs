@@ -6,10 +6,10 @@ namespace MonoRivUI;
 /// <summary>
 /// Represents a scrollbar component.
 /// </summary>
-public class ScrollBar : Component, IDragable
+public class ScrollBar : Component, IDragable, IStyleable<ScrollBar>
 {
-    private readonly Component thumb;
-    private IReadOnlyComponent? contentContainer;
+    private TextureComponent? thumb;
+    private Container? contentContainer;
 
     private float relativeSize = 0.02f;
     private float total;
@@ -22,15 +22,15 @@ public class ScrollBar : Component, IDragable
     /// <summary>
     /// Initializes a new instance of the <see cref="ScrollBar"/> class.
     /// </summary>
-    /// <param name="thumb">The thumb component of the scrollbar.</param>
     /// <remarks>
-    /// Using this constructor, remember to set the content container
-    /// using the <see cref="ContentContainer"/> property.
+    /// This constructor does not set the content container
+    /// nor the thumb component. Remember to set them using
+    /// the <see cref="ContentContainer"/> and <see cref="Thumb"/>
+    /// properties.
     /// </remarks>
-    public ScrollBar(Component thumb)
+    public ScrollBar()
+        : base()
     {
-        this.thumb = thumb;
-        this.thumb.Parent = this;
         this.ParentChanged += this.UIScrollBar_ParentChanged;
         this.Transform.Recalculated += this.Transform_Recalculated;
     }
@@ -41,10 +41,43 @@ public class ScrollBar : Component, IDragable
     /// <param name="contentContainer">
     /// The container that contains the content that is scrolled.
     /// </param>
-    /// <param name="thumb">The thumb component of the scrollbar.</param>
-    public ScrollBar(IReadOnlyComponent contentContainer, Component thumb)
-        : this(thumb)
+    /// <remarks>
+    /// Using this constructor, remember to set the thumb component
+    /// using the <see cref="Thumb"/> property.
+    /// </remarks>
+    public ScrollBar(Container contentContainer)
+        : this()
     {
+        this.contentContainer = contentContainer;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ScrollBar"/> class.
+    /// </summary>
+    /// <param name="thumb">The thumb component of the scrollbar.</param>
+    /// <remarks>
+    /// Using this constructor, remember to set the content container
+    /// using the <see cref="ContentContainer"/> property.
+    /// </remarks>
+    public ScrollBar(TextureComponent thumb)
+        : this()
+    {
+        this.thumb = thumb;
+        this.thumb.Parent = this;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ScrollBar"/> class.
+    /// </summary>
+    /// <param name="contentContainer">
+    /// The container that contains the content that is scrolled.
+    /// </param>
+    /// <param name="thumb">The thumb component of the scrollbar.</param>
+    public ScrollBar(Container contentContainer, TextureComponent thumb)
+        : this()
+    {
+        this.thumb = thumb;
+        this.thumb.Parent = this;
         this.contentContainer = contentContainer;
     }
 
@@ -66,20 +99,46 @@ public class ScrollBar : Component, IDragable
     public bool WasThumbDragging { get; private set; }
 
     /// <summary>
-    /// Gets or sets the content container that contains the content that is scrolled.
+    /// Gets or sets the content container
+    /// that contains the content that is scrolled.
     /// </summary>
-    public IReadOnlyComponent ContentContainer
+    public Container ContentContainer
     {
-        get
-        {
-            return this.contentContainer
-                ?? throw new InvalidOperationException(
-                    "The content container is not set. " +
-                    $"Use the {nameof(this.ContentContainer)} property " +
-                    $"or the constructor with the {nameof(this.contentContainer)} parameter " +
-                    "to set the content container.");
-        }
+        get => this.contentContainer
+            ?? throw new InvalidOperationException(
+                "The content container is not set. " +
+                $"Use the {nameof(this.ContentContainer)} property " +
+                $"or the constructor with the {nameof(this.contentContainer)} parameter " +
+                "to set the content container.");
         set => this.contentContainer = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the thumb component of the scrollbar.
+    /// </summary>
+    public TextureComponent Thumb
+    {
+        get => this.thumb
+            ?? throw new InvalidOperationException(
+                "The thumb component is not set. " +
+                $"Use the {nameof(this.Thumb)} property " +
+                $"or the constructor with the {nameof(this.thumb)} parameter " +
+                "to set the thumb component.");
+        set
+        {
+            if (this.thumb == value)
+            {
+                return;
+            }
+
+            if (this.thumb is not null && this.IsParentOf(this.thumb))
+            {
+                this.thumb.Parent = null;
+            }
+
+            this.thumb = value;
+            this.thumb.Parent = this;
+        }
     }
 
     /// <summary>
@@ -143,6 +202,12 @@ public class ScrollBar : Component, IDragable
         }
     }
 
+    /// <inheritdoc/>
+    public void ApplyStyle(Style<ScrollBar> style)
+    {
+        style.Apply(this);
+    }
+
     /// <summary>
     /// Scrolls to the specified position.
     /// </summary>
@@ -170,7 +235,7 @@ public class ScrollBar : Component, IDragable
         this.WasThumbDragging = this.IsThumbDragging;
         this.IsThumbDragging = MouseController.IsLeftButtonPressed()
             && ((MouseController.WasLeftButtonReleased()
-                    && MouseController.IsComponentFocused(this.thumb))
+                    && MouseController.IsComponentFocused(this.Thumb))
                 || this.IsThumbDragging);
     }
 
@@ -181,8 +246,6 @@ public class ScrollBar : Component, IDragable
         {
             return;
         }
-
-        Debug.WriteLine(MouseController.IsComponentFocused(this.thumb));
 
         if (this.isUpdateThumbSizeNeeded)
         {
@@ -263,10 +326,10 @@ public class ScrollBar : Component, IDragable
     private void HandleScrollBarClick()
     {
         bool clickedAbove = (this.Orientation == Orientation.Vertical)
-            ? MouseController.Position.Y < this.thumb.Transform.DestRectangle.Y
-            : MouseController.Position.X < this.thumb.Transform.DestRectangle.X;
+            ? MouseController.Position.Y < this.Thumb.Transform.DestRectangle.Y
+            : MouseController.Position.X < this.Thumb.Transform.DestRectangle.X;
 
-        Vector2 thumbRelativeSize = this.thumb.Transform.RelativeSize;
+        Vector2 thumbRelativeSize = this.Thumb.Transform.RelativeSize;
         float shiftValue = this.total * this.Orientation switch
         {
             Orientation.Vertical => thumbRelativeSize.Y,
@@ -348,12 +411,12 @@ public class ScrollBar : Component, IDragable
             case Orientation.Vertical:
                 int frameHeight = this.ContentContainer.Transform.Size.Y;
                 float newRelativeThumbHeight = Math.Clamp(frameHeight / this.total, 0.0f, 1.0f);
-                this.thumb.Transform.RelativeSize = new Vector2(1.0f, newRelativeThumbHeight);
+                this.Thumb.Transform.RelativeSize = new Vector2(1.0f, newRelativeThumbHeight);
                 break;
             case Orientation.Horizontal:
                 int frameWidth = this.ContentContainer.Transform.Size.X;
                 float newRelativeThumbWidth = Math.Clamp(frameWidth / this.total, 0.0f, 1.0f);
-                this.thumb.Transform.RelativeSize = new Vector2(newRelativeThumbWidth, 1.0f);
+                this.Thumb.Transform.RelativeSize = new Vector2(newRelativeThumbWidth, 1.0f);
                 break;
         }
     }
@@ -361,7 +424,7 @@ public class ScrollBar : Component, IDragable
     private void UpdateThumbOffset()
     {
         float relativeScrollPosition = this.current / this.total;
-        this.thumb.Transform.RelativeOffset = this.Orientation switch
+        this.Thumb.Transform.RelativeOffset = this.Orientation switch
         {
             Orientation.Vertical => new Vector2(0.0f, relativeScrollPosition),
             Orientation.Horizontal => new Vector2(relativeScrollPosition, 0.0f),
