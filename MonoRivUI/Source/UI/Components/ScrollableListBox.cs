@@ -194,7 +194,7 @@ public class ScrollableListBox : ListBox
         Rectangle scissorRect = sourceContainer.Transform.DestRectangle;
         spriteBatch.GraphicsDevice.ScissorRectangle = scissorRect;
 
-        foreach (Component component in this.Components)
+        foreach (Component component in this.Components.ToList())
         {
             if (this.IsComponentVisible(component))
             {
