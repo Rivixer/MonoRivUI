@@ -235,7 +235,7 @@ public class ScrollableListBox : ListBox
 
     private void UpdateVisibleComponents(GameTime gameTime)
     {
-        foreach (Component component in this.Components)
+        foreach (Component component in this.Components.ToList())
         {
             if (this.IsComponentVisible(component))
             {
