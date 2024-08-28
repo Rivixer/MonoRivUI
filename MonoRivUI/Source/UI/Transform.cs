@@ -312,7 +312,12 @@ public class Transform
                     $"is not {TransformType.Absolute}.");
             }
 
+            var locationBefore = this.location;
             this.location = value;
+
+            var args = new TransformElementChangedEventArgs<Point>(locationBefore, value);
+            this.OnLocationChanged(args);
+
             this.isRecalculationNeeded = true;
         }
     }
@@ -354,7 +359,12 @@ public class Transform
                     $"{nameof(this.Size)} cannot have non-positive components.");
             }
 
+            var sizeBefore = this.size;
             this.size = value.Clamp(this.minSize, this.maxSize);
+
+            var args = new TransformElementChangedEventArgs<Point>(sizeBefore, value);
+            this.OnSizeChanged(args);
+
             this.isRecalculationNeeded = true;
         }
     }
@@ -517,20 +527,14 @@ public class Transform
 
         if (this.location != locationBefore)
         {
-            this.LocationChanged?.Invoke(
-                this,
-                new TransformElementChangedEventArgs<Point>(
-                    locationBefore,
-                    this.location));
+            var args = new TransformElementChangedEventArgs<Point>(locationBefore, this.location);
+            this.OnLocationChanged(args);
         }
 
         if (this.size != sizeBefore)
         {
-            this.SizeChanged?.Invoke(
-                this,
-                new TransformElementChangedEventArgs<Point>(
-                    sizeBefore,
-                    this.size));
+            var args = new TransformElementChangedEventArgs<Point>(sizeBefore, this.size);
+            this.OnSizeChanged(args);
         }
     }
 
@@ -648,6 +652,16 @@ public class Transform
         }
 
         this.size = size;
+    }
+
+    private void OnLocationChanged(TransformElementChangedEventArgs<Point> args)
+    {
+        this.LocationChanged?.Invoke(this, args);
+    }
+
+    private void OnSizeChanged(TransformElementChangedEventArgs<Point> args)
+    {
+        this.SizeChanged?.Invoke(this, args);
     }
 
     private void ScreenController_ScreenChanged(object? sender, EventArgs args)
