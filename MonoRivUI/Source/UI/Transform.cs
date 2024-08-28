@@ -45,6 +45,11 @@ public class Transform
     }
 
     /// <summary>
+    /// An event raised when the transformation is being recalculated.
+    /// </summary>
+    public event EventHandler? Recalculating;
+
+    /// <summary>
     /// An event raised when the transformation has been recalculated.
     /// </summary>
     public event EventHandler? Recalculated;
@@ -509,6 +514,8 @@ public class Transform
 
     private void Recalculate()
     {
+        this.Recalculating?.Invoke(this, EventArgs.Empty);
+
         Point locationBefore = this.location;
         Point sizeBefore = this.size;
 
