@@ -29,6 +29,7 @@ public class ScalableFont : IDisposable
     private const int DpiX = 150;
     private const int DpiY = 150;
 
+    private static readonly Dictionary<(string, int), ScalableFont> Cache = new();
     private static readonly FreeTypeLibrary Library = new();
 
     private readonly FreeTypeFaceFacade face;
@@ -50,6 +51,15 @@ public class ScalableFont : IDisposable
         this.path = path;
         this.size = size;
 
+        if (Cache.TryGetValue((path, size), out var cached))
+        {
+            this.face = cached.face;
+            this.textures = cached.textures;
+            this.glyphDatas = cached.glyphDatas;
+            this.height = cached.height;
+            return;
+        }
+
         FT_FaceRec_* facePtr;
         var error = FT_New_Face(Library.Native, (byte*)Marshal.StringToHGlobalAnsi(path), IntPtr.Zero, &facePtr);
         FTError.ThrowIfError(this, error);
@@ -57,6 +67,8 @@ public class ScalableFont : IDisposable
         this.face = new FreeTypeFaceFacade(Library, facePtr);
 
         this.Render();
+
+        Cache.Add((path, size), this);
     }
 
     /// <summary>
@@ -86,6 +98,11 @@ public class ScalableFont : IDisposable
     }
 
     /// <summary>
+    /// Gets or sets the spacing between characters.
+    /// </summary>
+    public float Spacing { get; set; }
+
+    /// <summary>
     /// Gets the dimensions of the base character.
     /// </summary>
     public Vector2 BaseCharDimensions => this.glyphDatas[BaseChar].TextureCoords.Size.ToVector2();
@@ -112,9 +129,10 @@ public class ScalableFont : IDisposable
     /// <param name="text">The text to draw.</param>
     /// <param name="position">The position to draw the text at.</param>
     /// <param name="color">The color of the text.</param>
-    public void DrawString(string text, Vector2 position, Color color)
+    /// <param name="spacing">The spacing between characters.</param>
+    public void DrawString(string text, Vector2 position, Color color, float? spacing = null)
     {
-        this.DrawString(text, position, color, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 1.0f);
+        this.DrawString(text, position, color, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 1.0f, spacing);
     }
 
     /// <summary>
@@ -128,7 +146,17 @@ public class ScalableFont : IDisposable
     /// <param name="scale">The scale of the text.</param>
     /// <param name="effects">The effects of the text.</param>
     /// <param name="layerDepth">The layer depth of the text.</param>
-    public void DrawString(string text, Vector2 position, Color color, float rotation, Vector2 origin, float scale, SpriteEffects effects, float layerDepth)
+    /// <param name="spacing">The spacing between characters.</param>
+    public void DrawString(
+        string text,
+        Vector2 position,
+        Color color,
+        float rotation,
+        Vector2 origin,
+        float scale,
+        SpriteEffects effects,
+        float layerDepth,
+        float? spacing = null)
     {
         var sb = SpriteBatchController.SpriteBatch;
 
@@ -150,6 +178,7 @@ public class ScalableFont : IDisposable
             }
 
             currentPosition += glyphData.HorizontalAdvance * advance * scale;
+            currentPosition += new Vector2((spacing ?? this.Spacing) * scale, 0);
         }
     }
 
@@ -157,26 +186,38 @@ public class ScalableFont : IDisposable
     /// Measures the size of the text.
     /// </summary>
     /// <param name="text">The text to measure.</param>
+    /// <param name="spacing">
+    /// The spacing between characters. If not specified,
+    /// the <see cref="Spacing"/> property is used.
+    /// </param>
     /// <returns>The size of the text.</returns>
-    public Vector2 MeasureString(string text)
+    public Vector2 MeasureString(string text, float? spacing = null)
     {
-        return this.MeasureString(text, out _);
+        return this.MeasureString(text, out _, spacing);
     }
 
-    /// <inheritdoc cref="MeasureString(string)"/>
+    /// <summary>
+    /// Measures the size of the text.
+    /// </summary>
+    /// <param name="text">The text to measure.</param>
     /// <param name="heightOffset">
     /// The difference between the height of the text and the height of the base character.
     /// </param>
-    public Vector2 MeasureString(string text, out float heightOffset)
+    /// <param name="spacing">
+    /// The spacing between characters. If not specified,
+    /// the <see cref="Spacing"/> property is used.
+    /// </param>
+    /// <returns>The size of the text.</returns>
+    public Vector2 MeasureString(string text, out float heightOffset, float? spacing = null)
     {
-        heightOffset = 0.0f;
-
         if (string.IsNullOrEmpty(text))
         {
+            heightOffset = 0.0f;
             return Vector2.Zero;
         }
 
         var result = Vector2.Zero;
+        result -= new Vector2(spacing ?? this.Spacing, 0);
 
         foreach (char c in text)
         {
@@ -185,13 +226,13 @@ public class ScalableFont : IDisposable
                 continue;
             }
 
-            result.X += data.HorizontalAdvance;
+            result.X += data.HorizontalAdvance + (spacing ?? this.Spacing);
             result.Y = Math.Max(result.Y, this.glyphDatas[c].TextureCoords.Height);
         }
 
         heightOffset = result.Y - this.glyphDatas[BaseChar].TextureCoords.Height;
 
-        return result;
+        return result.ClampVec(Vector2.Zero, new Vector2(float.MaxValue));
     }
 
     /// <summary>
@@ -204,10 +245,14 @@ public class ScalableFont : IDisposable
         return this.MeasureString(sb.ToString(), out var _);
     }
 
-    /// <inheritdoc cref="MeasureString(StringBuilder)"/>
+    /// <summary>
+    /// Measures the size of the text.
+    /// </summary>
+    /// <param name="sb">The string builder to measure.</param>
     /// <param name="heightOffset">
     /// The difference between the height of the text and the height of the base character.
     /// </param>
+    /// <returns>The size of the text.</returns>
     public Vector2 MeasureString(StringBuilder sb, out float heightOffset)
     {
         return this.MeasureString(sb.ToString(), out heightOffset);
@@ -346,7 +391,7 @@ public class ScalableFont : IDisposable
         /// Initializes a new instance of the <see cref="FTError"/> class.
         /// </summary>
         /// <param name="exception">The exception that occurred.</param>
-        /// <param name="relativePath">The relative path to the font</param>
+        /// <param name="relativePath">The relative path to the font.</param>
         public FTError(FreeTypeException exception, string relativePath)
         {
             this.Exception = exception;
