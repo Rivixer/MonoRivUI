@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
+﻿using Microsoft.Xna.Framework;
 using static MonoRivUI.Style;
 
 namespace MonoRivUI;
@@ -10,8 +8,6 @@ namespace MonoRivUI;
 /// </summary>
 public class SolidColor : TextureComponent, IButtonContent<SolidColor>, IStyleable<SolidColor>
 {
-    private Color color;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SolidColor"/> class.
     /// </summary>
@@ -29,7 +25,7 @@ public class SolidColor : TextureComponent, IButtonContent<SolidColor>, IStyleab
     /// <param name="color">The color to be drawn.</param>
     public SolidColor(Color color)
     {
-        this.color = color;
+        this.Color = color;
         this.LoadTexture();
     }
 
@@ -39,17 +35,8 @@ public class SolidColor : TextureComponent, IButtonContent<SolidColor>, IStyleab
     [Stylable]
     public new Color Color
     {
-        get => this.color;
-        set
-        {
-            if (this.color == value)
-            {
-                return;
-            }
-
-            this.color = value;
-            this.LoadTexture();
-        }
+        get => base.Color;
+        set => base.Color = value;
     }
 
     /// <remarks>
@@ -75,9 +62,6 @@ public class SolidColor : TextureComponent, IButtonContent<SolidColor>, IStyleab
     /// </remarks>
     protected override void LoadTexture()
     {
-        this.Texture?.Dispose();
-        var texture = new Texture2D(ScreenController.GraphicsDevice, 1, 1);
-        texture.SetData(new Color[] { this.color });
-        this.Texture = texture;
+        this.Texture = SpriteBatchController.WhitePixel;
     }
 }
