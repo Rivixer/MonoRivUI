@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
-using Svg;
 
 namespace MonoRivUI;
 
@@ -12,13 +11,14 @@ namespace MonoRivUI;
 /// The components are placed in a vertical or horizontal orientation,
 /// next to each other.
 /// </remarks>
+/// <seealso cref="AlignedListBox"/>
 /// <seealso cref="FlexListBox"/>
 /// <seealso cref="ScrollableListBox"/>
 public class ListBox : Component
 {
     private readonly List<Component> components = new();
-    private Orientation orientation;
 
+    private Orientation orientation = Orientation.Vertical;
     private int spacing;
 
     /// <summary>
@@ -65,24 +65,6 @@ public class ListBox : Component
     public Container ContentContainer { get; protected set; }
 
     /// <summary>
-    /// Gets or sets the spacing between the content elements.
-    /// </summary>
-    public virtual int Spacing
-    {
-        get => this.spacing;
-        set
-        {
-            if (this.spacing == value)
-            {
-                return;
-            }
-
-            this.spacing = value;
-            this.IsRecalulcationNeeded = true;
-        }
-    }
-
-    /// <summary>
     /// Gets or sets the orientation of the list box.
     /// </summary>
     public virtual Orientation Orientation
@@ -96,6 +78,24 @@ public class ListBox : Component
             }
 
             this.orientation = value;
+            this.IsRecalulcationNeeded = true;
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets the spacing between the content elements.
+    /// </summary>
+    public virtual int Spacing
+    {
+        get => this.spacing;
+        set
+        {
+            if (this.spacing == value)
+            {
+                return;
+            }
+
+            this.spacing = value;
             this.IsRecalulcationNeeded = true;
         }
     }
@@ -188,20 +188,19 @@ public class ListBox : Component
         switch (this.orientation)
         {
             case Orientation.Vertical:
-                this.components.ForEach(
-                    component =>
-                    {
-                        component.Transform.SetRelativeOffsetFromAbsolute(y: currentOffset);
-                        currentOffset += this.spacing + component.Transform.Size.Y;
-                    });
+                this.components.ForEach(component =>
+                {
+                    var componentLength = this.GetComponentLength(component);
+                    component.Transform.SetRelativeOffsetFromAbsolute(y: currentOffset);
+                    currentOffset += this.spacing + this.GetComponentLength(component);
+                });
                 break;
             case Orientation.Horizontal:
-                this.components.ForEach(
-                    component =>
-                    {
-                        component.Transform.SetRelativeOffsetFromAbsolute(x: currentOffset);
-                        currentOffset += this.spacing + component.Transform.Size.X;
-                    });
+                this.components.ForEach(component =>
+                {
+                    component.Transform.SetRelativeOffsetFromAbsolute(x: currentOffset);
+                    currentOffset += this.spacing + this.GetComponentLength(component);
+                });
                 break;
             default:
                 throw new NotSupportedException();
