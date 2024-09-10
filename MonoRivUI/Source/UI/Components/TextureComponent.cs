@@ -37,21 +37,21 @@ public abstract class TextureComponent : Component
     /// </summary>
     /// <remarks>
     /// The rotation is applied to the image in a clockwise
-    /// direction around its <see cref="Origin"/>. The angle
-    /// is measured in radians, where 0 represents
+    /// direction around its origin (see <see cref="RelativeOrigin"/>).
+    /// The angle is measured in radians, where 0 represents
     /// no rotation and values increase clockwise.
     /// </remarks>
     public float Rotation { get; set; }
 
     /// <summary>
-    /// Gets or sets the origin of the image.
+    /// Gets or sets the relative origin of the image.
     /// </summary>
-    /// <remarks>
-    /// The origin point determines the point around which
-    /// the image will rotate. By default, the origin
-    /// is set to the top-left corner (0,0) of the image.
-    /// </remarks>
-    public Vector2 Origin { get; set; } = Vector2.Zero;
+    public Vector2 RelativeOrigin { get; set; } = Vector2.Zero;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the origin of the image is centered.
+    /// </summary>
+    public bool CenterOrigin { get; set; }
 
     /// <summary>
     /// Gets or sets the sprite effects applied to the image.
@@ -73,11 +73,11 @@ public abstract class TextureComponent : Component
 
         SpriteBatchController.SpriteBatch.Draw(
             texture: this.Texture,
-            destinationRectangle: this.Transform.DestRectangle,
+            destinationRectangle: this.GetDestRectWithOriginOffset(),
             sourceRectangle: null,
             color: this.Color * this.Opacity,
             rotation: this.Rotation,
-            origin: this.Origin,
+            origin: this.Transform.Size.ToVector2() * this.RelativeOrigin,
             effects: this.SpriteEffects,
             layerDepth: this.LayerDepth);
 
@@ -88,4 +88,21 @@ public abstract class TextureComponent : Component
     /// Loads the texture of the image.
     /// </summary>
     protected abstract void LoadTexture();
+
+    private Rectangle GetDestRectWithOriginOffset()
+    {
+        if (!this.CenterOrigin)
+        {
+            return this.Transform.DestRectangle;
+        }
+
+        var destRect = this.Transform.DestRectangle;
+        var originOffset = this.Transform.Size.ToVector2() * this.RelativeOrigin;
+
+        return new Rectangle(
+            destRect.X + (int)originOffset.X,
+            destRect.Y + (int)originOffset.Y,
+            destRect.Width,
+            destRect.Height);
+    }
 }
