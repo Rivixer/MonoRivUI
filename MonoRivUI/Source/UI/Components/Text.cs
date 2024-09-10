@@ -85,8 +85,8 @@ public class Text : TextComponent
     /// to fit the transform size if it goes beyond the bounds.
     /// </para>
     /// <para>
-    /// If the <see cref="AdjustTransformSizeToText"/> property is not set to
-    /// <see cref="AdjustSizeOption.None"/>, the text shrink mode is ignored.
+    /// If the <see cref="TextComponent.AdjustTransformSizeToText"/> property is not
+    /// set to <see cref="AdjustSizeOption.None"/>, the text shrink mode is ignored.
     /// </para>
     /// <para>
     /// If the mode is set to <see cref="TextShrinkMode.SafeCharHeight"/>,
@@ -129,6 +129,11 @@ public class Text : TextComponent
             return this.dimensions;
         }
     }
+
+    /// <summary>
+    /// Gets or sets the spacing between characters.
+    /// </summary>
+    public float? Spacing { get; set; }
 
     /// <summary>
     /// Gets or sets the fixed height of the text.
@@ -205,7 +210,8 @@ public class Text : TextComponent
             origin: Vector2.Zero,
             scale: this.drawScale,
             effects: SpriteEffects.None,
-            layerDepth: 0.0f);
+            layerDepth: 0.0f,
+            spacing: this.Spacing);
 
         base.Draw(gameTime);
     }
@@ -225,10 +231,19 @@ public class Text : TextComponent
         return this.MeasureDimensions(startIndex, endIndex, out _);
     }
 
-    /// <inheritdoc cref="MeasureDimensions(int, int)"/>
+    /// <summary>
+    /// Measures the dimensions of a portion of the text.
+    /// </summary>
+    /// <param name="startIndex">The index at which to start measuring the text.</param>
+    /// <param name="endIndex">The index at which to stop measuring the text (exclusive).</param>
     /// <param name="heightOffset">
     /// The difference between the height of the text and the height of the base character.
     /// </param>
+    /// <returns>The dimensions of the specified portion of the text.</returns>
+    /// <remarks>
+    /// The dimensions represent the minimum size of the rectangle
+    /// that can contain the text.
+    /// </remarks>
     public Vector2 MeasureDimensions(int startIndex, int endIndex, out float heightOffset)
     {
         if (this.isRecalculationNeeded)
@@ -236,7 +251,7 @@ public class Text : TextComponent
             this.Recalculate();
         }
 
-        return this.Font.MeasureString(this.Value[startIndex..endIndex], out heightOffset) * this.drawScale;
+        return this.Font.MeasureString(this.Value[startIndex..endIndex], out heightOffset, this.Spacing) * this.drawScale;
     }
 
     private void Recalculate()
@@ -245,7 +260,7 @@ public class Text : TextComponent
         this.drawScale = this.Scale * this.shrinkScale;
 
         this.dimensions = this.Font
-            .MeasureString(this.Value, out this.heightOffset)
+            .MeasureString(this.Value, out this.heightOffset, this.Spacing * this.drawScale)
             .Scale(this.drawScale);
 
         this.dimensions.Y -= this.heightOffset;
@@ -292,7 +307,7 @@ public class Text : TextComponent
             return;
         }
 
-        Vector2 nativeDimensions = this.Font.MeasureString(this.Value);
+        Vector2 nativeDimensions = this.Font.MeasureString(this.Value, this.Spacing);
         float scaleX = this.Transform.Size.X / nativeDimensions.X;
         float scaleY = this.Transform.Size.Y / nativeDimensions.Y;
 
