@@ -42,7 +42,7 @@ public abstract class Scene : IScene
             },
         };
 
-        this.baseComponent.Transform.Recalculated += (s, e) =>
+        this.baseComponent.Transform.Recalculating += (s, e) =>
         {
             (s as Transform)!.Size = ScreenController.CurrentSize;
         };
