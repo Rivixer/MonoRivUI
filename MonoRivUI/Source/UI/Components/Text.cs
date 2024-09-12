@@ -31,6 +31,11 @@ public class Text : TextComponent
         this.Transform.Recalculated += this.Transform_Recalculated;
     }
 
+    /// <summary>
+    /// Occurs when the value of the text changes.
+    /// </summary>
+    public event EventHandler<(string Before, string After)>? ValueChanged;
+
     /// <inheritdoc/>
     public override string Value
     {
@@ -41,8 +46,10 @@ public class Text : TextComponent
                 return;
             }
 
+            string before = base.Value;
             base.Value = value;
             this.isRecalculationNeeded = true;
+            this.ValueChanged?.Invoke(this, (before, value));
         }
     }
 
