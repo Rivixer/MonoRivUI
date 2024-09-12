@@ -20,6 +20,17 @@ public abstract class TextureComponent : Component
     }
 
     /// <summary>
+    /// Gets or sets the source rectangle of the image.
+    /// </summary>
+    public Rectangle? SourceRect { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the destination
+    /// rectangle should be adjusted to the source rectangle.
+    /// </summary>
+    public bool MatchDestinationToSource { get; set; }
+
+    /// <summary>
     /// Gets or sets the color of the image.
     /// </summary>
     public Color Color { get; set; } = Color.White;
@@ -63,6 +74,11 @@ public abstract class TextureComponent : Component
     /// </summary>
     public float LayerDepth { get; set; }
 
+    /// <summary>
+    /// Gets the ratio of the texture.
+    /// </summary>
+    public Ratio TextureRatio => new(this.Texture.Width, this.Texture.Height);
+
     /// <inheritdoc/>
     public override void Draw(GameTime gameTime)
     {
@@ -73,8 +89,8 @@ public abstract class TextureComponent : Component
 
         SpriteBatchController.SpriteBatch.Draw(
             texture: this.Texture,
-            destinationRectangle: this.GetDestRectWithOriginOffset(),
-            sourceRectangle: null,
+            destinationRectangle: this.CalculateDestinationRectangle(),
+            sourceRectangle: this.SourceRect,
             color: this.Color * this.Opacity,
             rotation: this.Rotation,
             origin: this.Transform.Size.ToVector2() * this.RelativeOrigin,
@@ -89,20 +105,25 @@ public abstract class TextureComponent : Component
     /// </summary>
     protected abstract void LoadTexture();
 
-    private Rectangle GetDestRectWithOriginOffset()
+    private Rectangle CalculateDestinationRectangle()
     {
-        if (!this.CenterOrigin)
+        Rectangle rectangle = this.Transform.DestRectangle;
+
+        if (this.CenterOrigin)
         {
-            return this.Transform.DestRectangle;
+            var originOffset = this.Transform.Size.ToVector2() * this.RelativeOrigin;
+            rectangle.X += (int)originOffset.X;
+            rectangle.Y += (int)originOffset.Y;
         }
 
-        var destRect = this.Transform.DestRectangle;
-        var originOffset = this.Transform.Size.ToVector2() * this.RelativeOrigin;
+        if (this.MatchDestinationToSource && this.SourceRect is not null)
+        {
+            rectangle.X += this.SourceRect!.Value.X;
+            rectangle.Y += this.SourceRect.Value.Y;
+            rectangle.Width = this.SourceRect!.Value.Width;
+            rectangle.Height = this.SourceRect.Value.Height;
+        }
 
-        return new Rectangle(
-            destRect.X + (int)originOffset.X,
-            destRect.Y + (int)originOffset.Y,
-            destRect.Width,
-            destRect.Height);
+        return rectangle;
     }
 }

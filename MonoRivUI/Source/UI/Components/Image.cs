@@ -29,7 +29,7 @@ public class Image : TextureComponent, IButtonContent<Image>
     /// directory to the image, without the file extension.
     /// </param>
     /// <remarks>
-    /// It is also set the <see cref="Transform.Ratio"/>
+    /// This constructor also sets the <see cref="Transform.Ratio"/>
     /// to the ratio of the image.
     /// </remarks>
     public Image(string relativePath)
@@ -45,11 +45,6 @@ public class Image : TextureComponent, IButtonContent<Image>
     /// Gets the pixels of the texture.
     /// </summary>
     public Color[] TexturePixels => this.texturePixels.Value;
-
-    /// <summary>
-    /// Gets the ratio of the texture.
-    /// </summary>
-    public Ratio TextureRatio => new(this.Texture.Width, this.Texture.Height);
 
     /// <summary>
     /// Checks if the cursor is over a non-transparent pixel in the image.
