@@ -12,6 +12,8 @@ namespace MonoRivUI;
 public class Style<T> : Style
     where T : IComponent, IStyleable<T>
 {
+    private readonly Dictionary<string, object?> customProperties = new();
+
     /// <summary>
     /// Gets or sets the action to be performed when the style is applied.
     /// </summary>
@@ -21,9 +23,16 @@ public class Style<T> : Style
     public Action<T>? Action { get; set; }
 
     /// <summary>
-    /// Gets or sets the custom properties of the style.
+    /// Gets or sets the name of the style.
     /// </summary>
-    public List<Property> CustomProperties { get; set; } = new();
+    /// <param name="key">The key of the property.
+    /// </param>
+    /// <returns>The property of the style.</returns>
+    public object? this[string key]
+    {
+        get => this.customProperties.First(v => v.Key == key).Value;
+        set => this.customProperties[key] = value;
+    }
 
     /// <summary>
     /// Gets a property of the style.
@@ -33,8 +42,7 @@ public class Style<T> : Style
     /// <returns>The property of the style.</returns>
     public virtual TProp? GetProperty<TProp>(string key)
     {
-        PropertyInfo? property = this.GetType().GetProperty(key);
-        return (TProp?)(property?.GetValue(this) ?? this.CustomProperties.FirstOrDefault(v => v.Name == key)?.Value);
+        return (TProp?)this.customProperties[key];
     }
 
     /// <summary>
@@ -45,10 +53,21 @@ public class Style<T> : Style
     /// <remarks>
     /// If there are multiple properties of the same type, the first one is returned.
     /// </remarks>
-    public virtual TProp? GetPropertyOfType<TProp>()
+    public virtual TProp GetPropertyOfType<TProp>()
+        where TProp : notnull
     {
-        PropertyInfo? property = this.GetType().GetProperties().FirstOrDefault(v => v.PropertyType == typeof(TProp));
-        return (TProp?)(property?.GetValue(this) ?? this.CustomProperties.FirstOrDefault(v => v.Value is TProp)?.Value);
+        return this.customProperties.Values.OfType<TProp>().First();
+    }
+
+    /// <summary>
+    /// Gets all properties of the style.
+    /// </summary>
+    /// <typeparam name="TProp">The type of the properties to get.</typeparam>
+    /// <returns>The properties of the style.</returns>
+    public virtual IEnumerable<TProp> GetAllPropertiesOfType<TProp>()
+        where TProp : notnull
+    {
+        return this.customProperties.Values.OfType<TProp>();
     }
 
     /// <summary>
@@ -86,11 +105,9 @@ public class Style<T> : Style
             }
         }
 
-        foreach (Property property in this.CustomProperties)
+        foreach (var property in this.customProperties)
         {
-            string propertyName = property.Name;
-
-            PropertyInfo? componentProperty = component.GetType().GetProperty(propertyName);
+            PropertyInfo? componentProperty = component.GetType().GetProperty(property.Key);
             if (componentProperty is { } p && Attribute.IsDefined(p, typeof(Stylable)))
             {
                 p.SetValue(component, property.Value);
