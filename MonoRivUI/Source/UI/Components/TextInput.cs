@@ -1,4 +1,5 @@
 using System;
+using System.Drawing.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
@@ -77,6 +78,11 @@ public class TextInput : Component
     public bool DeselectAfterSend { get; set; } = true;
 
     /// <summary>
+    /// Gets the value of the text input.
+    /// </summary>
+    public string Value => this.text.Value;
+
+    /// <summary>
     /// Gets or sets a value indicating
     /// maximum length of the text input.
     /// </summary>
@@ -138,6 +144,34 @@ public class TextInput : Component
             }
         }
     }
+
+    /// <summary>
+    /// Gets or sets the text case.
+    /// </summary>
+    public TextCase Case
+    {
+        get => this.text.Case;
+        set
+        {
+            this.text.Case = value;
+            if (this.placeholder is not null)
+            {
+                this.placeholder.Case = value;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether
+    /// the caret height should be adjusted to the font height.
+    /// </summary>
+    /// <remarks>
+    /// If it is set to <see langword="true"/>,
+    /// the caret height will be adjusted to the font
+    /// <see cref="ScalableFont.SafeDimensions"/>'s Y value.
+    /// Otherwise, the relative size of the caret will be set to 90%.
+    /// </remarks>
+    public bool AdjustCaretHeightToFont { get; set; }
 
     /// <summary>
     /// Gets or sets the placeholder text.
@@ -273,7 +307,9 @@ public class TextInput : Component
             else
             {
                 var elapsedSeconds = (float)gameTime.ElapsedGameTime.TotalSeconds;
-                this.UpdateCursorBlinking(elapsedSeconds);
+                this.caretEnableTime += elapsedSeconds;
+                this.AdjustCaretHeight();
+                this.UpdateCaretPosition();
             }
         }
 
@@ -333,11 +369,33 @@ public class TextInput : Component
         }
     }
 
-    private void UpdateCursorBlinking(float elapsedSeconds)
+    private void UpdateCaretPosition()
     {
-        this.caretEnableTime += elapsedSeconds;
-        float caretOffset = this.text.MeasureDimensions(0, this.caretPosition).X;
-        this.caret.Transform.SetRelativeOffsetFromAbsolute(x: caretOffset);
+        float offset = this.text.MeasureDimensions(0, this.caretPosition).X;
+        float totalTextWidth = this.text.Dimensions.X;
+
+        if (this.TextAlignment.HasFlag(Alignment.Right))
+        {
+            offset += this.Transform.Size.X - totalTextWidth;
+        }
+        else if (!this.TextAlignment.HasFlag(Alignment.Left))
+        {
+            offset += (this.Transform.Size.X - totalTextWidth) / 2f;
+        }
+
+        this.caret.Transform.SetRelativeOffsetFromAbsolute(x: offset);
+    }
+
+    private void AdjustCaretHeight()
+    {
+        if (this.AdjustCaretHeightToFont)
+        {
+            this.caret.Transform.SetRelativeSizeFromAbsolute(y: this.text.Font.SafeDimensions.Y);
+        }
+        else
+        {
+            this.caret.Transform.RelativeSize = new Vector2(0.9f);
+        }
     }
 
     private void OnTextChanged()
