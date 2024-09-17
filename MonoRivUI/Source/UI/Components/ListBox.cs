@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Xna.Framework;
 
 namespace MonoRivUI;
@@ -188,7 +189,7 @@ public class ListBox : Component
         switch (this.orientation)
         {
             case Orientation.Vertical:
-                this.components.ForEach(component =>
+                this.components.ToList().ForEach(component =>
                 {
                     var componentLength = this.GetComponentLength(component);
                     component.Transform.SetRelativeOffsetFromAbsolute(y: currentOffset);
@@ -196,7 +197,7 @@ public class ListBox : Component
                 });
                 break;
             case Orientation.Horizontal:
-                this.components.ForEach(component =>
+                this.components.ToList().ForEach(component =>
                 {
                     component.Transform.SetRelativeOffsetFromAbsolute(x: currentOffset);
                     currentOffset += this.spacing + this.GetComponentLength(component);
