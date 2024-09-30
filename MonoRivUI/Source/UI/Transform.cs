@@ -72,6 +72,22 @@ public class Transform
     /// <summary>
     /// Gets or sets the transform type.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// It determines how the component is positioned and sized.
+    /// </para>
+    /// <para>
+    /// If the type is set to <see cref="TransformType.Relative"/>,
+    /// the component is positioned and sized relative to the parent
+    /// component or the screen, depending on whether
+    /// the <see cref="Component.Parent"/> is set.
+    /// </para>
+    /// <para>
+    /// If the type is set to <see cref="TransformType.Absolute"/>,
+    /// the component is positioned and sized based on manual values
+    /// <see cref="Location"/> and <see cref="Size"/>.
+    /// </para>
+    /// </remarks>
     public TransformType Type
     {
         get => this.transformType;
@@ -80,13 +96,6 @@ public class Transform
             if (this.transformType == value)
             {
                 return;
-            }
-
-            if (value is TransformType.Relative && this.Component.Parent is null)
-            {
-                throw new InvalidOperationException(
-                    $"Cannot set {nameof(this.Type)} to {nameof(TransformType.Relative)} " +
-                    $"when {nameof(this.Component)} has no {nameof(this.Component.Parent)}");
             }
 
             this.transformType = value;
@@ -222,8 +231,12 @@ public class Transform
     /// Gets or sets the alignment of the component.
     /// </summary>
     /// <remarks>
-    /// It is effective only when <see cref="Type"/>
-    /// is set to <see cref="TransformType.Relative"/>.
+    /// If the component's <see cref="Type"/> is set
+    /// to <see cref="TransformType.Relative"/>,
+    /// the alignment is relative to the parent component.
+    /// If the component's <see cref="Type"/> is set
+    /// to <see cref="TransformType.Absolute"/>,
+    /// the alignment is relative to the screen.
     /// </remarks>
     public Alignment Alignment
     {
@@ -472,7 +485,6 @@ public class Transform
         this.RelativeSize = new Vector2(
             x / reference.X ?? this.RelativeSize.X,
             y / reference.Y ?? this.RelativeSize.Y);
-
     }
 
     /// <inheritdoc cref="SetRelativeSizeFromAbsolute(float?, float?)"/>
@@ -582,24 +594,31 @@ public class Transform
 
     private void RecalculateRelative()
     {
-        var reference = (Transform)this.Component.Parent!.Transform;
+        var reference = this.Component.Parent?.Transform;
 
-        if (reference.isRecalculationNeeded)
+        if (reference is null)
         {
-            reference.Recalculate();
+            this.location = Point.Zero;
+            this.size = ScreenController.CurrentSize;
         }
-
-        this.location = reference.location;
-        this.size = reference.size.Scale(this.relativeSize);
+        else
+        {
+            reference.RecalculateIfNeeded();
+            this.location = reference.location;
+            this.size = reference.size.Scale(this.relativeSize);
+        }
 
         this.RecalculateRatio();
 
         this.size = this.size.Clamp(this.minSize, this.maxSize);
 
-        Rectangle sourceRect = reference.DestRectangle;
-        if (!this.IgnoreParentPadding && reference.padding != Vector4.Zero)
+        Rectangle sourceRect = reference is null
+            ? new(Point.Zero, ScreenController.CurrentSize)
+            : reference.DestRectangle;
+
+        if (!this.IgnoreParentPadding && (reference?.padding ?? Vector4.Zero) != Vector4.Zero)
         {
-            Point referenceSize = reference.size;
+            Point referenceSize = reference!.size;
 
             int paddingLeft = (int)(reference.RelativePadding.X * referenceSize.X);
             int paddingTop = (int)(reference.RelativePadding.Y * referenceSize.Y);
@@ -614,19 +633,12 @@ public class Transform
             this.size.Y -= paddingTop + paddingBottom;
         }
 
-        sourceRect.Size = sourceRect.Size;
-
-        if (this.Component.Parent is null)
-        {
-            sourceRect.Size = sourceRect.Size.Scale(ScreenController.Scale);
-        }
-
         var currentRect = new Rectangle(this.location, this.size);
 
         this.location = RecalculationUtils.AlignRectangle(
             sourceRect, currentRect, this.alignment).Location;
 
-        this.location += reference.size.Scale(this.relativeOffset);
+        this.location += sourceRect.Size.Scale(this.relativeOffset);
     }
 
     private void RecalculateAbsolute()
