@@ -138,11 +138,6 @@ public class Text : TextComponent
     }
 
     /// <summary>
-    /// Gets or sets the spacing between characters.
-    /// </summary>
-    public float? Spacing { get; set; }
-
-    /// <summary>
     /// Gets or sets the fixed height of the text.
     /// </summary>
     /// <remarks>
@@ -263,11 +258,13 @@ public class Text : TextComponent
 
     private void Recalculate()
     {
+        this.Transform.RecalculateIfNeeded();
+
         this.UpdateShrinkScale();
         this.drawScale = this.Scale * this.shrinkScale;
 
         this.dimensions = this.Font
-            .MeasureString(this.Value, out this.heightOffset, this.Spacing * this.drawScale)
+            .MeasureString(this.Value, out this.heightOffset, this.Spacing)
             .Scale(this.drawScale);
 
         this.dimensions.Y -= this.heightOffset;

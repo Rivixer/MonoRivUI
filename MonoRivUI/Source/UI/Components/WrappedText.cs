@@ -40,7 +40,7 @@ public class WrappedText : TextComponent, IEnumerable<Text>
     {
         set
         {
-            if (base.Value == value)
+            if (this.RawText == value)
             {
                 return;
             }
@@ -131,6 +131,20 @@ public class WrappedText : TextComponent, IEnumerable<Text>
         }
     }
 
+    /// <inheritdoc/>
+    public override Color Color
+    {
+        get => base.Color;
+        set
+        {
+            base.Color = value;
+            foreach (Text textLine in this.textLines)
+            {
+                textLine.Color = value;
+            }
+        }
+    }
+
     /// <summary>
     /// Gets a text line at the specified index.
     /// </summary>
@@ -138,6 +152,11 @@ public class WrappedText : TextComponent, IEnumerable<Text>
     /// <returns>The text line at the specified index.</returns>
     public Text this[int i] => this.textLines[i];
 
+    /// <summary>
+    /// Converts a <see cref="Text"/> instance
+    /// to a <see cref="WrappedText"/> instance.
+    /// </summary>
+    /// <param name="text">The <see cref="Text"/> instance to convert.</param>
     public static explicit operator WrappedText(Text text)
     {
         return new WrappedText(text.Font, text.Color)
@@ -188,6 +207,8 @@ public class WrappedText : TextComponent, IEnumerable<Text>
         {
             this.Recalculate();
         }
+
+        this.PositionTextLines();
 
         base.Draw(gameTime);
     }
@@ -301,12 +322,18 @@ public class WrappedText : TextComponent, IEnumerable<Text>
             _ = currentLine.Append(word);
             currentWidth += wordWidth;
 
+            // Add the spacing between words
+            currentWidth += this.Spacing ?? this.Font.Spacing;
+
             // If a whitespace character was encountered earlier, add it to the current line
             if (whitespace != default)
             {
                 _ = currentLine.Append(whitespace);
                 float whitespaceWidth = this.MeasureText(whitespace.ToString()).X;
                 currentWidth += whitespaceWidth;
+
+                // Add the spacing between words
+                currentWidth += this.Spacing ?? this.Font.Spacing;
             }
         }
 

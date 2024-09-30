@@ -8,7 +8,6 @@ namespace MonoRivUI;
 /// </summary>
 public abstract class TextComponent : Component
 {
-    private string rawText = string.Empty;
     private string text = string.Empty;
     private TextCase textCase = TextCase.None;
 
@@ -31,7 +30,7 @@ public abstract class TextComponent : Component
         get => this.text;
         set
         {
-            this.rawText = this.text = value;
+            this.RawText = this.text = value;
             this.ApplyTextCase();
         }
     }
@@ -66,6 +65,11 @@ public abstract class TextComponent : Component
     public virtual AdjustSizeOption AdjustTransformSizeToText { get; set; }
 
     /// <summary>
+    /// Gets or sets the spacing between characters.
+    /// </summary>
+    public float? Spacing { get; set; }
+
+    /// <summary>
     /// Gets the dimensions of the text.
     /// </summary>
     /// <remarks>
@@ -91,6 +95,11 @@ public abstract class TextComponent : Component
             this.ApplyTextCase();
         }
     }
+
+    /// <summary>
+    /// Gets the raw text content.
+    /// </summary>
+    protected string RawText { get; private set; } = string.Empty;
 
     /// <summary>
     /// Adjusts the size of the transform to fit the text content.
@@ -123,7 +132,7 @@ public abstract class TextComponent : Component
         switch (this.Case)
         {
             case TextCase.None:
-                this.text = this.rawText;
+                this.text = this.RawText;
                 break;
             case TextCase.Upper:
                 this.text = this.text.ToUpper();
