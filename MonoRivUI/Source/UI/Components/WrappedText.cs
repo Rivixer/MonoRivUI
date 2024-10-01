@@ -241,8 +241,9 @@ public class WrappedText : TextComponent, IEnumerable<Text>
         Rectangle reference = this.Transform.DestRectangle;
 
         // If the width of the text is smaller than
-        // the reference width, no wrapping is needed
-        if (this.MeasureText(this.Value).X < reference.Width)
+        // the reference width and it doesn't contain
+        // any newline characters, don't wrap it
+        if (this.MeasureText(this.Value).X < reference.Width && !this.Value.Contains('\n'))
         {
             this.ResetTextLines();
             Text textLine = this.CreateTextLine(this.Value);
