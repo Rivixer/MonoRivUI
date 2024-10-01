@@ -83,13 +83,43 @@ public static class MouseController
     /// of the currently focused component and the mouse position
     /// is within the <paramref name="component"/>'s boundaries.
     /// </remarks>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Style",
+        "IDE0046:Convert to conditional expression",
+        Justification = "It is more readable this way.")]
     public static bool IsComponentFocused(IComponent component)
     {
-        return focusedComponent is not null
-            && (focusedComponent == component
-                || (component.Transform.DestRectangle.Contains(Position)
-                        && component.IsAncestorOf(focusedComponent)
-                    && (!isFocusedComponentPriority || component.IsPriority || IsParentPriority(component))));
+        if (focusedComponent is null)
+        {
+            return false;
+        }
+
+        if (focusedComponent == component)
+        {
+            return true;
+        }
+
+        if (!component.Transform.DestRectangle.Contains(Position))
+        {
+            return false;
+        }
+
+        if (!component.IsAncestorOf(focusedComponent))
+        {
+            return false;
+        }
+
+        if (!isFocusedComponentPriority)
+        {
+            return true;
+        }
+
+        if (component.IsPriority)
+        {
+            return true;
+        }
+
+        return IsParentPriority(component);
     }
 
     /// <summary>
@@ -225,12 +255,12 @@ public static class MouseController
     private static void DetectFocusedComponent()
     {
         /* REFACTOR !!!
-         * Detecting focusing component sucks, but works for now. */
+         * Detecting focused component sucks, but works for now. */
 
-        Queue<IOverlayScene> queue = new();
-        foreach (OverlaySceneData data in Scene.DisplayedOverlays.Reverse())
+        Queue<IOverlay> queue = new();
+        foreach (OverlayData<IOverlay> data in ScreenController.DisplayedOverlays.Reverse())
         {
-            queue.Enqueue(data.Scene);
+            queue.Enqueue(data.Value);
             if (data.Options.BlockFocusOnUnderlyingScenes)
             {
                 break;
@@ -240,8 +270,23 @@ public static class MouseController
         focusedComponent = null;
         while (queue.Count != 0)
         {
-            IOverlayScene scene = queue.Dequeue();
-            foreach (IComponent component in scene.OverlayComponents)
+            IOverlay overlay = queue.Dequeue();
+
+            if (overlay is IOverlayComponent overlayComponent)
+            {
+                UpdateFocusedPriorityComponent(overlayComponent);
+                UpdateFocusedComponent(overlayComponent);
+                if (focusedComponent is not null)
+                {
+                    break;
+                }
+
+                continue;
+            }
+
+            var overlayScene = (IOverlayScene)overlay;
+
+            foreach (IComponent component in overlayScene.OverlayComponents)
             {
                 if (focusedComponent is not null)
                 {
@@ -288,9 +333,23 @@ public static class MouseController
     {
         draggedComponent = null;
 
-        foreach (OverlaySceneData data in Scene.DisplayedOverlays.Reverse())
+        foreach (OverlayData<IOverlay> data in ScreenController.DisplayedOverlays.Reverse())
         {
-            foreach (IComponent component in data.Scene.OverlayComponents)
+            if (data.Value is IOverlayComponent overlayComponent)
+            {
+                UpdateDraggedComponent(overlayComponent);
+                if (draggedComponent is not null)
+                {
+                    return;
+                }
+            }
+
+            if (data.Value is not IOverlayScene overlayScene)
+            {
+                break;
+            }
+
+            foreach (IComponent component in overlayScene.OverlayComponents)
             {
                 UpdateDraggedComponent(component);
 

@@ -264,7 +264,7 @@ public class ScrollBar : Component, IDragable, IStyleable<ScrollBar>
             this.HandleThumbDrag();
         }
         else if (this.IsScrollBarClicked()
-            && !MouseController.IsComponentFocused(this.thumb))
+            && !MouseController.IsComponentFocused(this.Thumb))
         {
             this.HandleScrollBarClick();
         }

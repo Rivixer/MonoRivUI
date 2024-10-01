@@ -340,7 +340,7 @@ public class Selector<T> : Component, ISelector, IStyleable<Selector<T>>
 
     private bool ClickedEscape()
     {
-        return (!Scene.DisplayedOverlays.Any() || (Scene.DisplayedOverlays.Last().Scene as Scene)!.BaseComponent.IsAncestorOf(this))
+        return (!ScreenController.DisplayedOverlays.Any() || ((ScreenController.DisplayedOverlays.Last().Value as Scene)?.BaseComponent.IsAncestorOf(this) ?? true))
             && KeyboardController.IsKeyHit(Keys.Escape);
     }
 

@@ -12,6 +12,9 @@ namespace MonoRivUI;
 public class Button<T> : Component, IButton<T>
     where T : Component, IButtonContent<IComponent>
 {
+    private bool isFocusBlockedByOverlay;
+    private bool wasFocusBlockedByOverlay;
+
     static Button()
     {
         Scene.SceneChanged += (s, e) =>
@@ -143,16 +146,19 @@ public class Button<T> : Component, IButton<T>
             && !MouseController.WasDragStateChanged
             && this.Component.IsButtonContentHovered(mousePosition);
 
-        if (isFocused && !this.WasHovered && this.IsHovered)
+        this.wasFocusBlockedByOverlay = this.isFocusBlockedByOverlay;
+        this.isFocusBlockedByOverlay = isFocused && ScreenController.IsFocusBlockedByOverlay(this.Root as IOverlay);
+
+        if (isFocused && (!this.WasHovered || this.wasFocusBlockedByOverlay) && this.IsHovered && !this.isFocusBlockedByOverlay)
         {
             this.OnHoverEntered();
         }
-        else if (this.WasHovered && !this.IsHovered)
+        else if (this.WasHovered && (!this.IsHovered || this.isFocusBlockedByOverlay))
         {
             this.OnHoverExited();
         }
 
-        if (isFocused && MouseController.IsLeftButtonClicked() && this.IsHovered)
+        if (isFocused && MouseController.IsLeftButtonClicked() && this.IsHovered && !this.wasFocusBlockedByOverlay)
         {
             this.Clicked?.Invoke(this, EventArgs.Empty);
         }

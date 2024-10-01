@@ -12,7 +12,7 @@
 /// <param name="BlockDrawOnUnderlyingScenes">
 /// Indicates whether to prevent underlying scenes from being drawn.
 /// </param>
-public record struct OverlaySceneShowOptions(
+public record struct OverlayShowOptions(
     bool BlockFocusOnUnderlyingScenes = false,
     bool BlockUpdateOnUnderlyingScenes = false,
     bool BlockDrawOnUnderlyingScenes = false);

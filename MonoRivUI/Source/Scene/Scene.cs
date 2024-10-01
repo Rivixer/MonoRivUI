@@ -14,7 +14,6 @@ public abstract class Scene : IScene
 {
     private static readonly HashSet<Scene> Scenes = new();
     private static readonly Stack<(Scene, SceneDisplayEventArgs)> SceneStack = new();
-    private static readonly List<OverlaySceneData> DisplayedOverlaysData = new();
 
     private readonly SolidColor baseComponent;
     private bool isInitialized;
@@ -84,11 +83,6 @@ public abstract class Scene : IScene
     public static SceneDisplayEventArgs CurrentDisplayEventArgs { get; private set; } = default!;
 
     /// <summary>
-    /// Gets the currently displayed overlays.
-    /// </summary>
-    public static IEnumerable<OverlaySceneData> DisplayedOverlays => DisplayedOverlaysData;
-
-    /// <summary>
     /// Gets the base component of the scene.
     /// </summary>
     public IComponent BaseComponent => this.baseComponent;
@@ -99,9 +93,9 @@ public abstract class Scene : IScene
     protected bool IsDisplayed => Current == this;
 
     /// <summary>
-    /// Gets a value indicating whether the scene is displayed as an overlay.
+    /// Gets a value indicating whether the scene is currently displayed as an overlay.
     /// </summary>
-    protected bool IsDisplayedOverlay => DisplayedOverlaysData.Any(x => x.Scene == this);
+    protected bool IsDisplayedOverlay => this is IOverlayScene s && ScreenController.IsOverlayDisplayed(s);
 
     /// <summary>
     /// Initializes all scenes in the specified assembly.
@@ -268,81 +262,39 @@ public abstract class Scene : IScene
     /// Shows an overlay scene.
     /// </summary>
     /// <typeparam name="T">The type of the overlay scene to show.</typeparam>
-    /// <param name="options">The options for showing the overlay scene.</param>
-    public static void ShowOverlay<T>(OverlaySceneShowOptions options = default)
+    /// <param name="options">The options for displaying the overlay scene.</param>
+    /// <param name="args">The arguments for the display event.</param>
+    public static void ShowOverlay<T>(OverlayShowOptions options = default, SceneDisplayEventArgs? args = null)
         where T : Scene, IOverlayScene
     {
-        ShowOverlay<T>(options, SceneDisplayEventArgs.Empty);
-    }
+        var scene = Scenes.OfType<T>().Single();
+        args ??= SceneDisplayEventArgs.Empty;
 
-    /// <summary>
-    /// Shows an overlay scene.
-    /// </summary>
-    /// <typeparam name="T">The type of the overlay scene to show.</typeparam>
-    /// <param name="options">The options for showing the overlay scene.</param>
-    /// <param name="args">The arguments for the change event.</param>
-    public static void ShowOverlay<T>(OverlaySceneShowOptions options, SceneDisplayEventArgs args)
-        where T : Scene, IOverlayScene
-    {
-        T scene = Scenes.OfType<T>().Single();
-        ShowOverlay(scene, options, args);
-    }
-
-    /// <summary>
-    /// Shows an overlay scene.
-    /// </summary>
-    /// <typeparam name="T">The type of the overlay scene to show.</typeparam>
-    /// <param name="scene">The overlay scene to show.</param>
-    /// <param name="options">The options for showing the overlay scene.</param>
-    public static void ShowOverlay<T>(T scene, OverlaySceneShowOptions options = default)
-        where T : Scene, IOverlayScene
-    {
-        ShowOverlay(scene, options, SceneDisplayEventArgs.Empty);
-    }
-
-    /// <summary>
-    /// Shows an overlay scene.
-    /// </summary>
-    /// <typeparam name="T">The type of the overlay scene to show.</typeparam>
-    /// <param name="scene">The overlay scene to show.</param>
-    /// <param name="options">The options for showing the overlay scene.</param>
-    /// <param name="args">The arguments for the change event.</param>
-    public static void ShowOverlay<T>(T scene, OverlaySceneShowOptions options, SceneDisplayEventArgs args)
-        where T : Scene, IOverlayScene
-    {
-        if (DisplayedOverlaysData.Any(x => x.Scene == scene))
+        if (!ScreenController.IsOverlayDisplayed(scene))
         {
-            return;
+            OnSceneShowing(scene, args);
+            ScreenController.ShowOverlay(scene, options);
+            OnSceneShowed(scene, args);
         }
-
-        OnSceneShowing(scene, args);
-        DisplayedOverlaysData.Add(new OverlaySceneData(scene, options));
-        SortOverlayPriorities();
-        OnSceneShowed(scene, args);
     }
 
     /// <summary>
     /// Hides an overlay scene.
     /// </summary>
-    /// <typeparam name="T">The type of the overlay scene to hide.</typeparam>
+    /// <typeparam name="T">
+    /// The type of the overlay scene to hide.
+    /// </typeparam>
     public static void HideOverlay<T>()
         where T : Scene, IOverlayScene
     {
-        T scene = Scenes.OfType<T>().Single();
-        HideOverlay(scene);
-    }
+        var scene = Scenes.OfType<T>().Single();
 
-    /// <summary>
-    /// Hides an overlay scene.
-    /// </summary>
-    /// <typeparam name="T">The type of the overlay scene to hide.</typeparam>
-    /// <param name="scene">The overlay scene to hide.</param>
-    public static void HideOverlay<T>(T scene)
-        where T : Scene, IOverlayScene
-    {
-        OnSceneHiding(scene);
-        DisplayedOverlaysData.RemoveAt(DisplayedOverlaysData.FindIndex(x => x.Scene == scene));
-        OnSceneHid(scene);
+        if (ScreenController.IsOverlayDisplayed(scene))
+        {
+            OnSceneHiding(scene);
+            ScreenController.HideOverlay(scene);
+            OnSceneHid(scene);
+        }
     }
 
     /// <summary>
@@ -471,67 +423,10 @@ public abstract class Scene : IScene
         }
     }
 
-    /// <summary>
-    /// Updates the overlay scenes.
-    /// </summary>
-    /// <param name="gameTime">The game time.</param>
-    public static void UpdateOverlays(GameTime gameTime)
-    {
-        if (DisplayedOverlaysData.Count == 0)
-        {
-            return;
-        }
-
-        var stack = new Stack<OverlaySceneData>();
-        foreach (OverlaySceneData data in DisplayedOverlaysData.AsEnumerable().Reverse())
-        {
-            stack.Push(data);
-            if (data.Options.BlockUpdateOnUnderlyingScenes)
-            {
-                break;
-            }
-        }
-
-        while (stack.Count > 0)
-        {
-            IOverlayScene scene = stack.Pop().Scene;
-            scene.Update(gameTime);
-        }
-    }
-
-    /// <summary>
-    /// Draws the overlay scenes.
-    /// </summary>
-    /// <param name="gameTime">The game time.</param>
-    public static void DrawOverlays(GameTime gameTime)
-    {
-        if (DisplayedOverlaysData.Count == 0)
-        {
-            return;
-        }
-
-        var stack = new Stack<OverlaySceneData>();
-        foreach (OverlaySceneData data in DisplayedOverlaysData.AsEnumerable().Reverse())
-        {
-            stack.Push(data);
-            if (data.Options.BlockDrawOnUnderlyingScenes)
-            {
-                break;
-            }
-        }
-
-        while (stack.Count > 0)
-        {
-            IOverlayScene scene = stack.Pop().Scene;
-            scene.Draw(gameTime);
-            Component.DrawPriorityComponents(gameTime);
-        }
-    }
-
     /// <inheritdoc/>
     public virtual void Update(GameTime gameTime)
     {
-        if (DisplayedOverlaysData.Any(x => x.Options.BlockUpdateOnUnderlyingScenes))
+        if (ScreenController.DisplayedOverlays.Any(x => x.Options.BlockUpdateOnUnderlyingScenes))
         {
             return;
         }
@@ -542,7 +437,7 @@ public abstract class Scene : IScene
     /// <inheritdoc/>
     public virtual void Draw(GameTime gameTime)
     {
-        if (DisplayedOverlaysData.Any(x => x.Options.BlockDrawOnUnderlyingScenes))
+        if (ScreenController.DisplayedOverlays.Any(x => x.Options.BlockDrawOnUnderlyingScenes))
         {
             return;
         }
@@ -601,10 +496,5 @@ public abstract class Scene : IScene
     private static void OnSceneChanged(Scene? previous, Scene current)
     {
         SceneChanged?.Invoke(null, new SceneChangedEventArgs(previous, current));
-    }
-
-    private static void SortOverlayPriorities()
-    {
-        DisplayedOverlaysData.Sort((a, b) => a.Scene.Priority.CompareTo(b.Scene.Priority));
     }
 }
