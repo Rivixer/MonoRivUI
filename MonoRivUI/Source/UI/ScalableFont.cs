@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using FreeTypeSharp;
@@ -48,10 +49,16 @@ public class ScalableFont : IDisposable
     /// <param name="size">The size of the font.</param>
     public unsafe ScalableFont(string path, int size)
     {
-        this.path = path;
+        string assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
+
+        path = path.Replace('/', Path.DirectorySeparatorChar);
+        path = path.Replace('\\', Path.DirectorySeparatorChar);
+
+        this.path = Path.GetFullPath(Path.Combine(assemblyLocation, path));
+
         this.size = size;
 
-        if (Cache.TryGetValue((path, size), out var cached))
+        if (Cache.TryGetValue((this.path, size), out var cached))
         {
             this.face = cached.face;
             this.textures = cached.textures;
@@ -61,14 +68,14 @@ public class ScalableFont : IDisposable
         }
 
         FT_FaceRec_* facePtr;
-        var error = FT_New_Face(Library.Native, (byte*)Marshal.StringToHGlobalAnsi(path), IntPtr.Zero, &facePtr);
+        var error = FT_New_Face(Library.Native, (byte*)Marshal.StringToHGlobalAnsi(this.path), IntPtr.Zero, &facePtr);
         FTError.ThrowIfError(this, error);
 
         this.face = new FreeTypeFaceFacade(Library, facePtr);
 
         this.Render();
 
-        Cache.Add((path, size), this);
+        Cache.Add((this.path, size), this);
     }
 
     /// <summary>
@@ -412,6 +419,11 @@ public class ScalableFont : IDisposable
         /// Gets the absolute path to the font.
         /// </summary>
         public string AbsolutePath => Path.GetFullPath(this.RelativePath);
+
+        /// <inheritdoc/>
+        public override string Message => "An error occurred in FreeType " +
+            $"while loading the font \"{this.AbsolutePath}\".\n" +
+            $"Error: {this.Exception.Message}";
 
         /// <summary>
         /// Throws an exception if an error occurred.
