@@ -35,10 +35,8 @@ public class Image : TextureComponent, IButtonContent<Image>
     public Image(string relativePath)
     {
         this.path = $"Images/{relativePath}";
-        this.LoadTexture();
         this.texturePixels = new Lazy<Color[]>(this.LoadImagePixels);
         this.AddTextureToReferenceCounter();
-        this.Transform.Ratio = this.TextureRatio;
     }
 
     /// <summary>
@@ -81,9 +79,11 @@ public class Image : TextureComponent, IButtonContent<Image>
     }
 
     /// <inheritdoc/>
-    protected override void LoadTexture()
+    public override void Load()
     {
         this.Texture = ContentController.Content.Load<Texture2D>(this.path);
+        this.Transform.Ratio = this.TextureRatio;
+        this.IsLoaded = true;
     }
 
     private void AddTextureToReferenceCounter()

@@ -26,7 +26,6 @@ public class SolidColor : TextureComponent, IButtonContent<SolidColor>, IStyleab
     public SolidColor(Color color)
     {
         this.Color = color;
-        this.LoadTexture();
     }
 
     /// <summary>
@@ -60,8 +59,9 @@ public class SolidColor : TextureComponent, IButtonContent<SolidColor>, IStyleab
     /// If the texture is already loaded, it will
     /// be disposed before loading a new one.
     /// </remarks>
-    protected override void LoadTexture()
+    public override void Load()
     {
         this.Texture = SpriteBatchController.WhitePixel;
+        this.IsLoaded = true;
     }
 }

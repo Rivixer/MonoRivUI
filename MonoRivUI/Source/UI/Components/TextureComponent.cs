@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+using System;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace MonoRivUI;
@@ -79,12 +80,22 @@ public abstract class TextureComponent : Component
     /// </summary>
     public Ratio TextureRatio => new(this.Texture.Width, this.Texture.Height);
 
+    /// <summary>
+    /// Gets or sets a value indicating whether the texture is loaded.
+    /// </summary>
+    public bool IsLoaded { get; protected set; }
+
     /// <inheritdoc/>
     public override void Draw(GameTime gameTime)
     {
         if (!this.IsEnabled)
         {
             return;
+        }
+
+        if (!this.IsLoaded)
+        {
+            throw new InvalidOperationException("The texture is not loaded.");
         }
 
         SpriteBatchController.SpriteBatch.Draw(
@@ -101,9 +112,9 @@ public abstract class TextureComponent : Component
     }
 
     /// <summary>
-    /// Loads the texture of the image.
+    /// Loads the texture.
     /// </summary>
-    protected abstract void LoadTexture();
+    public abstract void Load();
 
     private Rectangle CalculateDestinationRectangle()
     {
@@ -118,7 +129,7 @@ public abstract class TextureComponent : Component
 
         if (this.MatchDestinationToSource && this.SourceRect is not null)
         {
-            rectangle.X += this.SourceRect!.Value.X;
+            rectangle.X += this.SourceRect.Value.X;
             rectangle.Y += this.SourceRect.Value.Y;
             rectangle.Width = this.SourceRect!.Value.Width;
             rectangle.Height = this.SourceRect.Value.Height;

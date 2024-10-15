@@ -41,6 +41,8 @@ public abstract class Scene : IScene
             },
         };
 
+        this.baseComponent.Load();
+
         this.baseComponent.Transform.Recalculating += (s, e) =>
         {
             (s as Transform)!.Size = ScreenController.CurrentSize;
@@ -81,6 +83,11 @@ public abstract class Scene : IScene
     /// Gets the current change event arguments.
     /// </summary>
     public static SceneDisplayEventArgs CurrentDisplayEventArgs { get; private set; } = default!;
+
+    /// <summary>
+    /// Gets a value indicating whether the scene content is loaded.
+    /// </summary>
+    public bool IsContentLoaded { get; private set; }
 
     /// <summary>
     /// Gets the base component of the scene.
@@ -132,6 +139,20 @@ public abstract class Scene : IScene
     {
         var assembly = Assembly.LoadFrom(assemblyPath);
         InitializeScenes(assembly);
+    }
+
+    /// <summary>
+    /// Loads the content of all scenes.
+    /// </summary>
+    public static void LoadAllContent()
+    {
+        foreach (var scene in Scenes)
+        {
+            if (scene.GetType().GetCustomAttribute<AutoLoadContentAttribute>() is not null)
+            {
+                scene.LoadSceneContent();
+            }
+        }
     }
 
     /// <summary>
@@ -459,10 +480,49 @@ public abstract class Scene : IScene
     }
 
     /// <summary>
+    /// Loads the content of the scene.
+    /// </summary>
+    public void LoadContent()
+    {
+        if (this.IsContentLoaded)
+        {
+            throw new InvalidOperationException("The scene content has already been loaded.");
+        }
+
+        if (!this.isInitialized)
+        {
+            throw new InvalidOperationException("The scene has not been initialized.");
+        }
+
+        this.baseComponent.Load();
+        this.LoadSceneContent();
+        this.IsContentLoaded = true;
+    }
+
+    /// <summary>
+    /// Gets the scene of the specified type.
+    /// </summary>
+    /// <typeparam name="T">The type of the scene to get.</typeparam>
+    /// <returns>
+    /// The scene of the specified type if it exists;
+    /// otherwise, <see langword="null"/>.
+    /// </returns>
+    protected static T? GetScene<T>()
+        where T : Scene
+    {
+        return Scenes.OfType<T>().FirstOrDefault();
+    }
+
+    /// <summary>
     /// Initializes the scene.
     /// </summary>
     /// <param name="baseComponent">The base component.</param>
     protected abstract void Initialize(Component baseComponent);
+
+    /// <summary>
+    /// Loads the content of the scene.
+    /// </summary>
+    protected abstract void LoadSceneContent();
 
     /// <summary>
     /// Sets the background color of the scene.
