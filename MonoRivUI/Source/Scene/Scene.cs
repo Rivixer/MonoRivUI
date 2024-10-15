@@ -103,13 +103,13 @@ public abstract class Scene : IScene
     /// <param name="assembly">The assembly.</param>
     /// <remarks>
     /// Scenes are initialized if they are subclasses of <see cref="Scene"/>
-    /// and do not have the <see cref="NoAutoInitializeAttribute"/> attribute.
+    /// and have the <see cref="AutoInitializeAttribute"/> attribute.
     /// </remarks>
     public static void InitializeScenes([NotNull] Assembly assembly)
     {
         var sceneTypes = assembly.GetTypes()
             .Where(t => t.IsSubclassOf(typeof(Scene))
-            && t.GetCustomAttribute<NoAutoInitializeAttribute>() is null
+            && t.GetCustomAttribute<AutoInitializeAttribute>() is not null
             && !t.IsAbstract);
 
         foreach (var sceneType in sceneTypes)
@@ -126,7 +126,7 @@ public abstract class Scene : IScene
     /// <param name="assemblyPath">The assembly path.</param>
     /// /// <remarks>
     /// Scenes are initialized if they are subclasses of <see cref="Scene"/>
-    /// and do not have the <see cref="NoAutoInitializeAttribute"/> attribute.
+    /// and have the <see cref="AutoInitializeAttribute"/> attribute.
     /// </remarks>
     public static void InitializeScenes(string assemblyPath)
     {
