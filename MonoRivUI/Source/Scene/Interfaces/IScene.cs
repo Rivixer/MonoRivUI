@@ -8,6 +8,11 @@ namespace MonoRivUI;
 public interface IScene
 {
     /// <summary>
+    /// Gets the base component of the overlay object.
+    /// </summary>
+    IComponent BaseComponent { get; }
+
+    /// <summary>
     /// Updates the scene's components.
     /// </summary>
     /// <param name="gameTime">The game time.</param>

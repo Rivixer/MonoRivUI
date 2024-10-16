@@ -5,14 +5,19 @@ namespace MonoRivUI;
 /// <summary>
 /// Represents a base class for displaying scene event arguments.
 /// </summary>
-public abstract class SceneDisplayEventArgs : EventArgs
+public class SceneDisplayEventArgs : EventArgs
 {
     /// <summary>
-    /// Gets an empty instance of the <see cref="SceneDisplayEventArgs"/> class.
+    /// Initializes a new instance of the <see cref="SceneDisplayEventArgs"/> class.
     /// </summary>
-    public static new SceneDisplayEventArgs Empty { get; } = new EmptySceneShowingEventArgs();
-
-    private class EmptySceneShowingEventArgs : SceneDisplayEventArgs
+    /// <param name="overlay">A value indicating whether the scene is an overlay.</param>
+    public SceneDisplayEventArgs(bool overlay)
     {
+        this.Overlay = overlay;
     }
+
+    /// <summary>
+    /// Gets a value indicating whether the scene is an overlay.
+    /// </summary>
+    public bool Overlay { get; }
 }

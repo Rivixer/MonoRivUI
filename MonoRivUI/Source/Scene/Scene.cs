@@ -168,24 +168,11 @@ public abstract class Scene : IScene
     /// Changes the current scene to the specified scene.
     /// </summary>
     /// <typeparam name="T">The type of the scene to change to.</typeparam>
-    /// <remarks>
-    /// This method adds the current scene to the scene stack.
-    /// </remarks>
-    public static void Change<T>()
-         where T : Scene
-    {
-        Change<T>(SceneDisplayEventArgs.Empty);
-    }
-
-    /// <summary>
-    /// Changes the current scene to the specified scene.
-    /// </summary>
-    /// <typeparam name="T">The type of the scene to change to.</typeparam>
     /// <param name="args">The arguments for the change event.</param>
     /// <remarks>
     /// This method adds the current scene to the scene stack.
     /// </remarks>
-    public static void Change<T>(SceneDisplayEventArgs args)
+    public static void Change<T>(SceneDisplayEventArgs? args = null)
         where T : Scene
     {
         var scene = Scenes.OfType<T>().Single();
@@ -196,23 +183,11 @@ public abstract class Scene : IScene
     /// Changes the current scene to the specified scene.
     /// </summary>
     /// <param name="scene">The scene to change to.</param>
-    /// <remarks>
-    /// This method adds the current scene to the scene stack.
-    /// </remarks>
-    public static void Change(Scene scene)
-    {
-        Change(scene, SceneDisplayEventArgs.Empty);
-    }
-
-    /// <summary>
-    /// Changes the current scene to the specified scene.
-    /// </summary>
-    /// <param name="scene">The scene to change to.</param>
     /// <param name="args">The arguments for the change event.</param>
     /// <remarks>
     /// This method adds the current scene to the scene stack.
     /// </remarks>
-    public static void Change(Scene scene, SceneDisplayEventArgs args)
+    public static void Change(Scene scene, SceneDisplayEventArgs? args = null)
     {
         if (Current != null)
         {
@@ -227,19 +202,8 @@ public abstract class Scene : IScene
     /// without adding it to the scene stack.
     /// </summary>
     /// <typeparam name="T">The type of the scene to change to.</typeparam>
-    public static void ChangeWithoutStack<T>()
-        where T : Scene
-    {
-        ChangeWithoutStack<T>(SceneDisplayEventArgs.Empty);
-    }
-
-    /// <summary>
-    /// Changes the current scene to the specified scene
-    /// without adding it to the scene stack.
-    /// </summary>
-    /// <typeparam name="T">The type of the scene to change to.</typeparam>
     /// <param name="args">The arguments for the change event.</param>
-    public static void ChangeWithoutStack<T>(SceneDisplayEventArgs args)
+    public static void ChangeWithoutStack<T>(SceneDisplayEventArgs? args = null)
         where T : Scene
     {
         var scene = Scenes.OfType<T>().Single();
@@ -251,18 +215,8 @@ public abstract class Scene : IScene
     /// without adding it to the scene stack.
     /// </summary>
     /// <param name="scene">The scene to change to.</param>
-    public static void ChangeWithoutStack(Scene scene)
-    {
-        ChangeWithoutStack(scene, SceneDisplayEventArgs.Empty);
-    }
-
-    /// <summary>
-    /// Changes the current scene to the specified scene
-    /// without adding it to the scene stack.
-    /// </summary>
-    /// <param name="scene">The scene to change to.</param>
     /// <param name="args">The arguments for the change event.</param>
-    public static void ChangeWithoutStack(Scene scene, SceneDisplayEventArgs args)
+    public static void ChangeWithoutStack(Scene scene, SceneDisplayEventArgs? args = null)
     {
         Scene? previous = Current;
 
@@ -289,7 +243,13 @@ public abstract class Scene : IScene
         where T : Scene, IOverlayScene
     {
         var scene = Scenes.OfType<T>().Single();
-        args ??= SceneDisplayEventArgs.Empty;
+
+        if (args is not null && !args.Overlay)
+        {
+            throw new InvalidOperationException("The scene must be an overlay.");
+        }
+
+        args ??= new SceneDisplayEventArgs(overlay: true);
 
         if (!ScreenController.IsOverlayDisplayed(scene))
         {
@@ -382,8 +342,6 @@ public abstract class Scene : IScene
     /// </remarks>
     public static void ChangeToPreviousOrDefault(Scene scene, SceneDisplayEventArgs? defaultArgs = null)
     {
-        defaultArgs ??= SceneDisplayEventArgs.Empty;
-
         if (SceneStack.Count > 0)
         {
             ChangeToPrevious();
@@ -432,8 +390,6 @@ public abstract class Scene : IScene
         Scene scene,
         SceneDisplayEventArgs? defaultArgs = null)
     {
-        defaultArgs ??= SceneDisplayEventArgs.Empty;
-
         if (SceneStack.Count > 0)
         {
             ChangeToPrevious();
