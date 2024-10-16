@@ -147,7 +147,13 @@ public class Button<T> : Component, IButton<T>
             && this.Component.IsButtonContentHovered(mousePosition);
 
         this.wasFocusBlockedByOverlay = this.isFocusBlockedByOverlay;
-        this.isFocusBlockedByOverlay = isFocused && ScreenController.IsFocusBlockedByOverlay(this.Root as IOverlay);
+
+        // Temporary solution to fix the issue with the overlay blocking the focus.
+        IOverlay? overlay = ScreenController.DisplayedOverlays
+            .Select(x => x.Value)
+            .FirstOrDefault(x => x is IOverlayScene o && o.BaseComponent == (IComponent)this.Root);
+        overlay ??= this.Root as IOverlay;
+        this.isFocusBlockedByOverlay = isFocused && ScreenController.IsFocusBlockedByOverlay(overlay);
 
         if (isFocused && (!this.WasHovered || this.wasFocusBlockedByOverlay) && this.IsHovered && !this.isFocusBlockedByOverlay)
         {
