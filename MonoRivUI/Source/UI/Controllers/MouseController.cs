@@ -396,7 +396,8 @@ public static class MouseController
         if (component.IsEnabled && component.Transform.DestRectangle.Contains(Position))
         {
             focusedComponent = component;
-            foreach (IComponent child in component.Children.ToList())
+            var children = component.Children.ToList();
+            foreach (IComponent child in children)
             {
                 UpdateFocusedComponent(child);
             }

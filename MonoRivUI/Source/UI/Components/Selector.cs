@@ -17,6 +17,7 @@ public class Selector<T> : Component, ISelector, IStyleable<Selector<T>>
     private readonly HashSet<Item> items = new();
     private readonly Button<Container> button;
     private bool scrollToSelected;
+    private int? elementFixedHeight;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Selector{T}"/> class.
@@ -145,7 +146,25 @@ public class Selector<T> : Component, ISelector, IStyleable<Selector<T>>
     /// <summary>
     /// Gets or sets the fixed height of the elements.
     /// </summary>
-    public int? ElementFixedHeight { get; set; }
+    public int? ElementFixedHeight
+    {
+        get => this.elementFixedHeight;
+        set
+        {
+            if (this.elementFixedHeight == value)
+            {
+                return;
+            }
+
+            this.elementFixedHeight = value;
+
+            foreach (var item in this.items)
+            {
+                var button = (Component)item.Button;
+                button.Transform.SetRelativeSizeFromAbsolute(y: value);
+            }
+        }
+    }
 
     /// <inheritdoc/>
     ISelector.Item? ISelector.SelectedItem => this.SelectedItem;

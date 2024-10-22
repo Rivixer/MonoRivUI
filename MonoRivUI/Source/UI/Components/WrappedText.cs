@@ -379,7 +379,8 @@ public class WrappedText : TextComponent, IEnumerable<Text>
     private void PositionTextLines()
     {
         float currentOffset = 0.0f;
-        foreach (Text textLine in this.textLines)
+        var textLines = this.textLines.ToList();
+        foreach (Text textLine in textLines)
         {
             textLine.Transform.SetRelativeOffsetFromAbsolute(y: currentOffset);
             currentOffset += textLine.Dimensions.Y + this.lineSpacing;
