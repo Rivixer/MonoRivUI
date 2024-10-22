@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -30,16 +31,20 @@ public class ScalableFont : IDisposable
     private const int DpiX = 150;
     private const int DpiY = 150;
 
-    private static readonly Dictionary<(string, int), ScalableFont> Cache = new();
     private static readonly FreeTypeLibrary Library = new();
 
-    private readonly FreeTypeFaceFacade face;
-    private readonly List<Texture2D> textures = new();
-    private readonly Dictionary<char, GlyphData> glyphDatas = new();
     private readonly string path;
-    private int size;
-    private uint height;
 
+    private FreeTypeFaceFacade face = default!;
+    private List<Texture2D> textures = new();
+    private Dictionary<char, GlyphData> glyphDatas = new();
+
+    private int size;
+    private int minSize = 1;
+    private int maxSize = int.MaxValue;
+
+    private bool autoResize;
+    private uint height;
     private bool disposed;
 
     /// <summary>
@@ -55,27 +60,17 @@ public class ScalableFont : IDisposable
         path = path.Replace('\\', Path.DirectorySeparatorChar);
 
         this.path = Path.GetFullPath(Path.Combine(assemblyLocation, path));
-
         this.size = size;
 
-        if (Cache.TryGetValue((this.path, size), out var cached))
+        ScreenController.ScreenChanged += (s, e) =>
         {
-            this.face = cached.face;
-            this.textures = cached.textures;
-            this.glyphDatas = cached.glyphDatas;
-            this.height = cached.height;
-            return;
-        }
+            if (this.AutoResize)
+            {
+                this.Load();
+            }
+        };
 
-        FT_FaceRec_* facePtr;
-        var error = FT_New_Face(Library.Native, (byte*)Marshal.StringToHGlobalAnsi(this.path), IntPtr.Zero, &facePtr);
-        FTError.ThrowIfError(this, error);
-
-        this.face = new FreeTypeFaceFacade(Library, facePtr);
-
-        this.Render();
-
-        Cache.Add((this.path, size), this);
+        this.Load();
     }
 
     /// <summary>
@@ -94,13 +89,84 @@ public class ScalableFont : IDisposable
         get => this.size;
         set
         {
-            if (this.size == value)
+            if (this.size != value)
             {
                 return;
             }
 
+            if (value < 1)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(value),
+                    "The size of the font must be greater than 0.");
+            }
+
             this.size = value;
-            this.Render();
+            this.Load();
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets the minimum size of the font.
+    /// </summary>
+    public int MinSize
+    {
+        get => this.minSize;
+        set
+        {
+            if (this.minSize != value)
+            {
+                return;
+            }
+
+            if (value < 1)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(value),
+                    "The minimum size of the font must be greater than 0.");
+            }
+
+            if (value > this.maxSize)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(value),
+                    "The minimum size of the font must not be greater than the maximum size.");
+            }
+
+            this.minSize = value;
+            this.Load();
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets the maximum size of the font.
+    /// </summary>
+    public int MaxSize
+    {
+        get => this.maxSize;
+        set
+        {
+            if (this.maxSize != value)
+            {
+                return;
+            }
+
+            if (value < 1)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(value),
+                    "The maximum size of the font must be greater than 0.");
+            }
+
+            if (value < this.minSize)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(value),
+                    "The maximum size of the font must not be less than the minimum size.");
+            }
+
+            this.maxSize = value;
+            this.Load();
         }
     }
 
@@ -108,6 +174,25 @@ public class ScalableFont : IDisposable
     /// Gets or sets the spacing between characters.
     /// </summary>
     public float Spacing { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the text
+    /// should be auto-resized when the screen size changes.
+    /// </summary>
+    public bool AutoResize
+    {
+        get => this.autoResize;
+        set
+        {
+            if (this.autoResize == value)
+            {
+                return;
+            }
+
+            this.autoResize = value;
+            this.Load();
+        }
+    }
 
     /// <summary>
     /// Gets the dimensions of the base character.
@@ -166,6 +251,7 @@ public class ScalableFont : IDisposable
         float? spacing = null)
     {
         var sb = SpriteBatchController.SpriteBatch;
+        spacing ??= this.AutoResize ? GetScaled(this.Spacing) : this.Spacing;
 
         Vector2 currentPosition = position;
         Vector2 currentOffset = Vector2.Zero;
@@ -185,7 +271,7 @@ public class ScalableFont : IDisposable
             }
 
             currentPosition += glyphData.HorizontalAdvance * advance * scale;
-            currentPosition += new Vector2((spacing ?? this.Spacing) * scale, 0);
+            currentPosition += new Vector2(spacing.Value * scale, 0);
         }
     }
 
@@ -223,8 +309,10 @@ public class ScalableFont : IDisposable
             return Vector2.Zero;
         }
 
+        spacing ??= this.AutoResize ? GetScaled(this.Spacing) : this.Spacing;
+
         var result = Vector2.Zero;
-        result -= new Vector2(spacing ?? this.Spacing, 0);
+        result -= new Vector2(spacing.Value, 0);
 
         foreach (char c in text)
         {
@@ -233,7 +321,7 @@ public class ScalableFont : IDisposable
                 continue;
             }
 
-            result.X += data.HorizontalAdvance + (spacing ?? this.Spacing);
+            result.X += data.HorizontalAdvance + spacing.Value;
             result.Y = Math.Max(result.Y, this.glyphDatas[c].TextureCoords.Height);
         }
 
@@ -287,13 +375,33 @@ public class ScalableFont : IDisposable
         }
     }
 
-    private unsafe void Render()
+    private static int GetScaled(float size)
+    {
+        var screenScale = ScreenController.Scale;
+        return (int)Math.Ceiling(size * Math.Min(screenScale.X, screenScale.Y));
+    }
+
+    private unsafe void Load()
+    {
+        var size = this.AutoResize ? GetScaled(this.size) : this.size;
+        size = Math.Clamp(size, this.minSize, this.maxSize);
+
+        FT_FaceRec_* facePtr;
+        var error = FT_New_Face(Library.Native, (byte*)Marshal.StringToHGlobalAnsi(this.path), IntPtr.Zero, &facePtr);
+        FTError.ThrowIfError(this, error);
+
+        this.face = new FreeTypeFaceFacade(Library, facePtr);
+
+        this.Render(size);
+    }
+
+    private unsafe void Render(int size)
     {
         this.textures.ForEach(x => x.Dispose());
         this.textures.Clear();
         this.glyphDatas.Clear();
 
-        this.face.SelectCharSize(this.size, DpiX, DpiY);
+        this.face.SelectCharSize(size, DpiX, DpiY);
 
         uint nextY = 0;
         GlyphData data;
