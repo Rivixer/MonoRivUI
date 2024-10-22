@@ -121,6 +121,11 @@ public class ListBox : Component
         _ => throw new NotSupportedException(),
     };
 
+    /// <summary>
+    /// Gets the list of components in the list box.
+    /// </summary>
+    protected List<Component> ComponentList => this.components;
+
     /// <inheritdoc/>
     public override void Update(GameTime gameTime)
     {

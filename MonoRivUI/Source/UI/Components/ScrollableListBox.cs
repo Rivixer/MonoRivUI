@@ -85,6 +85,12 @@ public class ScrollableListBox : ListBox
     /// </summary>
     public ScrollBar ScrollBar { get; }
 
+    /// <summary>
+    /// Gets or sets the maximum number of elements
+    /// that can be contained in the list box.
+    /// </summary>
+    public int? MaxElements { get; set; }
+
     /// <inheritdoc/>
     /// <remarks>
     /// This property also sets the orientation of the scroll bar.
@@ -223,6 +229,13 @@ public class ScrollableListBox : ListBox
         // to be queued until initialization is done.
         e.Child.AutoUpdate = false;
         e.Child.AutoDraw = false;
+
+        if (this.MaxElements is not null && this.Components.Count() > this.MaxElements)
+        {
+            var componentToRemove = this.Components.First();
+            _ = this.ComponentList.Remove(componentToRemove);
+            componentToRemove.Parent = null;
+        }
 
         base.ContentContainer_ChildAdded(sender, e);
     }
