@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 
 namespace MonoRivUI;
 
@@ -15,8 +13,10 @@ public static class ScreenController
 {
     private static readonly List<OverlayData<IOverlay>> DisplayedOverlaysData = new();
 
-    private static bool isInitialized;
     private static GraphicsDeviceManager graphicsDeviceManager = default!;
+    private static Matrix? inverseTransformMatrix;
+    private static Matrix? transformMatrix;
+    private static bool isInitialized;
 
     /// <summary>
     /// An event raised when the screen settings have been changed.
@@ -45,6 +45,12 @@ public static class ScreenController
         => new(Width / (float)DefaultSize.X, Height / (float)DefaultSize.Y);
 
     /// <summary>
+    /// Gets the scale factor of the current screen compared to the viewport.
+    /// </summary>
+    public static Vector2 ViewportScale
+        => new(Width / (float)GraphicsDevice.Viewport.Width, Height / (float)GraphicsDevice.Viewport.Height);
+
+    /// <summary>
     /// Gets the current width of the screen.
     /// </summary>
     public static int Width { get; private set; }
@@ -63,6 +69,24 @@ public static class ScreenController
     /// Gets the current size of the screen.
     /// </summary>
     public static Point CurrentSize => new(Width, Height);
+
+    /// <summary>
+    /// Gets or sets the transformation matrix for the screen.
+    /// </summary>
+    public static Matrix? TransformMatrix
+    {
+        get => transformMatrix;
+        set
+        {
+            transformMatrix = value;
+            inverseTransformMatrix = value.HasValue ? Matrix.Invert(value.Value) : null;
+        }
+    }
+
+    /// <summary>
+    /// Gets the inverse transformation matrix for the screen.
+    /// </summary>
+    public static Matrix? InverseTransformMatrix => inverseTransformMatrix;
 
     /// <summary>
     /// Gets the currently displayed overlays.
@@ -85,26 +109,6 @@ public static class ScreenController
         GameWindow = window;
         graphicsDeviceManager = graphics;
         isInitialized = true;
-    }
-
-    /// <summary>
-    /// Updates the ScreenController class.
-    /// </summary>
-    public static void Update()
-    {
-        if (KeyboardController.IsKeyHit(Keys.F11))
-        {
-            if (graphicsDeviceManager.PreferredBackBufferWidth != 1366)
-            {
-                Change(1366, 768, ScreenType.Windowed);
-            }
-            else
-            {
-                Change(1920, 1080, ScreenType.Windowed);
-            }
-
-            ApplyChanges();
-        }
     }
 
     /// <summary>
@@ -149,7 +153,7 @@ public static class ScreenController
         graphicsDeviceManager.PreferredBackBufferWidth = Width;
         graphicsDeviceManager.PreferredBackBufferHeight = Height;
         graphicsDeviceManager.IsFullScreen = ScreenType is ScreenType.FullScreen or ScreenType.Borderless;
-        GameWindow.IsBorderless = ScreenType is ScreenType.Borderless;
+        GameWindow.IsBorderless = graphicsDeviceManager.IsFullScreen || ScreenType is ScreenType.Borderless;
 
         graphicsDeviceManager.ApplyChanges();
         ScreenChanged?.Invoke(null, EventArgs.Empty);

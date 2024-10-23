@@ -189,6 +189,7 @@ public class ScrollableListBox : ListBox
         spriteBatch.Begin(
             sortMode: SpriteSortMode.Immediate,
             blendState: BlendState.NonPremultiplied,
+            transformMatrix: ScreenController.TransformMatrix,
             samplerState: null,
             depthStencilState: null,
             rasterizerState: rasterizerState);
@@ -198,6 +199,13 @@ public class ScrollableListBox : ListBox
         IComponent sourceContainer = this.DrawContentOnParentPadding ? this : this.ContentContainer;
 
         Rectangle scissorRect = sourceContainer.Transform.DestRectangle;
+
+        if (ScreenController.TransformMatrix is { } m)
+        {
+            scissorRect.Location = Vector2.Transform(scissorRect.Location.ToVector2(), m).ToPoint();
+            scissorRect.Size = Vector2.Transform(scissorRect.Size.ToVector2(), m).ToPoint();
+        }
+
         spriteBatch.GraphicsDevice.ScissorRectangle = scissorRect;
 
         foreach (Component component in this.Components.ToList())
@@ -211,7 +219,9 @@ public class ScrollableListBox : ListBox
         spriteBatch.End();
         rasterizerState.Dispose();
         spriteBatch.GraphicsDevice.ScissorRectangle = tempRectangle;
-        spriteBatch.Begin(blendState: BlendState.NonPremultiplied);
+        spriteBatch.Begin(
+            blendState: BlendState.NonPremultiplied,
+            transformMatrix: ScreenController.TransformMatrix);
     }
 
     /// <inheritdoc/>

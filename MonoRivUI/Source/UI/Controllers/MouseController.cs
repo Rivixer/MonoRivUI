@@ -21,7 +21,7 @@ public static class MouseController
     /// <summary>
     /// Gets the current position of the mouse cursor.
     /// </summary>
-    public static Point Position => currentState.Position;
+    public static Point Position { get; private set; }
 
     /// <summary>
     /// Gets the difference in position of the mouse cursor
@@ -60,6 +60,15 @@ public static class MouseController
     {
         previousState = currentState;
         currentState = Mouse.GetState();
+
+        var position = new Vector2(currentState.X, currentState.Y);
+
+        if (ScreenController.InverseTransformMatrix is { } m)
+        {
+            position = Vector2.Transform(position, m);
+        }
+
+        Position = position.ToPoint();
 
         DetectFocusedComponent();
 
