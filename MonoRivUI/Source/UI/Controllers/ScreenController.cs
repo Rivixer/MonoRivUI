@@ -150,12 +150,27 @@ public static class ScreenController
     /// </remarks>
     public static void ApplyChanges()
     {
+        var hms = graphicsDeviceManager.HardwareModeSwitch;
+        if (graphicsDeviceManager.IsFullScreen && ScreenType is not ScreenType.FullScreen)
+        {
+            graphicsDeviceManager.HardwareModeSwitch = true;
+            graphicsDeviceManager.ApplyChanges();
+        }
+
         graphicsDeviceManager.PreferredBackBufferWidth = Width;
         graphicsDeviceManager.PreferredBackBufferHeight = Height;
         graphicsDeviceManager.IsFullScreen = ScreenType is ScreenType.FullScreen or ScreenType.Borderless;
-        GameWindow.IsBorderless = graphicsDeviceManager.IsFullScreen || ScreenType is ScreenType.Borderless;
+        GameWindow.IsBorderless = graphicsDeviceManager.IsFullScreen;
+        graphicsDeviceManager.HardwareModeSwitch = hms;
 
         graphicsDeviceManager.ApplyChanges();
+
+        if (!graphicsDeviceManager.IsFullScreen)
+        {
+            GameWindow.Position = new Point(50, 50);
+            graphicsDeviceManager.ApplyChanges();
+        }
+
         ScreenChanged?.Invoke(null, EventArgs.Empty);
     }
 

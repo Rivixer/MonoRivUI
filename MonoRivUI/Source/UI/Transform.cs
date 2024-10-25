@@ -120,12 +120,6 @@ public class Transform
                 return;
             }
 
-            if (value.X <= 0 || value.Y <= 0)
-            {
-                throw new ArgumentException(
-                    $"{nameof(this.RelativeSize)} cannot have non-positive components.");
-            }
-
             this.relativeSize = value;
             this.isRecalculationNeeded = true;
         }
@@ -166,12 +160,6 @@ public class Transform
             if (this.minSize == value)
             {
                 return;
-            }
-
-            if (value.X <= 0 || value.Y <= 0)
-            {
-                throw new ArgumentException(
-                    $"{nameof(this.MinSize)} cannot have non-positive components.");
             }
 
             this.minSize = value;
