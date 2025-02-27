@@ -14,6 +14,7 @@ public class ScrollBar : Component, IDragable, IStyleable<ScrollBar>
     private float relativeSize = 0.02f;
     private float total;
     private float current;
+    private Orientation orientation;
 
     private float thumbDragOffset;
 
@@ -144,7 +145,15 @@ public class ScrollBar : Component, IDragable, IStyleable<ScrollBar>
     /// <summary>
     /// Gets or sets the orientation of the scrollbar.
     /// </summary>
-    public Orientation Orientation { get; set; } = Orientation.Vertical;
+    public Orientation Orientation
+    {
+        get => this.orientation;
+        set
+        {
+            this.orientation = value;
+            this.UpdateScrollBarSize();
+        }
+    }
 
     /// <inheritdoc/>
     bool IDragable.IsDragging => this.IsThumbDragging;
