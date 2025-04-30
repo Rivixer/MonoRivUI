@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -33,7 +32,7 @@ public class ScalableFont : IDisposable
 
     private static readonly FreeTypeLibrary Library = new();
 
-    private readonly string path;
+    private string path;
 
     private FreeTypeFaceFacade face = default!;
     private List<Texture2D> textures = new();
@@ -47,20 +46,31 @@ public class ScalableFont : IDisposable
     private uint height;
     private bool disposed;
 
+    private int firstSupportedCodePoint;
+    private int lastSupportedCodePoint;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ScalableFont"/> class.
     /// </summary>
-    /// <param name="path">The path to the font.</param>
+    /// <param name="path">The relative path to the font.</param>
     /// <param name="size">The size of the font.</param>
-    public unsafe ScalableFont(string path, int size)
+    /// <param name="firstSupportedCodePoint">
+    /// The first supported character in the font.
+    /// </param>
+    /// <param name="lastSupportedCodePoint">
+    /// The last supported character in the font.
+    /// </param>
+    public unsafe ScalableFont(
+        string path,
+        int size,
+        int firstSupportedCodePoint = 0x20,
+        int lastSupportedCodePoint = 0x1FF)
     {
-        string assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
-
-        path = path.Replace('/', Path.DirectorySeparatorChar);
-        path = path.Replace('\\', Path.DirectorySeparatorChar);
-
-        this.path = Path.GetFullPath(Path.Combine(assemblyLocation, path));
+        this.path = GetAbsoluteFontPath(path);
         this.size = size;
+
+        this.firstSupportedCodePoint = firstSupportedCodePoint;
+        this.lastSupportedCodePoint = lastSupportedCodePoint;
 
         ScreenController.ScreenChanged += (s, e) =>
         {
@@ -74,12 +84,33 @@ public class ScalableFont : IDisposable
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="ScalableFont"/> class.
+    /// </summary>
+    /// <param name="path">The relative path to the font.</param>
+    /// <param name="size">The size of the font.</param>
+    /// <param name="supportedCodePoints">
+    /// The supported code points in the font.
+    /// </param>
+    protected ScalableFont(
+        string path,
+        int size,
+        (int First, int Last) supportedCodePoints)
+        : this(path, size, supportedCodePoints.First, supportedCodePoints.Last)
+    {
+    }
+
+    /// <summary>
     /// Finalizes an instance of the <see cref="ScalableFont"/> class.
     /// </summary>
     ~ScalableFont()
     {
         this.Dispose(false);
     }
+
+    /// <summary>
+    /// Occurs when the font is reloaded.
+    /// </summary>
+    public event EventHandler? Reloaded;
 
     /// <summary>
     /// Gets or sets the size of the font.
@@ -213,6 +244,39 @@ public class ScalableFont : IDisposable
     {
         this.Dispose(true);
         GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Reloads the font, optionally changing its path.
+    /// </summary>
+    /// <param name="newPath">
+    /// The new path to the font. If <see langword="null"/>, the current path is used.
+    /// </param>
+    /// <param name="firstSupportedCodePoint">
+    /// The first supported character in the font. If <see langword="null"/>,
+    /// the current first supported character is used.
+    /// </param>
+    /// <param name="lastSupportedCodePoint">
+    /// The last supported character in the font. If <see langword="null"/>,
+    /// the current last supported character is used.
+    /// </param>
+    public void Reload(
+        string? newPath = null,
+        int? firstSupportedCodePoint = null,
+        int? lastSupportedCodePoint = null)
+    {
+        ObjectDisposedException.ThrowIf(this.disposed, this);
+
+        this.firstSupportedCodePoint = firstSupportedCodePoint ?? this.firstSupportedCodePoint;
+        this.lastSupportedCodePoint = lastSupportedCodePoint ?? this.lastSupportedCodePoint;
+
+        if (newPath is not null)
+        {
+            this.path = GetAbsoluteFontPath(newPath);
+        }
+
+        this.Load();
+        this.Reloaded?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -381,8 +445,24 @@ public class ScalableFont : IDisposable
         return (int)Math.Ceiling(size * Math.Min(screenScale.X, screenScale.Y));
     }
 
+    private static string GetAbsoluteFontPath(string relativePath)
+    {
+        string assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
+
+        relativePath = relativePath.Replace('/', Path.DirectorySeparatorChar);
+        relativePath = relativePath.Replace('\\', Path.DirectorySeparatorChar);
+
+        return Path.GetFullPath(Path.Combine(assemblyLocation, relativePath));
+    }
+
     private unsafe void Load()
     {
+        if (this.firstSupportedCodePoint > this.lastSupportedCodePoint)
+        {
+            throw new ArgumentException(
+                "The first supported character must not be greater than the last supported character.");
+        }
+
         var size = this.AutoResize ? GetScaled(this.size) : this.size;
         size = Math.Clamp(size, this.minSize, this.maxSize);
 
@@ -413,9 +493,14 @@ public class ScalableFont : IDisposable
         FT_GlyphSlotRec_* glyph = this.LoadGlyph(BaseChar);
         this.height = glyph->bitmap.rows;
 
-        for (var c = (char)0x20; c <= 0x1FF; c++)
+        for (var c = (char)this.firstSupportedCodePoint; c <= this.lastSupportedCodePoint; c++)
         {
             glyph = this.LoadGlyph(c);
+
+            if (glyph == null)
+            {
+                continue;
+            }
 
             if (glyph->metrics.width == IntPtr.Zero || glyph->metrics.height == IntPtr.Zero)
             {
@@ -480,6 +565,11 @@ public class ScalableFont : IDisposable
     private unsafe FT_GlyphSlotRec_* LoadGlyph(char c)
     {
         uint glyphIndex = this.face.GetCharIndex(c);
+
+        if (glyphIndex == 0)
+        {
+            return null;
+        }
 
         var error = FT_Load_Glyph(this.face.FaceRec, glyphIndex, FT_LOAD.FT_LOAD_DEFAULT);
         FTError.ThrowIfError(this, error);
