@@ -70,33 +70,34 @@ public class AlignedListBox : ListBox
     /// <inheritdoc/>
     protected override void RecalculateContentElements(int currentOffset = 0)
     {
-        var componentsLength = this.Components.Sum(this.GetComponentLength);
-        componentsLength += this.Spacing * (this.Components.Count() - 1);
-        Component? firstComponent = this.Components.FirstOrDefault();
-        float firstComponentLength = firstComponent is { } c ? this.GetComponentLength(c) : 0;
+        int componentsLength = this.Components.Sum(this.GetComponentLength)
+                             + (this.Spacing * (this.Components.Count() - 1));
 
-        float absoluteOffset = this.Orientation switch
+        int containerSize = this.Orientation == Orientation.Vertical
+            ? this.Transform.Size.Y
+            : this.Transform.Size.X;
+
+        int availableSpace = containerSize - componentsLength;
+        int absoluteOffset = this.Orientation switch
         {
-            Orientation.Vertical =>
-                this.elementsAlignment switch
-                {
-                    Alignment.Top => currentOffset,
-                    Alignment.Center => (this.Transform.Size.Y - componentsLength - (firstComponentLength / 2f)) / 2f,
-                    Alignment.Bottom => this.Transform.Size.Y - componentsLength - (firstComponentLength / 2f),
-                    _ => throw new NotSupportedException(),
-                },
-            Orientation.Horizontal =>
-                this.elementsAlignment switch
-                {
-                    Alignment.Left => 0,
-                    Alignment.Center => (this.Transform.Size.Y - componentsLength - (firstComponentLength / 2f)) / 2f,
-                    Alignment.Right => this.Transform.Size.Y - componentsLength - (firstComponentLength / 2f),
-                    _ => throw new NotSupportedException(),
-                },
+            Orientation.Vertical => this.elementsAlignment switch
+            {
+                Alignment.Top => currentOffset,
+                Alignment.Center => currentOffset + (int)(availableSpace / 2f),
+                Alignment.Bottom => currentOffset + availableSpace,
+                _ => throw new NotSupportedException(),
+            },
+            Orientation.Horizontal => this.elementsAlignment switch
+            {
+                Alignment.Left => currentOffset,
+                Alignment.Center => currentOffset + (int)(availableSpace / 2f),
+                Alignment.Right => currentOffset + availableSpace,
+                _ => throw new NotSupportedException(),
+            },
             _ => throw new NotSupportedException(),
         };
 
-        base.RecalculateContentElements((int)absoluteOffset);
+        base.RecalculateContentElements(absoluteOffset);
     }
 
     /// <summary>
